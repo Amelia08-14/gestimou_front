@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react'; // Ensure React hooks are imported
 import { 
   Building2, 
   Users, 
@@ -24,8 +25,25 @@ interface DashboardClientProps {
   weeklyActivity: any[];
 }
 
-export default function DashboardClient({ stats, revenueData, activities, weeklyActivity }: DashboardClientProps) {
-  
+export default function DashboardClient({ 
+    stats: initialStats, 
+    revenueData: initialRevenueData, 
+    activities: initialActivities, 
+    weeklyActivity: initialWeeklyActivity 
+}: DashboardClientProps) {
+
+  // New API URL
+  const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+
+  // State
+  const [stats, setStats] = useState(initialStats);
+  const [revenueData, setRevenueData] = useState<any[]>(initialRevenueData);
+  const [activities, setActivities] = useState<any[]>(initialActivities);
+  const [weeklyActivity, setWeeklyActivity] = useState<any[]>(initialWeeklyActivity);
+
+  // Ideally we fetch from API here too
+  // useEffect(() => { ... fetch(`${API_URL}/dashboard`) ... }, []);
+
   const statsDisplay = [
     {
       name: 'Total Résidences',

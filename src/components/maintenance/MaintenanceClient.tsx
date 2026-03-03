@@ -10,11 +10,26 @@ import {
   Plus,
   X,
 } from 'lucide-react';
-import { MaintenanceTicket } from '@prisma/client';
+// import { MaintenanceTicket } from '@prisma/client';
 import { useRole } from '@/contexts/RoleContext';
 
+interface MaintenanceTicket {
+  id: string;
+  title: string;
+  description: string;
+  priority: string;
+  status: string;
+  category?: string | null;
+  location: string;
+  requester: string;
+  assignee?: string | null;
+  createdAt: string | Date;
+  updatedAt: string | Date;
+  residenceId?: string | null;
+}
+
 interface MaintenanceClientProps {
-  tickets: any[]; // Using any for serialized dates
+  tickets: MaintenanceTicket[];
 }
 
 const PROBLEM_TYPES = [
@@ -33,36 +48,44 @@ const PROBLEM_TYPES = [
 ];
 
 export default function MaintenanceClient({ tickets: initialTickets }: MaintenanceClientProps) {
-  const [tickets, setTickets] = useState(initialTickets);
+  const [tickets, setTickets] = useState<MaintenanceTicket[]>(initialTickets);
+  const [activeTab, setActiveTab] = useState('all');
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   
   const { role, user } = useRole();
   const [intervenants, setIntervenants] = useState<any[]>([]);
 
+  const displayedTickets = tickets.filter(t => {
+    if (activeTab === 'all') return true;
+    if (activeTab === 'my_tickets') return t.assignee === user?.name;
+    return t.status.toLowerCase() === activeTab;
+  }).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+
+  const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+
   // Load intervenants for Admin assignment
   React.useEffect(() => {
     if (role === 'ADMIN') {
-        fetch('/api/users')
+        // Fetch from new Express API
+        fetch(`${API_URL}/users?role=INTERVENANT`) // Backend should support query params
             .then(res => res.json())
             .then(data => {
                 if (Array.isArray(data)) {
-                    setIntervenants(data.filter((u: any) => u.role === 'INTERVENANT'));
+                    setIntervenants(data);
                 }
             })
             .catch(err => console.error("Failed to load intervenants", err));
     }
   }, [role]);
 
-  // Filter tickets based on role
-  const displayedTickets = role === 'INTERVENANT' 
-    ? tickets.filter(t => t.assignee === user.name)
-    : tickets;
+  // Fetch tickets on mount instead of passing props (Migration step)
+  // Or keep props if we migrate Server Component fetching later.
+  // For now, let's keep props but update actions to use new API.
 
   const handleStatusChange = async (ticketId: string, newStatus: string) => {
-    // Intervenants can only change status
     try {
-        const res = await fetch(`/api/maintenance/${ticketId}`, {
+        const res = await fetch(`${API_URL}/maintenance/${ticketId}`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ status: newStatus })
@@ -82,11 +105,10 @@ export default function MaintenanceClient({ tickets: initialTickets }: Maintenan
   };
 
   const handleAssigneeChange = async (ticketId: string, newAssignee: string) => {
-    // Only Admin can change assignee
     if (role !== 'ADMIN') return;
 
     try {
-        const res = await fetch(`/api/maintenance/${ticketId}`, {
+        const res = await fetch(`${API_URL}/maintenance/${ticketId}`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ assignee: newAssignee })
@@ -125,27 +147,27 @@ export default function MaintenanceClient({ tickets: initialTickets }: Maintenan
     setIsSubmitting(true);
     
     try {
-        // Here we would call an API to save to DB
-        // For now, let's update local state to reflect UI update immediately
-        // In a real app with Server Actions, we'd use useFormStatus or similar
-        
-        // Mock API call simulation or real one if I implement the route
-        // I'll skip the API route creation for now as I did for Owners, to save time, 
-        // but I should really do it if "rien n'est fonctionnel".
-        // Let's assume I'll create the API route next.
-        
-        const res = await fetch('/api/maintenance', {
+        const res = await fetch(`${API_URL}/maintenance`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 ...newTicket,
-                // Map title to category if needed, or just use title
                 category: newTicket.title 
             })
         });
 
         if (res.ok) {
-             window.location.reload();
+             const createdTicket = await res.json();
+             // Ensure createdTicket matches MaintenanceTicket interface or close enough
+             // The backend returns the Sequelize object, which has id, createdAt, etc.
+             // We might need to map it if structure differs slightly, but usually it matches well enough for JS/TS if not strict.
+             // With strict TS, we might cast it.
+             setTickets([createdTicket as unknown as MaintenanceTicket, ...tickets]); 
+             setIsAddModalOpen(false);
+             setNewTicket({
+                title: '', description: '', location: 'Parties Communes',
+                requester: '', priority: 'Moyenne', status: 'Signalé', assignee: ''
+             });
         } else {
             alert("Erreur lors de la création");
         }

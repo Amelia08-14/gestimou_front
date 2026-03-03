@@ -14,9 +14,45 @@ import {
   CheckCircle2
 } from 'lucide-react';
 import { useState } from 'react';
-import { Residence, Property, Owner } from '@prisma/client';
+// import { Residence, Property, Owner } from '@prisma/client';
 
-type PropertyWithDetails = Property & { owner?: Owner | null };
+// Define types manually
+interface Residence {
+  id: string;
+  name: string;
+  address: string;
+  image?: string | null;
+  totalUnits: number;
+  deliveredUnits: number;
+  occupancyRate?: string | null;
+  description?: string | null;
+}
+
+interface Owner {
+  id: number;
+  firstName: string;
+  lastName: string;
+  avatar?: string | null;
+}
+
+interface Property {
+  id: number;
+  title: string;
+  type: string;
+  surface: number;
+  floor?: string | null;
+  block?: string | null;
+  lotNumber?: string | null;
+  address?: string | null;
+  price?: string | null; // Mapped from Decimal
+  status: string;
+  image?: string | null;
+  residenceId: string;
+  ownerId?: number | null;
+  createdAt: string | Date;
+}
+
+type PropertyWithDetails = Property & { owner?: Owner | null; reserves?: any[] };
 
 interface PropertiesClientProps {
   residences: Residence[];
@@ -29,6 +65,16 @@ export default function PropertiesClient({ residences, properties: initialProper
   const [showAddModal, setShowAddModal] = useState(false);
   const [selectedProperty, setSelectedProperty] = useState<any | null>(null);
 
+  // New API URL
+  const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+  
+  // State for fetched data (migrating away from props)
+  const [properties, setProperties] = useState<any[]>(initialProperties);
+
+  // Load properties from API when a residence is selected (optional optimization)
+  // For now, we rely on initialProperties passed from Server Component which still uses Prisma.
+  // TODO: Update Server Component to fetch from API too, or fetch here client-side.
+  
   const handleResidenceClick = (residence: Residence) => {
     setSelectedResidence(residence);
     setView('properties');

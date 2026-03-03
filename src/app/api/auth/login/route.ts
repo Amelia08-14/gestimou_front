@@ -1,31 +1,24 @@
 import { NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
 
 export async function POST(request: Request) {
   try {
-    const { email, password } = await request.json();
+    const body = await request.json();
+    const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
 
-    if (!email) {
-      return NextResponse.json({ error: 'Email requis' }, { status: 400 });
-    }
-
-    // In a real app, verify password hash. Here we just simulate login.
-    const user = await prisma.user.findUnique({
-      where: { email },
+    // Proxy the request to the Backend Express API
+    const response = await fetch(`${API_URL}/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
     });
 
-    if (!user) {
-      return NextResponse.json({ error: 'Utilisateur non trouvé' }, { status: 404 });
+    const data = await response.json();
+
+    if (!response.ok) {
+        return NextResponse.json(data, { status: response.status });
     }
 
-    // Simple role check
-    return NextResponse.json({
-      id: user.id,
-      name: user.name,
-      email: user.email,
-      role: user.role,
-      token: 'fake-jwt-token-123456', // Mobile app will store this
-    });
+    return NextResponse.json(data);
 
   } catch (error) {
     console.error('Login error:', error);

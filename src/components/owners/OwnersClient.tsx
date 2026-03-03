@@ -10,11 +10,38 @@ import {
   FileText 
 } from 'lucide-react';
 import { useState } from 'react';
-import { Owner, Property } from '@prisma/client';
+// import { Owner, Property } from '@prisma/client';
+
+// Define types manually since we removed Prisma
+interface Property {
+  id: number;
+  title: string;
+  type: string;
+  surface: number;
+  floor?: string | null;
+  block?: string | null;
+  lotNumber?: string | null;
+  status: string;
+  residenceId: string;
+  price?: string | null; // Mapped from Decimal
+}
+
+interface Owner {
+  id: number;
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone?: string | null;
+  address?: string | null;
+  status: string;
+  avatar?: string | null;
+  totalChargesPaid: string; // Mapped from Decimal
+  emergencyContactName?: string | null;
+  emergencyContactPhone?: string | null;
+}
 
 // Extended type for Owner with serialized Decimal fields
-type OwnerWithDetails = Omit<Owner, 'totalChargesPaid'> & {
-  totalChargesPaid: string; // Serialized Decimal
+type OwnerWithDetails = Owner & {
   unpaidBalance?: string; // Serialized Decimal
   propertiesCount: number;
   properties?: Property[]; // Optional loaded properties
@@ -71,14 +98,16 @@ export default function OwnersClient({ owners }: OwnersClientProps) {
     setShowAddModal(true);
   };
 
+  const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+
   const handleViewProperties = async (owner: OwnerWithDetails) => {
     setSelectedOwner(owner);
     setShowProperties(true);
     try {
-        const res = await fetch(`/api/owners/${owner.id}`);
+        const res = await fetch(`${API_URL}/owners/${owner.id}`);
         if (res.ok) {
             const data = await res.json();
-            setSelectedOwner(data); // Update with full details including unpaidBalance
+            setSelectedOwner(data); 
             setProperties(data.properties || []);
         }
     } catch (e) {
@@ -90,7 +119,7 @@ export default function OwnersClient({ owners }: OwnersClientProps) {
     e.preventDefault();
     setIsSubmitting(true);
     try {
-      const url = isEditing && selectedOwner ? `/api/owners/${selectedOwner.id}` : '/api/owners';
+      const url = isEditing && selectedOwner ? `${API_URL}/owners/${selectedOwner.id}` : `${API_URL}/owners`;
       const method = isEditing ? 'PUT' : 'POST';
 
       const res = await fetch(url, {
@@ -101,15 +130,8 @@ export default function OwnersClient({ owners }: OwnersClientProps) {
 
       if (!res.ok) throw new Error('Erreur lors de la sauvegarde');
 
-      // Reset form and close modal
-      setFormData({
-        firstName: '', lastName: '', email: '', phone: '', address: '',
-        emergencyContactName: '', emergencyContactPhone: ''
-      });
-      setShowAddModal(false);
-      setIsEditing(false);
-      setSelectedOwner(null);
       // Refresh page to show new owner
+      // In a real app we'd update state, but reload is safe for now
       window.location.reload();
     } catch (error) {
       alert('Erreur: Impossible de sauvegarder.');

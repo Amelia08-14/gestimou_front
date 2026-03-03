@@ -48,8 +48,10 @@ export default function AdminPage() {
     fetchUsers();
   }, []);
 
+  const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+
   const fetchUsers = () => {
-    fetch('/api/users')
+    fetch(`${API_URL}/users`)
       .then(res => res.json())
       .then(data => setUsers(Array.isArray(data) ? data : []))
       .catch(err => console.error(err));
@@ -75,7 +77,7 @@ export default function AdminPage() {
     e.preventDefault();
     setIsSubmitting(true);
     try {
-      const url = selectedUser ? `/api/users/${selectedUser.id}` : '/api/users';
+      const url = selectedUser ? `${API_URL}/users/${selectedUser.id}` : `${API_URL}/users`;
       const method = selectedUser ? 'PUT' : 'POST';
       
       const body: any = { ...formData };

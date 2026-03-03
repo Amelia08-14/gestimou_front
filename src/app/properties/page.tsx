@@ -1,25 +1,24 @@
-import { prisma } from '@/lib/prisma';
 import PropertiesClient from '@/components/properties/PropertiesClient';
 
+async function getData() {
+  const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+  try {
+    const [residencesRes, propertiesRes] = await Promise.all([
+      fetch(`${API_URL}/residences`, { cache: 'no-store' }),
+      fetch(`${API_URL}/properties`, { cache: 'no-store' })
+    ]);
+
+    const residences = residencesRes.ok ? await residencesRes.json() : [];
+    const properties = propertiesRes.ok ? await propertiesRes.json() : [];
+
+    return { residences, properties };
+  } catch (error) {
+    console.error('Failed to fetch data:', error);
+    return { residences: [], properties: [] };
+  }
+}
+
 export default async function PropertiesPage() {
-  const residences = await prisma.residence.findMany();
-  const properties = await prisma.property.findMany({
-    include: {
-      owner: true,
-      reserves: true,
-    }
-  } as any);
-
-  // Convert Decimal to number/string if needed, but Prisma usually returns Decimal object which can be tricky in Client Components
-  // We need to serialize the data. Recharts and simple display is fine with strings.
-  // The 'price' in Property is Decimal.
-  // We should map it.
-  
-  const serializedProperties = properties.map((p: any) => ({
-    ...p,
-    price: p.price ? p.price.toString() : null,
-    surface: p.surface, // Float is fine
-  }));
-
-  return <PropertiesClient residences={residences} properties={serializedProperties as any} />;
+  const { residences, properties } = await getData();
+  return <PropertiesClient residences={residences} properties={properties} />;
 }
