@@ -9,7 +9,8 @@ async function getData() {
     ]);
 
     const residences = residencesRes.ok ? await residencesRes.json() : [];
-    const properties = propertiesRes.ok ? await propertiesRes.json() : [];
+    const propertiesData = propertiesRes.ok ? await propertiesRes.json() : {};
+    const properties = propertiesData.success ? propertiesData.data : [];
 
     return { residences, properties };
   } catch (error) {

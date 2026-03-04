@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react'; // Ensure React hooks are imported
+import { useState, useEffect } from 'react'; // Ensure React hooks are imported
 import { 
   Building2, 
   Users, 
@@ -40,9 +40,36 @@ export default function DashboardClient({
   const [revenueData, setRevenueData] = useState<any[]>(initialRevenueData);
   const [activities, setActivities] = useState<any[]>(initialActivities);
   const [weeklyActivity, setWeeklyActivity] = useState<any[]>(initialWeeklyActivity);
+  const [loading, setLoading] = useState(false);
 
-  // Ideally we fetch from API here too
-  // useEffect(() => { ... fetch(`${API_URL}/dashboard`) ... }, []);
+  useEffect(() => {
+    const fetchData = async () => {
+      const token = localStorage.getItem('token');
+      if (!token) return;
+
+      setLoading(true);
+      try {
+        const res = await fetch(`${API_URL}/dashboard`, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setStats(data.stats);
+          setRevenueData(data.revenueData);
+          setActivities(data.activities);
+          setWeeklyActivity(data.weeklyActivity);
+        }
+      } catch (error) {
+        console.error('Error fetching dashboard data:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [API_URL]);
 
   const statsDisplay = [
     {
@@ -51,7 +78,7 @@ export default function DashboardClient({
       change: '+0',
       changeType: 'neutral',
       icon: Building2,
-      color: 'bg-blue-500',
+      color: 'blue-500',
     },
     {
       name: 'Taux d\'Occupation',
@@ -59,7 +86,7 @@ export default function DashboardClient({
       change: '+2%',
       changeType: 'positive',
       icon: Users,
-      color: 'bg-emerald-500',
+      color: 'emerald-500',
     },
     {
       name: 'Revenus Mensuels',
@@ -67,7 +94,7 @@ export default function DashboardClient({
       change: '+12%',
       changeType: 'positive',
       icon: Wallet,
-      color: 'bg-brand-gold',
+      color: 'brand-gold',
     },
     {
       name: 'Tickets En Cours',
@@ -75,7 +102,7 @@ export default function DashboardClient({
       change: '-2',
       changeType: 'positive', 
       icon: AlertTriangle,
-      color: 'bg-orange-500',
+      color: 'orange-500',
     },
   ];
 
@@ -101,13 +128,13 @@ export default function DashboardClient({
       <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
         {statsDisplay.map((item) => (
           <div key={item.name} className="overflow-hidden rounded-xl bg-white p-6 shadow-sm ring-1 ring-slate-200 transition-all hover:shadow-md">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-slate-500">{item.name}</p>
-                <p className="mt-2 text-3xl font-bold text-slate-900">{item.value}</p>
+            <div className="flex items-center justify-between gap-4">
+              <div className="min-w-0">
+                <p className="text-sm font-medium text-slate-500 truncate">{item.name}</p>
+                <p className="mt-2 text-3xl font-bold text-slate-900 truncate" title={item.value}>{item.value}</p>
               </div>
-              <div className={`rounded-lg p-3 ${item.color} bg-opacity-10`}>
-                <item.icon className={`h-6 w-6 ${item.color.replace('bg-', 'text-')}`} />
+              <div className={`rounded-lg p-3 shrink-0 bg-${item.color}/10 text-${item.color}`}>
+                <item.icon className="h-6 w-6" />
               </div>
             </div>
             <div className="mt-4 flex items-center gap-2">

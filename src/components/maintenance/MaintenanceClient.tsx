@@ -223,7 +223,7 @@ export default function MaintenanceClient({ tickets: initialTickets }: Maintenan
                   <tr>
                       <td colSpan={7} className="px-6 py-8 text-center text-slate-500">
                         {role === 'INTERVENANT' 
-                            ? `Aucun ticket assigné à ${user.name}.`
+                            ? `Aucun ticket assigné à ${user?.name || 'moi'}.`
                             : "Aucun ticket trouvé."}
                       </td>
                   </tr>

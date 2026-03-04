@@ -17,10 +17,8 @@ export const metadata: Metadata = {
   description: "Plateforme d'administration pour la gestion immobilière",
 };
 
-import { Sidebar } from "@/components/Sidebar";
-import { Header } from "@/components/Header";
+import AppLayout from "@/components/AppLayout";
 import { Providers } from "@/components/Providers";
-import AuthWrapper from "@/components/AuthWrapper";
 
 export default function RootLayout({
   children,
@@ -34,15 +32,9 @@ export default function RootLayout({
         suppressHydrationWarning
       >
         <Providers>
-          <AuthWrapper>
-            <Sidebar />
-            <div className="flex flex-1 flex-col h-screen overflow-hidden">
-              <Header />
-              <main className="flex-1 overflow-y-auto p-8">
-                {children}
-              </main>
-            </div>
-          </AuthWrapper>
+          <AppLayout>
+            {children}
+          </AppLayout>
         </Providers>
       </body>
     </html>

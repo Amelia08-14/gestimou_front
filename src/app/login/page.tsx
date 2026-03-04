@@ -11,7 +11,7 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const router = useRouter();
-  const { setRole } = useRole();
+  const { login } = useRole();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -31,11 +31,13 @@ export default function LoginPage() {
         throw new Error(data.error || 'Erreur de connexion');
       }
 
-      // Set role based on response
-      setRole(data.role);
-      
-      // Redirect based on role? Or just home
-      router.push('/');
+      // Login via context
+      login({
+        id: data.id,
+        name: data.name,
+        email: data.email,
+        role: data.role
+      }, data.token);
       
     } catch (err: any) {
       setError(err.message);
@@ -45,7 +47,7 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-slate-50 p-4">
+    <div className="flex min-h-screen w-full items-center justify-center bg-slate-50 p-4">
       <div className="w-full max-w-md space-y-8 rounded-2xl bg-white p-8 shadow-xl">
         <div className="text-center">
           <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-brand-gold text-brand-blue font-bold text-xl shadow-lg">
@@ -121,9 +123,7 @@ export default function LoginPage() {
           </button>
           
           <div className="text-center text-xs text-slate-500">
-            <p>Comptes de démo :</p>
-            <p>Admin : admin@aymen.com / pass</p>
-            <p>Intervenant : elec@aymen.com / pass</p>
+            <p>Comptes de démonstrations - tout est fictif</p>
           </div>
         </form>
       </div>

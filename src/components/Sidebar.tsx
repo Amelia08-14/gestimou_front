@@ -31,18 +31,15 @@ import { useRouter } from 'next/navigation';
 
 export function Sidebar() {
   const pathname = usePathname();
-  const { role, setRole } = useRole();
+  const { user, logout } = useRole();
   const router = useRouter();
 
-  const filteredNavigation = navigation.filter(item => item.roles.includes(role));
+  const filteredNavigation = navigation.filter(item => 
+    user?.role && item.roles.includes(user.role)
+  );
 
   const handleLogout = () => {
-    // In a real app, clear token/session here
-    router.push('/login');
-  };
-
-  const toggleRole = () => {
-    setRole(role === 'ADMIN' ? 'INTERVENANT' : 'ADMIN');
+    logout();
   };
 
   return (
@@ -85,32 +82,19 @@ export function Sidebar() {
       </nav>
 
       <div className="border-t border-brand-gold/20 p-4 space-y-4">
-        {/* Role Switcher for Demo */}
-        <div 
-          onClick={toggleRole}
-          className="flex items-center gap-3 rounded-xl bg-white/5 p-3 hover:bg-white/10 transition-colors cursor-pointer border border-dashed border-slate-500 hover:border-brand-gold/50"
-          title="Cliquez pour changer de rôle (Demo)"
-        >
-          <UserCog className="h-5 w-5 text-slate-400" />
-          <div className="flex-1">
-            <p className="text-xs text-slate-400">Mode actuel :</p>
-            <p className="text-sm font-bold text-brand-gold">{role}</p>
-          </div>
-        </div>
-
         <div 
           onClick={handleLogout}
           className="flex items-center gap-3 rounded-xl bg-white/5 p-3 hover:bg-white/10 transition-colors cursor-pointer border border-transparent hover:border-brand-gold/30"
         >
           <div className="h-9 w-9 rounded-full bg-brand-gold flex items-center justify-center text-xs font-bold text-brand-blue shadow-lg">
-            {role === 'ADMIN' ? 'AD' : 'IT'}
+            {user?.name ? user.name.charAt(0).toUpperCase() : 'U'}
           </div>
           <div className="flex-1 overflow-hidden">
             <p className="truncate text-sm font-medium text-white">
-              {role === 'ADMIN' ? 'Admin Principal' : 'Intervenant'}
+              {user?.name || 'Utilisateur'}
             </p>
             <p className="truncate text-xs text-slate-400">
-              {role === 'ADMIN' ? 'admin@aymen.com' : 'tech@aymen.com'}
+              {user?.email || ''}
             </p>
           </div>
           <LogOut className="h-4 w-4 text-slate-400 hover:text-brand-gold transition-colors" />

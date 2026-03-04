@@ -13,7 +13,7 @@ import {
   AlertTriangle,
   CheckCircle2
 } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 // import { Residence, Property, Owner } from '@prisma/client';
 
 // Define types manually
@@ -71,6 +71,13 @@ export default function PropertiesClient({ residences, properties: initialProper
   // State for fetched data (migrating away from props)
   const [properties, setProperties] = useState<any[]>(initialProperties);
 
+  // Sync state with props if they change
+  useEffect(() => {
+    if (initialProperties) {
+      setProperties(initialProperties);
+    }
+  }, [initialProperties]);
+
   // Load properties from API when a residence is selected (optional optimization)
   // For now, we rely on initialProperties passed from Server Component which still uses Prisma.
   // TODO: Update Server Component to fetch from API too, or fetch here client-side.
@@ -86,7 +93,7 @@ export default function PropertiesClient({ residences, properties: initialProper
   };
 
   const displayedProperties = selectedResidence 
-    ? initialProperties
+    ? properties
         .filter(p => p.residenceId === selectedResidence.id)
         // Filter out rentals as requested "pas des appartements en location"
         .filter(p => p.status !== 'Location')
@@ -194,14 +201,13 @@ export default function PropertiesClient({ residences, properties: initialProper
                     className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
                   />
                   <div className="absolute right-3 top-3">
-                    <span className={`rounded-full px-2.5 py-1 text-xs font-semibold shadow-sm backdrop-blur-md ${
-                      property.status === 'Libre' ? 'bg-emerald-500/90 text-white' :
-                      property.status === 'Occupé' ? 'bg-brand-blue/90 text-white' :
-                      'bg-brand-gold/90 text-brand-blue'
-                    }`}>
-                      {property.status}
-                    </span>
-                  </div>
+                  <span className={`rounded-full px-2.5 py-1 text-xs font-semibold shadow-sm backdrop-blur-md ${
+                    property.status === 'Libre' ? 'bg-emerald-500/90 text-white' :
+                    'bg-brand-gold/90 text-brand-blue'
+                  }`}>
+                    {property.status}
+                  </span>
+                </div>
                 </div>
                 
                 <div className="p-5">
@@ -297,7 +303,6 @@ export default function PropertiesClient({ residences, properties: initialProper
                 <div className="absolute right-3 top-3">
                   <span className={`rounded-full px-3 py-1.5 text-sm font-semibold shadow-sm backdrop-blur-md ${
                     selectedProperty.status === 'Libre' ? 'bg-emerald-500/90 text-white' :
-                    selectedProperty.status === 'Occupé' ? 'bg-brand-blue/90 text-white' :
                     'bg-brand-gold/90 text-brand-blue'
                   }`}>
                     {selectedProperty.status}
@@ -343,10 +348,16 @@ export default function PropertiesClient({ residences, properties: initialProper
                         </div>
                         <div>
                             <p className="text-sm font-bold text-slate-900">
-                                {selectedProperty.owner.firstName} {selectedProperty.owner.lastName}
+                                {selectedProperty.owner.firstName === 'Aymen' && selectedProperty.owner.lastName === 'Promotion' 
+                                    ? 'Aymen Promotion (Promoteur)'
+                                    : `${selectedProperty.owner.firstName} ${selectedProperty.owner.lastName}`
+                                }
                             </p>
                             <p className="text-xs text-slate-500">
-                                Depuis {new Date(selectedProperty.createdAt).toLocaleDateString('fr-FR', { month: 'short', year: 'numeric' })}
+                                {selectedProperty.owner.firstName === 'Aymen' && selectedProperty.owner.lastName === 'Promotion' 
+                                    ? 'Non vendu'
+                                    : `Depuis ${new Date(selectedProperty.createdAt).toLocaleDateString('fr-FR', { month: 'short', year: 'numeric' })}`
+                                }
                             </p>
                         </div>
                       </div>
