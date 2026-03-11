@@ -32,19 +32,78 @@ interface MaintenanceClientProps {
   tickets: MaintenanceTicket[];
 }
 
-const PROBLEM_TYPES = [
-  "Ascenseur en panne",
-  "Problème TAG d'accès",
-  "Eclairage défectueux",
-  "Déchets accumulés",
-  "Mauvaise odeur",
-  "Problème de sécurité",
-  "Place de parking occupée",
-  "Rideau parking défaillant",
-  "Espace vert",
-  "Nettoyage partie communes",
-  "Nuisances sonores",
-  "Autres"
+interface ProblemCategory {
+  category: string;
+  items: string[];
+}
+
+const PROBLEM_TYPES: ProblemCategory[] = [
+  {
+    category: "Peinture (Partie Commune)",
+    items: [
+        "Retouches peinture couloir",
+        "Peinture écaillée",
+        "Traces d'humidité",
+        "Autre problème de peinture"
+    ]
+  },
+  {
+    category: "Plomberie (Partie Commune)",
+    items: [
+        "Fuite d'eau",
+        "Canalisation bouchée",
+        "Mauvaise odeur",
+        "Autre problème plomberie"
+    ]
+  },
+  {
+    category: "Problème Bâche à eau",
+    items: [
+        "Niveau d'eau bas",
+        "Fuite bâche",
+        "Pompe défectueuse",
+        "Autre problème bâche"
+    ]
+  },
+  {
+    category: "Problème Groupe électrogène",
+    items: [
+        "Panne au démarrage",
+        "Niveau carburant bas",
+        "Bruit anormal",
+        "Eclairage défectueux"
+    ]
+  },
+  {
+    category: "Ascenseurs & Accès",
+    items: [
+        "Ascenseur en panne",
+        "Problème TAG d'accès",
+        "Rideau parking défaillant",
+        "Porte hall bloquée"
+    ]
+  },
+  {
+    category: "Hygiène & Sécurité",
+    items: [
+        "Déchets accumulés",
+        "Nettoyage partie communes",
+        "Problème de sécurité",
+        "Nuisances sonores"
+    ]
+  },
+  {
+    category: "Espaces Extérieurs",
+    items: [
+        "Espace vert",
+        "Place de parking occupée",
+        "Eclairage extérieur"
+    ]
+  },
+  {
+    category: "Autres",
+    items: ["Autres"]
+  }
 ];
 
 export default function MaintenanceClient({ tickets: initialTickets }: MaintenanceClientProps) {
@@ -147,12 +206,21 @@ export default function MaintenanceClient({ tickets: initialTickets }: Maintenan
     setIsSubmitting(true);
     
     try {
+        // Find category from title (selected item)
+        let category = 'Autres';
+        for (const group of PROBLEM_TYPES) {
+            if (group.items.includes(newTicket.title)) {
+                category = group.category;
+                break;
+            }
+        }
+
         const res = await fetch(`${API_URL}/maintenance`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 ...newTicket,
-                category: newTicket.title 
+                category: category 
             })
         });
 
@@ -333,8 +401,12 @@ export default function MaintenanceClient({ tickets: initialTickets }: Maintenan
                   className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-brand-blue focus:ring-1 focus:ring-brand-blue"
                 >
                     <option value="">Sélectionner un type...</option>
-                    {PROBLEM_TYPES.map(type => (
-                        <option key={type} value={type}>{type}</option>
+                    {PROBLEM_TYPES.map((group) => (
+                        <optgroup key={group.category} label={group.category}>
+                            {group.items.map(item => (
+                                <option key={item} value={item}>{item}</option>
+                            ))}
+                        </optgroup>
                     ))}
                 </select>
               </div>

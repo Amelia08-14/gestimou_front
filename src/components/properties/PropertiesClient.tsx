@@ -59,7 +59,7 @@ interface PropertiesClientProps {
   properties: any[];
 }
 
-export default function PropertiesClient({ residences, properties: initialProperties }: PropertiesClientProps) {
+export default function PropertiesClient({ residences: initialResidences, properties: initialProperties }: PropertiesClientProps) {
   const [view, setView] = useState<'residences' | 'properties'>('residences');
   const [selectedResidence, setSelectedResidence] = useState<Residence | null>(null);
   const [showAddModal, setShowAddModal] = useState(false);
@@ -68,15 +68,54 @@ export default function PropertiesClient({ residences, properties: initialProper
   // New API URL
   const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
   
-  // State for fetched data (migrating away from props)
-  const [properties, setProperties] = useState<any[]>(initialProperties);
+  // State for fetched data
+  const [properties, setProperties] = useState<any[]>(initialProperties || []);
+  const [residences, setResidences] = useState<Residence[]>(initialResidences || []);
 
-  // Sync state with props if they change
+  // Fetch data on mount (Client-side with Auth Token)
   useEffect(() => {
-    if (initialProperties) {
+    const fetchData = async () => {
+        const token = localStorage.getItem('token');
+        if (!token) return;
+
+        try {
+            const [resRes, propRes] = await Promise.all([
+                fetch(`${API_URL}/residences`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                }),
+                fetch(`${API_URL}/properties`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                })
+            ]);
+
+            if (resRes.ok) {
+                const resData = await resRes.json();
+                if (Array.isArray(resData)) setResidences(resData);
+            }
+
+            if (propRes.ok) {
+                const propData = await propRes.json();
+                if (propData.success && Array.isArray(propData.data)) {
+                    setProperties(propData.data);
+                }
+            }
+        } catch (error) {
+            console.error("Failed to fetch data", error);
+        }
+    };
+
+    fetchData();
+  }, []);
+
+  // Sync state with props if they change (fallback)
+  useEffect(() => {
+    if (initialProperties && initialProperties.length > 0) {
       setProperties(initialProperties);
     }
-  }, [initialProperties]);
+    if (initialResidences && initialResidences.length > 0) {
+      setResidences(initialResidences);
+    }
+  }, [initialProperties, initialResidences]);
 
   // Load properties from API when a residence is selected (optional optimization)
   // For now, we rely on initialProperties passed from Server Component which still uses Prisma.

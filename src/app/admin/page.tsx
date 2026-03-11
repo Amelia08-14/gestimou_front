@@ -12,7 +12,10 @@ import {
   AlertTriangle,
   Lock,
   Search,
-  Plus
+  Plus,
+  UserPlus,
+  Check,
+  X
 } from 'lucide-react';
 
 const users = [
@@ -30,6 +33,7 @@ const logs = [
 
 export default function AdminPage() {
   const [users, setUsers] = useState<any[]>([]);
+  const [requests, setRequests] = useState<any[]>([]);
   const [activeTab, setActiveTab] = useState('users');
   const [showAddUserModal, setShowAddUserModal] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -39,21 +43,88 @@ export default function AdminPage() {
     email: '',
     role: 'ADMIN',
     profession: '',
+    zone: '',
     password: ''
   });
   const [selectedUser, setSelectedUser] = useState<any | null>(null);
 
-  // Load users on mount
+  // Load users and requests on mount
   React.useEffect(() => {
     fetchUsers();
+    fetchRequests();
   }, []);
 
   const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
 
+  const fetchRequests = () => {
+    const token = localStorage.getItem('token');
+    fetch(`${API_URL}/registrations`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+    })
+      .then(res => res.json())
+      .then(data => {
+        if (Array.isArray(data)) setRequests(data);
+      })
+      .catch(err => console.error(err));
+  };
+
+  const handleApproveRequest = async (id: string) => {
+    if (!confirm('Voulez-vous valider cette inscription ? Cela créera un compte utilisateur.')) return;
+    
+    try {
+        const token = localStorage.getItem('token');
+        const res = await fetch(`${API_URL}/registrations/${id}/approve`, {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        
+        if (res.ok) {
+            const data = await res.json();
+            alert(`Compte créé avec succès !\nMot de passe temporaire : ${data.tempPassword}`);
+            fetchRequests();
+            fetchUsers(); // Refresh users list too
+        } else {
+            alert('Erreur lors de la validation.');
+        }
+    } catch (e) {
+        console.error(e);
+        alert('Erreur technique');
+    }
+  };
+
+  const handleRejectRequest = async (id: string) => {
+    if (!confirm('Voulez-vous rejeter cette demande ?')) return;
+
+    try {
+        const token = localStorage.getItem('token');
+        const res = await fetch(`${API_URL}/registrations/${id}/reject`, {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        
+        if (res.ok) {
+            fetchRequests();
+        } else {
+            alert('Erreur lors du rejet.');
+        }
+    } catch (e) {
+        console.error(e);
+        alert('Erreur technique');
+    }
+  };
+
   const fetchUsers = () => {
     fetch(`${API_URL}/users`)
       .then(res => res.json())
-      .then(data => setUsers(Array.isArray(data) ? data : []))
+      .then(data => {
+        if (Array.isArray(data)) {
+            // Filter out residents (mobile app users)
+            const staffUsers = data.filter((u: any) => u.role !== 'RESIDENT');
+            setUsers(staffUsers);
+        } else {
+            setUsers([]);
+        }
+      })
       .catch(err => console.error(err));
   };
 
@@ -68,6 +139,7 @@ export default function AdminPage() {
         email: user.email || '',
         role: user.role || 'ADMIN',
         profession: user.profession || '',
+        zone: user.zone || '',
         password: '' // Keep password empty unless changing
     });
     setShowAddUserModal(true);
@@ -92,7 +164,7 @@ export default function AdminPage() {
       if (res.ok) {
         fetchUsers();
         setShowAddUserModal(false);
-        setFormData({ name: '', email: '', role: 'ADMIN', profession: '', password: '' });
+        setFormData({ name: '', email: '', role: 'ADMIN', profession: '', zone: '', password: '' });
         setSelectedUser(null);
       } else {
         alert('Erreur lors de la sauvegarde');
@@ -125,6 +197,22 @@ export default function AdminPage() {
           >
             <Users className="h-4 w-4" />
             Utilisateurs & Rôles
+          </button>
+          <button
+            onClick={() => setActiveTab('registrations')}
+            className={`flex items-center gap-2 border-b-2 py-4 px-1 text-sm font-medium transition-colors ${
+              activeTab === 'registrations'
+                ? 'border-brand-blue text-brand-blue'
+                : 'border-transparent text-slate-500 hover:border-slate-300 hover:text-slate-700'
+            }`}
+          >
+            <UserPlus className="h-4 w-4" />
+            Demandes d'inscription
+            {requests.filter(r => r.status === 'PENDING').length > 0 && (
+                <span className="ml-1 rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-600">
+                    {requests.filter(r => r.status === 'PENDING').length}
+                </span>
+            )}
           </button>
           <button
             onClick={() => setActiveTab('history')}
@@ -232,6 +320,79 @@ export default function AdminPage() {
               </table>
             </div>
           </div>
+        )}
+
+        {activeTab === 'registrations' && (
+            <div className="space-y-6 animate-in fade-in duration-300">
+                <div className="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden">
+                    <table className="w-full text-left text-sm">
+                        <thead className="bg-slate-50 text-slate-700">
+                            <tr>
+                                <th className="px-6 py-4 font-semibold">Demandeur</th>
+                                <th className="px-6 py-4 font-semibold">Contact</th>
+                                <th className="px-6 py-4 font-semibold">Bien Déclaré</th>
+                                <th className="px-6 py-4 font-semibold">Statut</th>
+                                <th className="px-6 py-4 font-semibold text-right">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100">
+                            {requests.length === 0 ? (
+                                <tr>
+                                    <td colSpan={5} className="px-6 py-8 text-center text-slate-500">Aucune demande d'inscription.</td>
+                                </tr>
+                            ) : (
+                                requests.map((req) => (
+                                    <tr key={req.id} className="hover:bg-slate-50">
+                                        <td className="px-6 py-4">
+                                            <div className="font-medium text-slate-900">{req.firstName} {req.lastName}</div>
+                                            <div className="text-xs text-slate-500">Inscrit le {new Date(req.createdAt).toLocaleDateString()}</div>
+                                        </td>
+                                        <td className="px-6 py-4">
+                                            <div className="text-slate-900">{req.email}</div>
+                                            <div className="text-xs text-slate-500">{req.phone}</div>
+                                        </td>
+                                        <td className="px-6 py-4">
+                                            <div className="text-slate-900 font-medium">{req.residenceId === 'prestige' ? 'Résidence Prestige' : req.residenceId}</div>
+                                            <div className="text-xs text-slate-500">
+                                                Bloc {req.block}, Etage {req.floor}, Porte {req.door}
+                                            </div>
+                                        </td>
+                                        <td className="px-6 py-4">
+                                            <span className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ${
+                                                req.status === 'APPROVED' ? 'bg-green-50 text-green-700' :
+                                                req.status === 'REJECTED' ? 'bg-red-50 text-red-700' :
+                                                'bg-yellow-50 text-yellow-700'
+                                            }`}>
+                                                {req.status === 'APPROVED' ? 'Validé' : req.status === 'REJECTED' ? 'Rejeté' : 'En attente'}
+                                            </span>
+                                        </td>
+                                        <td className="px-6 py-4 text-right">
+                                            {req.status === 'PENDING' && (
+                                                <div className="flex justify-end gap-2">
+                                                    <button 
+                                                        onClick={() => handleApproveRequest(req.id)}
+                                                        className="p-1 rounded bg-green-50 text-green-600 hover:bg-green-100"
+                                                        title="Valider"
+                                                    >
+                                                        <Check className="h-4 w-4" />
+                                                    </button>
+                                                    <button 
+                                                        onClick={() => handleRejectRequest(req.id)}
+                                                        className="p-1 rounded bg-red-50 text-red-600 hover:bg-red-100"
+                                                        title="Rejeter"
+                                                    >
+                                                        <X className="h-4 w-4" />
+                                                    </button>
+                                                </div>
+                                            )}
+                                        </td>
+                                    </tr>
+                                ))
+                            )}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
         )}
 
         {activeTab === 'history' && (
@@ -383,9 +544,12 @@ export default function AdminPage() {
                     onChange={handleInputChange}
                     className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-brand-blue focus:ring-1 focus:ring-brand-blue outline-none"
                   >
-                    <option value="ADMIN">Administrateur</option>
+                    <option value="ADMIN">Administrateur (Directeur)</option>
+                    <option value="RESPONSABLE_ZONE">Responsable de Zone (Gestionnaire)</option>
+                    <option value="RECOUVREMENT">Chargé du Recouvrement</option>
+                    <option value="HSE">HSE</option>
                     <option value="INTERVENANT">Intervenant</option>
-                    <option value="MANAGER">Gestionnaire</option>
+                    <option value="MANAGER">Manager (Générique)</option>
                   </select>
                 </div>
                 {formData.role === 'INTERVENANT' && (
@@ -398,6 +562,22 @@ export default function AdminPage() {
                         placeholder="Ex: Electricien"
                         className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-brand-blue focus:ring-1 focus:ring-brand-blue outline-none"
                     />
+                    </div>
+                )}
+                {formData.role === 'RESPONSABLE_ZONE' && (
+                    <div className="space-y-2">
+                    <label className="text-sm font-medium text-slate-700">Zone Assignée</label>
+                    <select 
+                        name="zone"
+                        value={formData.zone}
+                        onChange={handleInputChange}
+                        className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-brand-blue focus:ring-1 focus:ring-brand-blue outline-none"
+                    >
+                        <option value="">Sélectionner une zone</option>
+                        <option value="Zone 1">Zone 1 (Draria, El Achour...)</option>
+                        <option value="Zone 2">Zone 2 (Ben Aknoun, Hydra...)</option>
+                        <option value="Zone 3">Zone 3 (Les Sources, Birkhadem...)</option>
+                    </select>
                     </div>
                 )}
               </div>
