@@ -121,13 +121,34 @@ export default function MaintenanceClient({ tickets: initialTickets }: Maintenan
     return t.status.toLowerCase() === activeTab;
   }).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
-  const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+  const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://landing.aymenpromotion-dz.com/api';
 
   // Load intervenants for Admin assignment
   React.useEffect(() => {
+    const token = localStorage.getItem('token');
+    
+    // Fetch Tickets
+    fetch(`${API_URL}/maintenance`, {
+        headers: {
+            'Authorization': `Bearer ${token}`
+        }
+    })
+    .then(res => {
+        if (!res.ok) throw new Error('Failed to fetch tickets');
+        return res.json();
+    })
+    .then(data => {
+        if (Array.isArray(data)) setTickets(data);
+    })
+    .catch(err => console.error(err));
+
     if (role === 'ADMIN') {
         // Fetch from new Express API
-        fetch(`${API_URL}/users?role=INTERVENANT`) // Backend should support query params
+        fetch(`${API_URL}/users?role=INTERVENANT`, {
+             headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        }) 
             .then(res => res.json())
             .then(data => {
                 if (Array.isArray(data)) {
@@ -144,9 +165,13 @@ export default function MaintenanceClient({ tickets: initialTickets }: Maintenan
 
   const handleStatusChange = async (ticketId: string, newStatus: string) => {
     try {
+        const token = localStorage.getItem('token');
         const res = await fetch(`${API_URL}/maintenance/${ticketId}`, {
             method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
             body: JSON.stringify({ status: newStatus })
         });
 
@@ -167,9 +192,13 @@ export default function MaintenanceClient({ tickets: initialTickets }: Maintenan
     if (role !== 'ADMIN') return;
 
     try {
+        const token = localStorage.getItem('token');
         const res = await fetch(`${API_URL}/maintenance/${ticketId}`, {
             method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
             body: JSON.stringify({ assignee: newAssignee })
         });
 
@@ -215,9 +244,13 @@ export default function MaintenanceClient({ tickets: initialTickets }: Maintenan
             }
         }
 
+        const token = localStorage.getItem('token');
         const res = await fetch(`${API_URL}/maintenance`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
             body: JSON.stringify({
                 ...newTicket,
                 category: category 

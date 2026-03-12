@@ -9,7 +9,7 @@ import {
   MoreVertical, 
   FileText 
 } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 // import { Owner, Property } from '@prisma/client';
 
 // Define types manually since we removed Prisma
@@ -52,6 +52,7 @@ interface OwnersClientProps {
 }
 
 export default function OwnersClient({ owners }: OwnersClientProps) {
+  const [ownersList, setOwnersList] = useState<OwnerWithDetails[]>(owners);
   const [showAddModal, setShowAddModal] = useState(false);
   const [selectedOwner, setSelectedOwner] = useState<OwnerWithDetails | null>(null);
   const [showProperties, setShowProperties] = useState(false);
@@ -59,7 +60,7 @@ export default function OwnersClient({ owners }: OwnersClientProps) {
   // Filter state
   const [searchTerm, setSearchTerm] = useState('');
 
-  const filteredOwners = owners.filter(owner => 
+  const filteredOwners = ownersList.filter(owner => 
     owner.firstName.toLowerCase().includes(searchTerm.toLowerCase()) ||
     owner.lastName.toLowerCase().includes(searchTerm.toLowerCase()) ||
     owner.email.toLowerCase().includes(searchTerm.toLowerCase())
@@ -78,6 +79,29 @@ export default function OwnersClient({ owners }: OwnersClientProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [properties, setProperties] = useState<any[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://landing.aymenpromotion-dz.com/api';
+
+  // Fetch owners on mount (Client-side)
+  // This ensures we get fresh data and can use auth token if needed
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    fetch(`${API_URL}/owners`, {
+        headers: {
+            'Authorization': `Bearer ${token}`
+        }
+    })
+    .then(res => {
+        if (res.ok) return res.json();
+        throw new Error('Failed to fetch');
+    })
+    .then(data => {
+        if (Array.isArray(data)) {
+            setOwnersList(data);
+        }
+    })
+    .catch(err => console.error("Error fetching owners:", err));
+  }, []);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -98,13 +122,16 @@ export default function OwnersClient({ owners }: OwnersClientProps) {
     setShowAddModal(true);
   };
 
-  const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
-
   const handleViewProperties = async (owner: OwnerWithDetails) => {
     setSelectedOwner(owner);
     setShowProperties(true);
     try {
-        const res = await fetch(`${API_URL}/owners/${owner.id}`);
+        const token = localStorage.getItem('token');
+        const res = await fetch(`${API_URL}/owners/${owner.id}`, {
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
         if (res.ok) {
             const data = await res.json();
             setSelectedOwner(data); 
@@ -121,18 +148,28 @@ export default function OwnersClient({ owners }: OwnersClientProps) {
     try {
       const url = isEditing && selectedOwner ? `${API_URL}/owners/${selectedOwner.id}` : `${API_URL}/owners`;
       const method = isEditing ? 'PUT' : 'POST';
+      const token = localStorage.getItem('token');
 
       const res = await fetch(url, {
         method,
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+        },
         body: JSON.stringify(formData),
       });
 
       if (!res.ok) throw new Error('Erreur lors de la sauvegarde');
 
-      // Refresh page to show new owner
-      // In a real app we'd update state, but reload is safe for now
-      window.location.reload();
+      // Refresh list locally
+      const savedOwner = await res.json();
+      if (isEditing) {
+          setOwnersList(prev => prev.map(o => o.id === savedOwner.id ? savedOwner : o));
+      } else {
+          setOwnersList(prev => [...prev, savedOwner]);
+      }
+      setShowAddModal(false);
+      
     } catch (error) {
       alert('Erreur: Impossible de sauvegarder.');
     } finally {

@@ -66,7 +66,7 @@ export default function PropertiesClient({ residences: initialResidences, proper
   const [selectedProperty, setSelectedProperty] = useState<any | null>(null);
 
   // New API URL
-  const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+  const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://landing.aymenpromotion-dz.com/api';
   
   // State for fetched data
   const [properties, setProperties] = useState<any[]>(initialProperties || []);
