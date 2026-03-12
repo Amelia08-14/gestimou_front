@@ -163,7 +163,7 @@ export default function DashboardClient({
               <TrendingUp className="h-5 w-5 text-emerald-600" />
             </div>
           </div>
-          <div className="h-72 w-full">
+          <div className="h-72 w-full min-h-[300px]">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={revenueData}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
@@ -202,7 +202,7 @@ export default function DashboardClient({
               <p className="text-sm text-slate-500">Tickets vs Paiements</p>
             </div>
           </div>
-          <div className="h-72 w-full">
+          <div className="h-72 w-full min-h-[300px]">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={weeklyActivity}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
