@@ -10,6 +10,7 @@ import {
   FileText
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { API_URL } from '@/utils/api';
 
 interface Property {
   id: number;
@@ -85,8 +86,6 @@ export default function OwnersClient({ owners }: OwnersClientProps) {
     emergencyContactPhone: ''
   });
 
-  const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://landing.aymenpromotion-dz.com/api';
-
   const filteredOwners = ownersList.filter((owner) =>
     owner.firstName.toLowerCase().includes(searchTerm.toLowerCase()) ||
     owner.lastName.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -119,7 +118,9 @@ export default function OwnersClient({ owners }: OwnersClientProps) {
 
     try {
       const response = await fetch(`${API_URL}/owners`, {
+        cache: 'no-store',
         headers: {
+          'Cache-Control': 'no-cache',
           Authorization: `Bearer ${token}`
         }
       });
@@ -142,7 +143,9 @@ export default function OwnersClient({ owners }: OwnersClientProps) {
 
     try {
       const response = await fetch(`${API_URL}/residences`, {
+        cache: 'no-store',
         headers: {
+          'Cache-Control': 'no-cache',
           Authorization: `Bearer ${token}`
         }
       });
@@ -163,6 +166,24 @@ export default function OwnersClient({ owners }: OwnersClientProps) {
   useEffect(() => {
     loadOwners();
     loadResidences();
+
+    const onVisibility = () => {
+      if (document.visibilityState === 'visible') {
+        loadOwners();
+        loadResidences();
+      }
+    };
+    document.addEventListener('visibilitychange', onVisibility);
+
+    const interval = window.setInterval(() => {
+      loadOwners();
+      loadResidences();
+    }, 15000);
+
+    return () => {
+      document.removeEventListener('visibilitychange', onVisibility);
+      window.clearInterval(interval);
+    };
   }, []);
 
   const handleInputChange = (event: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -196,7 +217,9 @@ export default function OwnersClient({ owners }: OwnersClientProps) {
     try {
       const token = localStorage.getItem('token');
       const response = await fetch(`${API_URL}/owners/${owner.id}`, {
+        cache: 'no-store',
         headers: {
+          'Cache-Control': 'no-cache',
           Authorization: `Bearer ${token}`
         }
       });
