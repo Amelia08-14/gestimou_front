@@ -364,6 +364,7 @@ export default function DocumentsClient() {
         <label className="flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-slate-200 bg-slate-50 p-6 transition-colors hover:border-brand-blue/50 hover:bg-blue-50/50 cursor-pointer">
             <input
               type="file"
+              accept="application/pdf,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,image/png,image/jpeg,image/webp"
               className="hidden"
               onChange={(e) => {
                 const file = e.target.files?.[0];
@@ -481,6 +482,7 @@ export default function DocumentsClient() {
                 <label className={`inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 ${isUploading ? 'opacity-50' : ''}`}>
                   <input
                     type="file"
+                    accept="application/pdf,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,image/png,image/jpeg,image/webp"
                     className="hidden"
                     disabled={isUploading}
                     onChange={(e) => {
