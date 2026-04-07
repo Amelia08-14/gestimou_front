@@ -132,10 +132,20 @@ export default function OwnersClient({ owners }: OwnersClientProps) {
         throw new Error('Failed to fetch owners');
       }
 
-      const data = await response.json();
-      if (Array.isArray(data)) {
-        setOwnersList(data);
-      }
+      const data = await response.json().catch(() => null);
+      const ownersPayload = Array.isArray(data) ? data : (Array.isArray((data as any)?.data) ? (data as any).data : []);
+
+      const usersRes = await fetch(`${API_URL}/users`, { cache: 'no-store' });
+      const usersData = await usersRes.json().catch(() => null);
+      const usersList = Array.isArray(usersData) ? usersData : (Array.isArray((usersData as any)?.data) ? (usersData as any).data : []);
+      const residentEmails = new Set(
+        usersList
+          .filter((u: any) => u?.role === 'RESIDENT' && typeof u?.email === 'string')
+          .map((u: any) => String(u.email).toLowerCase())
+      );
+
+      const filtered = ownersPayload.filter((o: any) => residentEmails.has(String(o?.email || '').toLowerCase()));
+      setOwnersList(filtered);
     } catch (error) {
       console.error('Error fetching owners:', error);
     }
@@ -157,10 +167,9 @@ export default function OwnersClient({ owners }: OwnersClientProps) {
         throw new Error('Failed to fetch residences');
       }
 
-      const data = await response.json();
-      if (Array.isArray(data)) {
-        setResidences(data);
-      }
+      const data = await response.json().catch(() => null);
+      const residencesPayload = Array.isArray(data) ? data : (Array.isArray((data as any)?.data) ? (data as any).data : []);
+      setResidences(residencesPayload);
     } catch (error) {
       console.error('Error fetching residences:', error);
     }
@@ -310,14 +319,15 @@ export default function OwnersClient({ owners }: OwnersClientProps) {
       });
 
       if (!response.ok) {
-        throw new Error('Erreur lors de la sauvegarde');
+        const err = await response.json().catch(() => ({}));
+        throw new Error(err?.error || 'Erreur lors de la sauvegarde');
       }
 
       await loadOwners();
       setShowAddModal(false);
       resetForm();
     } catch (error) {
-      alert('Erreur: Impossible de sauvegarder.');
+      alert(error instanceof Error ? `Erreur: ${error.message}` : 'Erreur: Impossible de sauvegarder.');
     } finally {
       setIsSubmitting(false);
     }
