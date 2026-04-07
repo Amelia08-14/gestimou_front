@@ -1,7 +1,7 @@
 import MaintenanceClient from '@/components/maintenance/MaintenanceClient';
+import { API_URL } from '@/utils/api';
 
 async function getTickets() {
-  const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
   try {
     const res = await fetch(`${API_URL}/maintenance`, { cache: 'no-store' });
     if (!res.ok) return [];

@@ -1,7 +1,7 @@
 import DashboardClient from '@/components/dashboard/DashboardClient';
+import { API_URL } from '@/utils/api';
 
 async function getDashboardData() {
-  const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
   try {
     const res = await fetch(`${API_URL}/dashboard`, { cache: 'no-store' });
     if (!res.ok) throw new Error('Failed to fetch dashboard data');

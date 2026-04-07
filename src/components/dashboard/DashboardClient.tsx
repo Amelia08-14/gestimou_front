@@ -11,6 +11,7 @@ import {
   TrendingUp
 } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from 'recharts';
+import { API_URL } from '@/utils/api';
 
 // Props interface
 interface DashboardClientProps {
@@ -32,15 +33,13 @@ export default function DashboardClient({
     weeklyActivity: initialWeeklyActivity 
 }: DashboardClientProps) {
 
-  // New API URL
-  const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
-
   // State
   const [stats, setStats] = useState(initialStats);
   const [revenueData, setRevenueData] = useState<any[]>(initialRevenueData);
   const [activities, setActivities] = useState<any[]>(initialActivities);
   const [weeklyActivity, setWeeklyActivity] = useState<any[]>(initialWeeklyActivity);
   const [loading, setLoading] = useState(false);
+  const [reportPeriod, setReportPeriod] = useState<'month' | 'year'>('month');
 
   useEffect(() => {
     const fetchData = async () => {
@@ -70,6 +69,54 @@ export default function DashboardClient({
 
     fetchData();
   }, [API_URL]);
+
+  const csvEscape = (value: unknown) => {
+    const str = String(value ?? '');
+    const needsQuotes = /[;"\n\r]/.test(str);
+    const escaped = str.replace(/"/g, '""');
+    return needsQuotes ? `"${escaped}"` : escaped;
+  };
+
+  const downloadCsv = (filename: string, rows: Array<Array<unknown>>) => {
+    const content = '\uFEFF' + rows.map((row) => row.map(csvEscape).join(';')).join('\n');
+    const blob = new Blob([content], { type: 'text/csv;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
+  };
+
+  const handleDownloadReport = () => {
+    const today = new Date().toISOString().slice(0, 10);
+    const rows: Array<Array<unknown>> = [
+      ['Section', 'Champ', 'Valeur'],
+      ['Stats', 'Total résidences', stats.totalResidences],
+      ['Stats', 'Taux occupation', stats.occupancyRate],
+      ['Stats', 'Revenus mensuels', stats.monthlyRevenue],
+      ['Stats', 'Tickets en cours', stats.ticketsCount],
+      [],
+      ['Revenus', 'Période', reportPeriod === 'month' ? 'Ce mois-ci' : 'Cette année'],
+      [],
+      ['Revenus', 'Série', 'Valeur', 'Label'],
+      ...revenueData.flatMap((row: any) => (
+        Object.keys(row || {})
+          .filter((key) => key !== 'name')
+          .map((key) => (['Revenus', key, row[key], row.name]))
+      )),
+      [],
+      ['Activité Hebdomadaire', 'Jour', 'Paiements', 'Tickets'],
+      ...weeklyActivity.map((row: any) => (['Activité Hebdomadaire', row.name, row.payments, row.tickets])),
+      [],
+      ['Dernières activités', 'Action', 'Utilisateur', 'Temps', 'Montant'],
+      ...activities.map((row: any) => (['Dernières activités', row.action, row.user, row.time, row.amount]))
+    ];
+
+    downloadCsv(`dashboard_report_${today}.csv`, rows);
+  };
 
   const statsDisplay = [
     {
@@ -114,11 +161,18 @@ export default function DashboardClient({
           <p className="text-sm text-slate-500">Bienvenue sur GESTIMOU, voici un aperçu de votre activité.</p>
         </div>
         <div className="flex gap-3">
-          <select className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 focus:border-brand-blue focus:outline-none">
-            <option>Ce mois-ci</option>
-            <option>Cette année</option>
+          <select
+            value={reportPeriod}
+            onChange={(e) => setReportPeriod(e.target.value === 'year' ? 'year' : 'month')}
+            className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 focus:border-brand-blue focus:outline-none"
+          >
+            <option value="month">Ce mois-ci</option>
+            <option value="year">Cette année</option>
           </select>
-          <button className="rounded-lg bg-brand-blue px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-800 transition-colors">
+          <button
+            onClick={handleDownloadReport}
+            className="rounded-lg bg-brand-blue px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-800 transition-colors"
+          >
             Télécharger le rapport
           </button>
         </div>

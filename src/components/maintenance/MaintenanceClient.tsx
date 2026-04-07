@@ -9,9 +9,11 @@ import {
   Filter,
   Plus,
   X,
+  Download,
 } from 'lucide-react';
 // import { MaintenanceTicket } from '@prisma/client';
 import { useRole } from '@/contexts/RoleContext';
+import { API_URL } from '@/utils/api';
 
 interface MaintenanceTicket {
   id: string;
@@ -111,17 +113,119 @@ export default function MaintenanceClient({ tickets: initialTickets }: Maintenan
   const [activeTab, setActiveTab] = useState('all');
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showFilters, setShowFilters] = useState(false);
+  const [filters, setFilters] = useState({
+    priority: '',
+    status: '',
+    assignee: '',
+    category: '',
+    requester: '',
+    q: '',
+    dateFrom: '',
+    dateTo: ''
+  });
+  const [draftFilters, setDraftFilters] = useState(filters);
   
   const { role, user } = useRole();
   const [intervenants, setIntervenants] = useState<any[]>([]);
+
+  const normalizeText = (value: string) =>
+    value
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .toLowerCase()
+      .trim();
+
+  const passesFilters = (ticket: MaintenanceTicket) => {
+    if (filters.priority && ticket.priority !== filters.priority) return false;
+    if (filters.status && ticket.status !== filters.status) return false;
+    if (filters.assignee && (ticket.assignee || '') !== filters.assignee) return false;
+    if (filters.category && (ticket.category || '') !== filters.category) return false;
+    if (filters.requester && normalizeText(ticket.requester || '').indexOf(normalizeText(filters.requester)) === -1) return false;
+    if (filters.q) {
+      const needle = normalizeText(filters.q);
+      const hay = normalizeText(`${ticket.title} ${ticket.description} ${ticket.location} ${ticket.requester} ${ticket.assignee || ''} ${ticket.category || ''}`);
+      if (!hay.includes(needle)) return false;
+    }
+
+    const from = filters.dateFrom ? new Date(`${filters.dateFrom}T00:00:00`) : null;
+    const to = filters.dateTo ? new Date(`${filters.dateTo}T23:59:59`) : null;
+    const date = new Date(ticket.createdAt);
+    if (from && date < from) return false;
+    if (to && date > to) return false;
+
+    return true;
+  };
 
   const displayedTickets = tickets.filter(t => {
     if (activeTab === 'all') return true;
     if (activeTab === 'my_tickets') return t.assignee === user?.name;
     return t.status.toLowerCase() === activeTab;
-  }).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  }).filter(passesFilters).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
-  const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://landing.aymenpromotion-dz.com/api';
+  const csvEscape = (value: unknown) => {
+    const str = String(value ?? '');
+    const needsQuotes = /[;"\n\r]/.test(str);
+    const escaped = str.replace(/"/g, '""');
+    return needsQuotes ? `"${escaped}"` : escaped;
+  };
+
+  const downloadCsv = (filename: string, rows: Array<Array<unknown>>) => {
+    const content = '\uFEFF' + rows.map((row) => row.map(csvEscape).join(';')).join('\n');
+    const blob = new Blob([content], { type: 'text/csv;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
+  };
+
+  const handleExport = () => {
+    const rows: Array<Array<unknown>> = [
+      ['ID', 'Ticket', 'Catégorie', 'Priorité', 'Lieu', 'Demandeur', 'Intervenant', 'Statut', 'Date création'],
+      ...displayedTickets.map((t) => ([
+        t.id,
+        t.title,
+        t.category || '',
+        t.priority,
+        t.location,
+        t.requester,
+        t.assignee || '',
+        t.status,
+        new Date(t.createdAt).toLocaleDateString('fr-FR')
+      ]))
+    ];
+    downloadCsv(`maintenance_${new Date().toISOString().slice(0, 10)}.csv`, rows);
+  };
+
+  const handleOpenFilters = () => {
+    setDraftFilters(filters);
+    setShowFilters(true);
+  };
+
+  const handleApplyFilters = () => {
+    setFilters(draftFilters);
+    setShowFilters(false);
+  };
+
+  const handleResetFilters = () => {
+    const initial = {
+      priority: '',
+      status: '',
+      assignee: '',
+      category: '',
+      requester: '',
+      q: '',
+      dateFrom: '',
+      dateTo: ''
+    };
+    setFilters(initial);
+    setDraftFilters(initial);
+    setShowFilters(false);
+  };
 
   // Load intervenants for Admin assignment
   React.useEffect(() => {
@@ -289,9 +393,19 @@ export default function MaintenanceClient({ tickets: initialTickets }: Maintenan
           <p className="text-sm text-slate-500">Suivi des demandes et travaux (Parties Communes uniquement).</p>
         </div>
         <div className="flex gap-2">
-          <button className="flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50">
+          <button
+            onClick={handleOpenFilters}
+            className="flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+          >
             <Filter className="h-4 w-4" />
             Filtres
+          </button>
+          <button
+            onClick={handleExport}
+            className="flex items-center gap-2 rounded-lg bg-brand-blue px-4 py-2 text-sm font-medium text-white hover:bg-blue-800"
+          >
+            <Download className="h-4 w-4" />
+            Exporter
           </button>
           {role === 'ADMIN' && (
             <button 
@@ -525,6 +639,126 @@ export default function MaintenanceClient({ tickets: initialTickets }: Maintenan
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {showFilters && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm overflow-y-auto">
+          <div className="w-full max-w-2xl rounded-2xl bg-white shadow-2xl animate-in fade-in zoom-in duration-200">
+            <div className="flex items-center justify-between border-b border-slate-100 p-6">
+              <h2 className="text-xl font-bold text-slate-900">Filtres</h2>
+              <button onClick={() => setShowFilters(false)} className="text-slate-400 hover:text-slate-600">
+                ✕
+              </button>
+            </div>
+            <div className="space-y-6 p-6">
+              <div className="grid gap-4 md:grid-cols-2">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-slate-700">Recherche</label>
+                  <input
+                    type="text"
+                    value={draftFilters.q}
+                    onChange={(e) => setDraftFilters((prev) => ({ ...prev, q: e.target.value }))}
+                    className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
+                    placeholder="Ticket, demandeur, lieu…"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-slate-700">Demandeur</label>
+                  <input
+                    type="text"
+                    value={draftFilters.requester}
+                    onChange={(e) => setDraftFilters((prev) => ({ ...prev, requester: e.target.value }))}
+                    className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
+                    placeholder="Nom du demandeur"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-slate-700">Statut</label>
+                  <select
+                    value={draftFilters.status}
+                    onChange={(e) => setDraftFilters((prev) => ({ ...prev, status: e.target.value }))}
+                    className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
+                  >
+                    <option value="">Tous</option>
+                    <option value="Signalé">Signalé</option>
+                    <option value="En cours">En cours</option>
+                    <option value="Terminé">Terminé</option>
+                  </select>
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-slate-700">Priorité</label>
+                  <select
+                    value={draftFilters.priority}
+                    onChange={(e) => setDraftFilters((prev) => ({ ...prev, priority: e.target.value }))}
+                    className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
+                  >
+                    <option value="">Toutes</option>
+                    <option value="Basse">Basse</option>
+                    <option value="Moyenne">Moyenne</option>
+                    <option value="Haute">Haute</option>
+                    <option value="Urgent">Urgent</option>
+                  </select>
+                </div>
+                <div className="space-y-2 md:col-span-2">
+                  <label className="text-sm font-medium text-slate-700">Catégorie</label>
+                  <select
+                    value={draftFilters.category}
+                    onChange={(e) => setDraftFilters((prev) => ({ ...prev, category: e.target.value }))}
+                    className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
+                  >
+                    <option value="">Toutes</option>
+                    {Array.from(new Set(tickets.map((t) => t.category).filter(Boolean) as string[]))
+                      .sort((a, b) => a.localeCompare(b, 'fr'))
+                      .map((cat) => (
+                        <option key={cat} value={cat}>{cat}</option>
+                      ))}
+                  </select>
+                </div>
+                <div className="space-y-2 md:col-span-2">
+                  <label className="text-sm font-medium text-slate-700">Intervenant</label>
+                  <select
+                    value={draftFilters.assignee}
+                    onChange={(e) => setDraftFilters((prev) => ({ ...prev, assignee: e.target.value }))}
+                    className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
+                  >
+                    <option value="">Tous</option>
+                    {Array.from(new Set(tickets.map((t) => t.assignee).filter(Boolean) as string[]))
+                      .sort((a, b) => a.localeCompare(b, 'fr'))
+                      .map((a) => (
+                        <option key={a} value={a}>{a}</option>
+                      ))}
+                  </select>
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-slate-700">Date du</label>
+                  <input
+                    type="date"
+                    value={draftFilters.dateFrom}
+                    onChange={(e) => setDraftFilters((prev) => ({ ...prev, dateFrom: e.target.value }))}
+                    className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-slate-700">Au</label>
+                  <input
+                    type="date"
+                    value={draftFilters.dateTo}
+                    onChange={(e) => setDraftFilters((prev) => ({ ...prev, dateTo: e.target.value }))}
+                    className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
+                  />
+                </div>
+              </div>
+              <div className="flex justify-end gap-3 border-t border-slate-100 pt-4">
+                <button onClick={handleResetFilters} className="rounded-lg px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100">
+                  Réinitialiser
+                </button>
+                <button onClick={handleApplyFilters} className="rounded-lg bg-brand-blue px-6 py-2 text-sm font-bold text-white hover:bg-blue-800">
+                  Appliquer
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}

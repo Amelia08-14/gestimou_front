@@ -1,18 +1,16 @@
 'use client';
 
-import { 
-  Plus, 
-  Search, 
-  Mail, 
-  Phone, 
-  MapPin, 
-  MoreVertical, 
-  FileText 
+import {
+  Plus,
+  Search,
+  Mail,
+  Phone,
+  MapPin,
+  MoreVertical,
+  FileText
 } from 'lucide-react';
-import { useState, useEffect } from 'react';
-// import { Owner, Property } from '@prisma/client';
+import { useEffect, useState } from 'react';
 
-// Define types manually since we removed Prisma
 interface Property {
   id: number;
   title: string;
@@ -23,7 +21,13 @@ interface Property {
   lotNumber?: string | null;
   status: string;
   residenceId: string;
-  price?: string | null; // Mapped from Decimal
+  price?: string | null;
+}
+
+interface ResidenceSummary {
+  id: string;
+  name: string;
+  zone?: string | null;
 }
 
 interface Owner {
@@ -32,19 +36,24 @@ interface Owner {
   lastName: string;
   email: string;
   phone?: string | null;
+  residenceId?: string | null;
+  block?: string | null;
+  floor?: string | null;
+  doorNumber?: string | null;
+  parkingNumber?: string | null;
   address?: string | null;
   status: string;
   avatar?: string | null;
-  totalChargesPaid: string; // Mapped from Decimal
+  totalChargesPaid: string;
   emergencyContactName?: string | null;
   emergencyContactPhone?: string | null;
+  residence?: ResidenceSummary | null;
 }
 
-// Extended type for Owner with serialized Decimal fields
 type OwnerWithDetails = Owner & {
-  unpaidBalance?: string; // Serialized Decimal
+  unpaidBalance?: string;
   propertiesCount: number;
-  properties?: Property[]; // Optional loaded properties
+  properties?: Property[];
 };
 
 interface OwnersClientProps {
@@ -56,55 +65,108 @@ export default function OwnersClient({ owners }: OwnersClientProps) {
   const [showAddModal, setShowAddModal] = useState(false);
   const [selectedOwner, setSelectedOwner] = useState<OwnerWithDetails | null>(null);
   const [showProperties, setShowProperties] = useState(false);
-
-  // Filter state
   const [searchTerm, setSearchTerm] = useState('');
-
-  const filteredOwners = ownersList.filter(owner => 
-    owner.firstName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    owner.lastName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    owner.email.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-
-  // Form state
+  const [isEditing, setIsEditing] = useState(false);
+  const [properties, setProperties] = useState<Property[]>([]);
+  const [residences, setResidences] = useState<ResidenceSummary[]>([]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
     email: '',
     phone: '',
+    residenceId: '',
+    block: '',
+    floor: '',
+    doorNumber: '',
+    parkingNumber: '',
     address: '',
     emergencyContactName: '',
     emergencyContactPhone: ''
   });
-  const [isEditing, setIsEditing] = useState(false);
-  const [properties, setProperties] = useState<any[]>([]);
-  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://landing.aymenpromotion-dz.com/api';
 
-  // Fetch owners on mount (Client-side)
-  // This ensures we get fresh data and can use auth token if needed
-  useEffect(() => {
+  const filteredOwners = ownersList.filter((owner) =>
+    owner.firstName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    owner.lastName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    owner.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (owner.residence?.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (owner.block || '').toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const resetForm = () => {
+    setFormData({
+      firstName: '',
+      lastName: '',
+      email: '',
+      phone: '',
+      residenceId: '',
+      block: '',
+      floor: '',
+      doorNumber: '',
+      parkingNumber: '',
+      address: '',
+      emergencyContactName: '',
+      emergencyContactPhone: ''
+    });
+    setIsEditing(false);
+    setSelectedOwner(null);
+  };
+
+  const loadOwners = async () => {
     const token = localStorage.getItem('token');
-    fetch(`${API_URL}/owners`, {
+
+    try {
+      const response = await fetch(`${API_URL}/owners`, {
         headers: {
-            'Authorization': `Bearer ${token}`
+          Authorization: `Bearer ${token}`
         }
-    })
-    .then(res => {
-        if (res.ok) return res.json();
-        throw new Error('Failed to fetch');
-    })
-    .then(data => {
-        if (Array.isArray(data)) {
-            setOwnersList(data);
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch owners');
+      }
+
+      const data = await response.json();
+      if (Array.isArray(data)) {
+        setOwnersList(data);
+      }
+    } catch (error) {
+      console.error('Error fetching owners:', error);
+    }
+  };
+
+  const loadResidences = async () => {
+    const token = localStorage.getItem('token');
+
+    try {
+      const response = await fetch(`${API_URL}/residences`, {
+        headers: {
+          Authorization: `Bearer ${token}`
         }
-    })
-    .catch(err => console.error("Error fetching owners:", err));
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch residences');
+      }
+
+      const data = await response.json();
+      if (Array.isArray(data)) {
+        setResidences(data);
+      }
+    } catch (error) {
+      console.error('Error fetching residences:', error);
+    }
+  };
+
+  useEffect(() => {
+    loadOwners();
+    loadResidences();
   }, []);
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+  const handleInputChange = (event: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    setFormData((prev) => ({ ...prev, [event.target.name]: event.target.value }));
   };
 
   const handleEdit = (owner: OwnerWithDetails) => {
@@ -114,6 +176,11 @@ export default function OwnersClient({ owners }: OwnersClientProps) {
       lastName: owner.lastName,
       email: owner.email,
       phone: owner.phone || '',
+      residenceId: owner.residenceId || '',
+      block: owner.block || '',
+      floor: owner.floor || '',
+      doorNumber: owner.doorNumber || '',
+      parkingNumber: owner.parkingNumber || '',
       address: owner.address || '',
       emergencyContactName: owner.emergencyContactName || '',
       emergencyContactPhone: owner.emergencyContactPhone || ''
@@ -122,54 +189,66 @@ export default function OwnersClient({ owners }: OwnersClientProps) {
     setShowAddModal(true);
   };
 
-  const handleViewProperties = async (owner: OwnerWithDetails) => {
+  const openOwnerDetails = async (owner: OwnerWithDetails, expandProperties = false) => {
     setSelectedOwner(owner);
-    setShowProperties(true);
+    setShowProperties(expandProperties);
+
     try {
-        const token = localStorage.getItem('token');
-        const res = await fetch(`${API_URL}/owners/${owner.id}`, {
-            headers: {
-                'Authorization': `Bearer ${token}`
-            }
-        });
-        if (res.ok) {
-            const data = await res.json();
-            setSelectedOwner(data); 
-            setProperties(data.properties || []);
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${API_URL}/owners/${owner.id}`, {
+        headers: {
+          Authorization: `Bearer ${token}`
         }
-    } catch (e) {
-        console.error("Failed to load properties", e);
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to load owner');
+      }
+
+      const data = await response.json();
+      setSelectedOwner(data);
+      setProperties(data.properties || []);
+    } catch (error) {
+      console.error('Failed to load owner:', error);
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async (event: React.FormEvent) => {
+    event.preventDefault();
     setIsSubmitting(true);
+
     try {
+      const token = localStorage.getItem('token');
       const url = isEditing && selectedOwner ? `${API_URL}/owners/${selectedOwner.id}` : `${API_URL}/owners`;
       const method = isEditing ? 'PUT' : 'POST';
-      const token = localStorage.getItem('token');
 
-      const res = await fetch(url, {
+      const response = await fetch(url, {
         method,
-        headers: { 
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
         },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({
+          ...formData,
+          phone: formData.phone || null,
+          residenceId: formData.residenceId || null,
+          block: formData.block || null,
+          floor: formData.floor || null,
+          doorNumber: formData.doorNumber || null,
+          parkingNumber: formData.parkingNumber || null,
+          address: formData.address || null,
+          emergencyContactName: formData.emergencyContactName || null,
+          emergencyContactPhone: formData.emergencyContactPhone || null
+        })
       });
 
-      if (!res.ok) throw new Error('Erreur lors de la sauvegarde');
-
-      // Refresh list locally
-      const savedOwner = await res.json();
-      if (isEditing) {
-          setOwnersList(prev => prev.map(o => o.id === savedOwner.id ? savedOwner : o));
-      } else {
-          setOwnersList(prev => [...prev, savedOwner]);
+      if (!response.ok) {
+        throw new Error('Erreur lors de la sauvegarde');
       }
+
+      await loadOwners();
       setShowAddModal(false);
-      
+      resetForm();
     } catch (error) {
       alert('Erreur: Impossible de sauvegarder.');
     } finally {
@@ -179,26 +258,28 @@ export default function OwnersClient({ owners }: OwnersClientProps) {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold text-brand-blue">Propriétaires</h1>
-          <p className="text-sm text-slate-500">Gérez les fiches propriétaires et leurs coordonnées.</p>
+          <p className="text-sm text-slate-500">Gérez les fiches propriétaires, leur résidence et leur localisation.</p>
         </div>
         <div className="flex gap-3">
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-            <input 
-              type="text" 
-              placeholder="Rechercher..." 
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+            <input
+              type="text"
+              placeholder="Rechercher..."
               value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10 pr-4 py-2 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-brand-gold/50 focus:border-brand-gold text-sm w-64"
+              onChange={(event) => setSearchTerm(event.target.value)}
+              className="w-64 rounded-lg border border-slate-200 py-2 pl-10 pr-4 text-sm focus:border-brand-gold focus:outline-none focus:ring-2 focus:ring-brand-gold/50"
             />
           </div>
-          <button 
-            onClick={() => setShowAddModal(true)}
-            className="flex items-center gap-2 rounded-lg bg-brand-gold px-4 py-2 text-sm font-bold text-brand-blue hover:bg-brand-gold-hover transition-colors shadow-sm"
+          <button
+            onClick={() => {
+              resetForm();
+              setShowAddModal(true);
+            }}
+            className="flex items-center gap-2 rounded-lg bg-brand-gold px-4 py-2 text-sm font-bold text-brand-blue shadow-sm transition-colors hover:bg-brand-gold-hover"
           >
             <Plus className="h-4 w-4" />
             Nouveau Propriétaire
@@ -206,23 +287,29 @@ export default function OwnersClient({ owners }: OwnersClientProps) {
         </div>
       </div>
 
-      {/* Owners Grid */}
       <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
         {filteredOwners.map((owner) => (
-          <div key={owner.id} className="group relative overflow-hidden rounded-xl bg-white border border-slate-200 shadow-sm hover:shadow-md hover:border-brand-gold/30 transition-all">
+          <div key={owner.id} className="group relative overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm transition-all hover:border-brand-gold/30 hover:shadow-md">
             <div className="p-6">
               <div className="flex items-start justify-between">
                 <div className="flex items-center gap-4">
-                  <div className="h-12 w-12 rounded-full bg-brand-blue flex items-center justify-center text-brand-gold font-bold text-lg shadow-inner">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-full bg-brand-blue text-lg font-bold text-brand-gold shadow-inner">
                     {owner.avatar || (owner.firstName[0] + owner.lastName[0])}
                   </div>
                   <div>
-                    <h3 className="font-semibold text-brand-blue group-hover:text-brand-gold-dark transition-colors">
+                    <h3 className="font-semibold text-brand-blue transition-colors group-hover:text-brand-gold-dark">
                       {owner.firstName} {owner.lastName}
                     </h3>
-                    <span className="inline-flex items-center rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-medium text-slate-800 mt-1">
-                      {owner.propertiesCount} Biens
-                    </span>
+                    <div className="mt-1 flex flex-wrap items-center gap-2">
+                      <span className="inline-flex items-center rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-medium text-slate-800">
+                        {owner.propertiesCount} Biens
+                      </span>
+                      {owner.residence?.name && (
+                        <span className="inline-flex items-center rounded-full bg-brand-blue/10 px-2.5 py-0.5 text-xs font-medium text-brand-blue">
+                          {owner.residence.name}
+                        </span>
+                      )}
+                    </div>
                   </div>
                 </div>
                 <button className="text-slate-400 hover:text-brand-blue">
@@ -233,28 +320,35 @@ export default function OwnersClient({ owners }: OwnersClientProps) {
               <div className="mt-6 space-y-3">
                 <div className="flex items-center gap-3 text-sm text-slate-600">
                   <Mail className="h-4 w-4 text-brand-gold" />
-                  <a href={`mailto:${owner.email}`} className="hover:text-brand-blue hover:underline truncate">{owner.email}</a>
+                  <a href={`mailto:${owner.email}`} className="truncate hover:text-brand-blue hover:underline">
+                    {owner.email}
+                  </a>
                 </div>
                 <div className="flex items-center gap-3 text-sm text-slate-600">
                   <Phone className="h-4 w-4 text-brand-gold" />
-                  <span>{owner.phone}</span>
+                  <span>{owner.phone || 'Non renseigné'}</span>
                 </div>
                 <div className="flex items-center gap-3 text-sm text-slate-600">
                   <MapPin className="h-4 w-4 text-brand-gold" />
-                  <span className="truncate">{owner.address}</span>
+                  <span className="truncate">
+                    {owner.block || owner.floor || owner.doorNumber
+                      ? `${owner.block || 'Bloc -'} • Étage ${owner.floor || '-'} • Porte ${owner.doorNumber || '-'}`
+                      : owner.address || 'Adresse non renseignée'}
+                  </span>
                 </div>
               </div>
 
-              <div className="mt-6 pt-4 border-t border-slate-100 flex gap-2">
-                <button 
-                  onClick={() => setSelectedOwner(owner)}
-                  className="flex-1 flex items-center justify-center gap-2 rounded-lg border border-slate-200 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 hover:text-brand-blue transition-colors">
+              <div className="mt-6 flex gap-2 border-t border-slate-100 pt-4">
+                <button
+                  onClick={() => openOwnerDetails(owner)}
+                  className="flex flex-1 items-center justify-center gap-2 rounded-lg border border-slate-200 py-2 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50 hover:text-brand-blue"
+                >
                   <FileText className="h-4 w-4" />
                   Détails
                 </button>
-                <button 
-                  onClick={() => handleViewProperties(owner)}
-                  className="flex-1 rounded-lg bg-brand-blue py-2 text-sm font-medium text-white hover:bg-brand-blue/90 transition-colors"
+                <button
+                  onClick={() => openOwnerDetails(owner, true)}
+                  className="flex-1 rounded-lg bg-brand-blue py-2 text-sm font-medium text-white transition-colors hover:bg-brand-blue/90"
                 >
                   Voir Biens
                 </button>
@@ -264,35 +358,39 @@ export default function OwnersClient({ owners }: OwnersClientProps) {
         ))}
       </div>
 
-      {/* Owner Details Modal */}
       {selectedOwner && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-          <div className="w-full max-w-lg rounded-2xl bg-white shadow-2xl animate-in fade-in zoom-in duration-200 max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
+          <div className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-2xl bg-white shadow-2xl animate-in fade-in zoom-in duration-200">
             <div className="flex items-center justify-between border-b border-slate-100 p-6">
               <div className="flex items-center gap-4">
-                <div className="h-12 w-12 rounded-full bg-brand-blue flex items-center justify-center text-brand-gold font-bold text-lg shadow-inner">
+                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-brand-blue text-lg font-bold text-brand-gold shadow-inner">
                   {selectedOwner.avatar || (selectedOwner.firstName[0] + selectedOwner.lastName[0])}
                 </div>
                 <div>
-                  <h2 className="text-xl font-bold text-brand-blue">{selectedOwner.firstName} {selectedOwner.lastName}</h2>
-                  <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium mt-1 ${
-                      selectedOwner.status === 'Actif' ? 'bg-green-50 text-green-700' : 'bg-slate-100 text-slate-700'
+                  <h2 className="text-xl font-bold text-brand-blue">
+                    {selectedOwner.firstName} {selectedOwner.lastName}
+                  </h2>
+                  <span className={`mt-1 inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
+                    selectedOwner.status === 'Actif' ? 'bg-green-50 text-green-700' : 'bg-slate-100 text-slate-700'
                   }`}>
                     {selectedOwner.status}
                   </span>
                 </div>
               </div>
-              <button 
-                onClick={() => { setSelectedOwner(null); setShowProperties(false); }}
+              <button
+                onClick={() => {
+                  setSelectedOwner(null);
+                  setShowProperties(false);
+                }}
                 className="text-slate-400 hover:text-slate-600"
               >
                 ✕
               </button>
             </div>
-            
-            <div className="p-6 space-y-6">
+
+            <div className="space-y-6 p-6">
               <div className="space-y-4">
-                <h3 className="text-sm font-bold text-slate-500 uppercase tracking-wider">Coordonnées</h3>
+                <h3 className="text-sm font-bold uppercase tracking-wider text-slate-500">Coordonnées</h3>
                 <div className="space-y-3">
                   <div className="flex items-center gap-3 text-slate-700">
                     <Mail className="h-5 w-5 text-brand-gold" />
@@ -300,18 +398,48 @@ export default function OwnersClient({ owners }: OwnersClientProps) {
                   </div>
                   <div className="flex items-center gap-3 text-slate-700">
                     <Phone className="h-5 w-5 text-brand-gold" />
-                    <span>{selectedOwner.phone}</span>
+                    <span>{selectedOwner.phone || 'Non renseigné'}</span>
                   </div>
                   <div className="flex items-center gap-3 text-slate-700">
                     <MapPin className="h-5 w-5 text-brand-gold" />
-                    <span>{selectedOwner.address}</span>
+                    <span>{selectedOwner.address || 'Non renseignée'}</span>
                   </div>
                 </div>
               </div>
 
-               <div className="space-y-4">
-                <h3 className="text-sm font-bold text-slate-500 uppercase tracking-wider">Contact d'Urgence</h3>
-                <div className="space-y-3 p-3 bg-red-50 rounded-lg border border-red-100">
+              <div className="space-y-4">
+                <h3 className="text-sm font-bold uppercase tracking-wider text-slate-500">Localisation</h3>
+                <div className="grid gap-3 rounded-xl border border-slate-100 bg-slate-50 p-4 text-sm text-slate-700">
+                  <div className="flex justify-between gap-3">
+                    <span className="text-slate-500">Résidence</span>
+                    <span className="font-medium text-slate-900">{selectedOwner.residence?.name || 'Non renseignée'}</span>
+                  </div>
+                  <div className="flex justify-between gap-3">
+                    <span className="text-slate-500">Zone</span>
+                    <span className="font-medium text-slate-900">{selectedOwner.residence?.zone || 'Non renseignée'}</span>
+                  </div>
+                  <div className="flex justify-between gap-3">
+                    <span className="text-slate-500">Bloc</span>
+                    <span className="font-medium text-slate-900">{selectedOwner.block || 'Non renseigné'}</span>
+                  </div>
+                  <div className="flex justify-between gap-3">
+                    <span className="text-slate-500">Étage</span>
+                    <span className="font-medium text-slate-900">{selectedOwner.floor || 'Non renseigné'}</span>
+                  </div>
+                  <div className="flex justify-between gap-3">
+                    <span className="text-slate-500">N° porte</span>
+                    <span className="font-medium text-slate-900">{selectedOwner.doorNumber || 'Non renseigné'}</span>
+                  </div>
+                  <div className="flex justify-between gap-3">
+                    <span className="text-slate-500">Parking</span>
+                    <span className="font-medium text-slate-900">{selectedOwner.parkingNumber || 'Non renseigné'}</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <h3 className="text-sm font-bold uppercase tracking-wider text-slate-500">Contact d'Urgence</h3>
+                <div className="space-y-3 rounded-lg border border-red-100 bg-red-50 p-3">
                   <div className="flex items-center gap-3 text-slate-700">
                     <span className="font-semibold">{selectedOwner.emergencyContactName || 'Non renseigné'}</span>
                   </div>
@@ -321,43 +449,43 @@ export default function OwnersClient({ owners }: OwnersClientProps) {
                   </div>
                 </div>
               </div>
-              
+
               <div className="space-y-4">
-                <h3 className="text-sm font-bold text-slate-500 uppercase tracking-wider">Finances</h3>
-                <div className="p-4 bg-slate-50 rounded-xl border border-slate-100 space-y-3">
-                    <div className="flex justify-between items-center">
-                        <span className="text-sm font-medium text-slate-600">Total Charges Payées</span>
-                        <span className="text-lg font-bold text-emerald-600">{selectedOwner.totalChargesPaid} DA</span>
-                    </div>
-                    {selectedOwner.unpaidBalance && Number(selectedOwner.unpaidBalance) > 0 && (
-                        <>
-                        <div className="flex justify-between items-center pt-2 border-t border-slate-200">
-                            <span className="text-sm font-medium text-slate-600">Reste à Payer</span>
-                            <span className="text-lg font-bold text-red-600">{selectedOwner.unpaidBalance} DA</span>
-                        </div>
-                        <button 
-                            onClick={() => alert(`Email de relance envoyé à ${selectedOwner.email}`)}
-                            className="w-full mt-2 flex items-center justify-center gap-2 rounded-lg bg-red-50 py-2 text-sm font-medium text-red-600 hover:bg-red-100 transition-colors border border-red-200"
-                        >
-                            <Mail className="h-4 w-4" />
-                            Relancer par mail
-                        </button>
-                        </>
-                    )}
+                <h3 className="text-sm font-bold uppercase tracking-wider text-slate-500">Finances</h3>
+                <div className="space-y-3 rounded-xl border border-slate-100 bg-slate-50 p-4">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium text-slate-600">Total Charges Payées</span>
+                    <span className="text-lg font-bold text-emerald-600">{selectedOwner.totalChargesPaid} DA</span>
+                  </div>
+                  {selectedOwner.unpaidBalance && Number(selectedOwner.unpaidBalance) > 0 && (
+                    <>
+                      <div className="flex items-center justify-between border-t border-slate-200 pt-2">
+                        <span className="text-sm font-medium text-slate-600">Reste à Payer</span>
+                        <span className="text-lg font-bold text-red-600">{selectedOwner.unpaidBalance} DA</span>
+                      </div>
+                      <button
+                        onClick={() => alert(`Email de relance envoyé à ${selectedOwner.email}`)}
+                        className="mt-2 flex w-full items-center justify-center gap-2 rounded-lg border border-red-200 bg-red-50 py-2 text-sm font-medium text-red-600 transition-colors hover:bg-red-100"
+                      >
+                        <Mail className="h-4 w-4" />
+                        Relancer par mail
+                      </button>
+                    </>
+                  )}
                 </div>
               </div>
 
               <div className="space-y-4">
-                <h3 className="text-sm font-bold text-slate-500 uppercase tracking-wider">Patrimoine</h3>
-                <div className="p-4 bg-slate-50 rounded-xl border border-slate-100">
-                    <div className="flex justify-between items-center mb-2">
-                        <span className="text-sm font-medium text-slate-600">Nombre de biens</span>
-                        <span className="text-lg font-bold text-brand-blue">{selectedOwner.propertiesCount}</span>
-                    </div>
+                <h3 className="text-sm font-bold uppercase tracking-wider text-slate-500">Patrimoine</h3>
+                <div className="rounded-xl border border-slate-100 bg-slate-50 p-4">
+                  <div className="mb-2 flex items-center justify-between">
+                    <span className="text-sm font-medium text-slate-600">Nombre de biens</span>
+                    <span className="text-lg font-bold text-brand-blue">{selectedOwner.propertiesCount}</span>
+                  </div>
                   {!showProperties ? (
-                    <button 
-                      onClick={() => handleViewProperties(selectedOwner)}
-                      className="w-full mt-2 text-sm text-brand-gold hover:underline text-left"
+                    <button
+                      onClick={() => openOwnerDetails(selectedOwner, true)}
+                      className="mt-2 w-full text-left text-sm text-brand-gold hover:underline"
                     >
                       Voir la liste des biens →
                     </button>
@@ -365,21 +493,23 @@ export default function OwnersClient({ owners }: OwnersClientProps) {
                     <div className="mt-4 space-y-3 animate-in fade-in slide-in-from-top-2">
                       {properties.length > 0 ? (
                         <ul className="space-y-2">
-                            {properties.map((prop: any) => (
-                                <li key={prop.id} className="text-sm text-slate-700 bg-white p-2 rounded border border-slate-200">
-                                    <span className="font-semibold block">{prop.title}</span>
-                                    <span className="text-xs text-slate-500">{prop.type} - Lot {prop.lotNumber} - {prop.floor ? `Etage ${prop.floor}` : ''}</span>
-                                </li>
-                            ))}
+                          {properties.map((property) => (
+                            <li key={property.id} className="rounded border border-slate-200 bg-white p-2 text-sm text-slate-700">
+                              <span className="block font-semibold">{property.title}</span>
+                              <span className="text-xs text-slate-500">
+                                {property.type} - Lot {property.lotNumber || '-'} - {property.floor ? `Étage ${property.floor}` : 'Étage -'}
+                              </span>
+                            </li>
+                          ))}
                         </ul>
                       ) : (
-                        <div className="text-center text-sm text-slate-500 italic py-2">
-                            Aucun bien trouvé.
+                        <div className="py-2 text-center text-sm italic text-slate-500">
+                          Aucun bien trouvé.
                         </div>
                       )}
-                      <button 
+                      <button
                         onClick={() => setShowProperties(false)}
-                        className="w-full mt-2 text-xs text-slate-400 hover:text-slate-600 text-center"
+                        className="mt-2 w-full text-center text-xs text-slate-400 hover:text-slate-600"
                       >
                         Masquer la liste
                       </button>
@@ -388,16 +518,20 @@ export default function OwnersClient({ owners }: OwnersClientProps) {
                 </div>
               </div>
 
-              <div className="pt-4 flex justify-end gap-3 border-t border-slate-100">
-                <button 
-                  onClick={() => { setSelectedOwner(null); setShowProperties(false); }}
+              <div className="flex justify-end gap-3 border-t border-slate-100 pt-4">
+                <button
+                  onClick={() => {
+                    setSelectedOwner(null);
+                    setShowProperties(false);
+                  }}
                   className="rounded-lg px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100"
                 >
                   Fermer
                 </button>
-                <button 
+                <button
                   onClick={() => handleEdit(selectedOwner)}
-                  className="rounded-lg bg-brand-blue px-6 py-2 text-sm font-bold text-white hover:bg-brand-blue/90 shadow-md">
+                  className="rounded-lg bg-brand-blue px-6 py-2 text-sm font-bold text-white shadow-md hover:bg-brand-blue/90"
+                >
                   Modifier
                 </button>
               </div>
@@ -406,16 +540,25 @@ export default function OwnersClient({ owners }: OwnersClientProps) {
         </div>
       )}
 
-      {/* Add Owner Modal */}
       {showAddModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 overflow-y-auto">
-          <div className="w-full max-w-lg rounded-2xl bg-white shadow-2xl animate-in fade-in zoom-in duration-200 my-8">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm overflow-y-auto">
+          <div className="my-8 w-full max-w-lg rounded-2xl bg-white shadow-2xl animate-in fade-in zoom-in duration-200">
             <div className="flex items-center justify-between border-b border-slate-100 p-6">
-              <h2 className="text-xl font-bold text-brand-blue">Nouveau Propriétaire</h2>
-              <button onClick={() => setShowAddModal(false)} className="text-slate-400 hover:text-slate-600">✕</button>
+              <h2 className="text-xl font-bold text-brand-blue">
+                {isEditing ? 'Modifier le propriétaire' : 'Nouveau Propriétaire'}
+              </h2>
+              <button
+                onClick={() => {
+                  setShowAddModal(false);
+                  resetForm();
+                }}
+                className="text-slate-400 hover:text-slate-600"
+              >
+                ✕
+              </button>
             </div>
-            
-            <form onSubmit={handleSubmit} className="p-6 space-y-4">
+
+            <form onSubmit={handleSubmit} className="space-y-4 p-6">
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-slate-700">Prénom</label>
@@ -465,6 +608,66 @@ export default function OwnersClient({ owners }: OwnersClientProps) {
               </div>
 
               <div className="space-y-2">
+                <label className="text-sm font-medium text-slate-700">Résidence</label>
+                <select
+                  name="residenceId"
+                  value={formData.residenceId}
+                  onChange={handleInputChange}
+                  className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-blue/20"
+                >
+                  <option value="">Sélectionner une résidence</option>
+                  {residences.map((residence) => (
+                    <option key={residence.id} value={residence.id}>
+                      {residence.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-slate-700">Bloc</label>
+                  <input
+                    type="text"
+                    name="block"
+                    value={formData.block}
+                    onChange={handleInputChange}
+                    className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-blue/20"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-slate-700">Étage</label>
+                  <input
+                    type="text"
+                    name="floor"
+                    value={formData.floor}
+                    onChange={handleInputChange}
+                    className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-blue/20"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-slate-700">N° porte</label>
+                  <input
+                    type="text"
+                    name="doorNumber"
+                    value={formData.doorNumber}
+                    onChange={handleInputChange}
+                    className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-blue/20"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-slate-700">N° place parking</label>
+                  <input
+                    type="text"
+                    name="parkingNumber"
+                    value={formData.parkingNumber}
+                    onChange={handleInputChange}
+                    className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-blue/20"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
                 <label className="text-sm font-medium text-slate-700">Adresse</label>
                 <input
                   type="text"
@@ -476,7 +679,7 @@ export default function OwnersClient({ owners }: OwnersClientProps) {
               </div>
 
               <div className="border-t border-slate-100 pt-4">
-                <h3 className="text-sm font-bold text-slate-900 mb-3">Contact d'Urgence</h3>
+                <h3 className="mb-3 text-sm font-bold text-slate-900">Contact d'Urgence</h3>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <label className="text-sm font-medium text-slate-700">Nom complet</label>
@@ -485,8 +688,8 @@ export default function OwnersClient({ owners }: OwnersClientProps) {
                       name="emergencyContactName"
                       value={formData.emergencyContactName}
                       onChange={handleInputChange}
-                      className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-blue/20"
                       placeholder="Ex: Conjoint, Parent..."
+                      className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-blue/20"
                     />
                   </div>
                   <div className="space-y-2">
@@ -502,10 +705,13 @@ export default function OwnersClient({ owners }: OwnersClientProps) {
                 </div>
               </div>
 
-              <div className="pt-4 flex justify-end gap-3">
+              <div className="flex justify-end gap-3 pt-4">
                 <button
                   type="button"
-                  onClick={() => setShowAddModal(false)}
+                  onClick={() => {
+                    setShowAddModal(false);
+                    resetForm();
+                  }}
                   className="rounded-lg px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100"
                 >
                   Annuler
@@ -513,9 +719,9 @@ export default function OwnersClient({ owners }: OwnersClientProps) {
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="rounded-lg bg-brand-blue px-6 py-2 text-sm font-bold text-white hover:bg-brand-blue/90 shadow-md disabled:opacity-50"
+                  className="rounded-lg bg-brand-blue px-6 py-2 text-sm font-bold text-white shadow-md hover:bg-brand-blue/90 disabled:opacity-50"
                 >
-                  {isSubmitting ? 'Création...' : 'Créer le propriétaire'}
+                  {isSubmitting ? 'Enregistrement...' : isEditing ? 'Enregistrer' : 'Créer le propriétaire'}
                 </button>
               </div>
             </form>

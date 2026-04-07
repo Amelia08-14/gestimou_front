@@ -1,7 +1,7 @@
 import PropertiesClient from '@/components/properties/PropertiesClient';
+import { API_URL } from '@/utils/api';
 
 async function getData() {
-  const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
   try {
     const [residencesRes, propertiesRes] = await Promise.all([
       fetch(`${API_URL}/residences`, { cache: 'no-store' }),

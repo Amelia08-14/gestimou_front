@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRole } from '@/contexts/RoleContext';
 import { Key, Lock, ShieldCheck, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { API_URL } from '@/utils/api';
 
 export default function ProfilePage() {
   const { user } = useRole();
@@ -11,8 +12,6 @@ export default function ProfilePage() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState({ type: '', text: '' });
-
-  const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
 
   const handleChangePassword = async (e: React.FormEvent) => {
     e.preventDefault();

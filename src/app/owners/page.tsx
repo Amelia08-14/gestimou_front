@@ -1,7 +1,7 @@
 import OwnersClient from '@/components/owners/OwnersClient';
+import { API_URL } from '@/utils/api';
 
 async function getOwners() {
-  const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
   try {
     const res = await fetch(`${API_URL}/owners`, { cache: 'no-store' });
     if (!res.ok) return [];

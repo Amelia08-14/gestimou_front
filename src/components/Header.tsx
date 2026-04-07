@@ -4,6 +4,7 @@ import { Bell, Search, Menu, User, LogOut, ChevronDown, Check, User as UserIcon 
 import { useState, useEffect } from 'react';
 import { useRole } from '@/contexts/RoleContext';
 import Link from 'next/link';
+import { API_URL } from '@/utils/api';
 
 interface Notification {
   id: number;
@@ -20,8 +21,6 @@ export function Header() {
   const { user, logout } = useRole();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
-
-  const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
 
   useEffect(() => {
     const fetchNotifications = async () => {

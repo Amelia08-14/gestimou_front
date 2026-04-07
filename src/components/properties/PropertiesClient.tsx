@@ -14,9 +14,8 @@ import {
   CheckCircle2
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
-// import { Residence, Property, Owner } from '@prisma/client';
+import { API_URL } from '@/utils/api';
 
-// Define types manually
 interface Residence {
   id: string;
   name: string;
@@ -25,6 +24,21 @@ interface Residence {
   totalUnits: number;
   deliveredUnits: number;
   occupancyRate?: string | null;
+  managerName?: string | null;
+  zone?: string | null;
+  blocks?: string | null;
+  hasBasement?: boolean;
+  elevatorCount?: number;
+  waterTankCount?: number;
+  generatorCount?: number;
+  hasSmokeExtraction?: boolean;
+  hasElectricCurtains?: boolean;
+  receptionCount?: number;
+  hasGuardPost?: boolean;
+  hasVideoSurveillance?: boolean;
+  hasOutdoorLighting?: boolean;
+  logo?: string | null;
+  hasPlayground?: boolean;
   description?: string | null;
 }
 
@@ -59,55 +73,130 @@ interface PropertiesClientProps {
   properties: any[];
 }
 
+interface ResidenceFormData {
+  id: string;
+  name: string;
+  address: string;
+  image: string;
+  logo: string;
+  totalUnits: number;
+  deliveredUnits: number;
+  occupancyRate: string;
+  managerName: string;
+  zone: string;
+  blocks: string;
+  hasBasement: boolean;
+  elevatorCount: number;
+  waterTankCount: number;
+  generatorCount: number;
+  hasSmokeExtraction: boolean;
+  hasElectricCurtains: boolean;
+  receptionCount: number;
+  hasGuardPost: boolean;
+  hasVideoSurveillance: boolean;
+  hasOutdoorLighting: boolean;
+  hasPlayground: boolean;
+  description: string;
+}
+
+const createResidenceForm = (residence?: Residence): ResidenceFormData => ({
+  id: residence?.id || '',
+  name: residence?.name || '',
+  address: residence?.address || '',
+  image: residence?.image || '',
+  logo: residence?.logo || '',
+  totalUnits: residence?.totalUnits || 0,
+  deliveredUnits: residence?.deliveredUnits || 0,
+  occupancyRate: residence?.occupancyRate || '',
+  managerName: residence?.managerName || '',
+  zone: residence?.zone || '',
+  blocks: residence?.blocks || '',
+  hasBasement: Boolean(residence?.hasBasement),
+  elevatorCount: residence?.elevatorCount || 0,
+  waterTankCount: residence?.waterTankCount || 0,
+  generatorCount: residence?.generatorCount || 0,
+  hasSmokeExtraction: Boolean(residence?.hasSmokeExtraction),
+  hasElectricCurtains: Boolean(residence?.hasElectricCurtains),
+  receptionCount: residence?.receptionCount || 0,
+  hasGuardPost: Boolean(residence?.hasGuardPost),
+  hasVideoSurveillance: Boolean(residence?.hasVideoSurveillance),
+  hasOutdoorLighting: Boolean(residence?.hasOutdoorLighting),
+  hasPlayground: Boolean(residence?.hasPlayground),
+  description: residence?.description || ''
+});
+
+const zoneDefinitions: Record<string, string[]> = {
+  'Zone 1': ['JAIS', 'LES CRÊTES', 'RUBIS', 'OPALE', 'EL BOUROUDJ', 'BERYL', 'PYRITE', 'RÉSIDENCE PRESTIGE', 'RESIDENCE PRESTIGE', 'PRESTIGE'],
+  'Zone 2': ['COQUELICOT', 'PLUMERIA', 'CORAIL', 'PERIDOT', 'MORDJANE'],
+  'Zone 3': ['SELENITE', 'SPINELLE', 'TURQUOISE', 'ÉMERAUDE', 'PERLA', 'CITRINE', 'ANGETITE']
+};
+
+const normalizeResidenceName = (value: string) =>
+  value
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/['’]/g, "'")
+    .replace(/\s+/g, ' ')
+    .trim()
+    .toUpperCase();
+
+const zoneEntries = Object.entries(zoneDefinitions).flatMap(([zone, names]) =>
+  names.map((name) => [normalizeResidenceName(name), zone] as const)
+);
+
+const zoneMap = Object.fromEntries(zoneEntries) as Record<string, string>;
+
+const inferZoneFromResidenceName = (name: string) => zoneMap[normalizeResidenceName(name)] || '';
+
 export default function PropertiesClient({ residences: initialResidences, properties: initialProperties }: PropertiesClientProps) {
   const [view, setView] = useState<'residences' | 'properties'>('residences');
   const [selectedResidence, setSelectedResidence] = useState<Residence | null>(null);
   const [showAddModal, setShowAddModal] = useState(false);
   const [selectedProperty, setSelectedProperty] = useState<any | null>(null);
+  const [showResidenceModal, setShowResidenceModal] = useState(false);
+  const [isEditingResidence, setIsEditingResidence] = useState(false);
+  const [isSavingResidence, setIsSavingResidence] = useState(false);
+  const [isUploadingLogo, setIsUploadingLogo] = useState(false);
+  const [isUploadingCover, setIsUploadingCover] = useState(false);
+  const [residenceFormData, setResidenceFormData] = useState<ResidenceFormData>(createResidenceForm());
 
-  // New API URL
-  const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://landing.aymenpromotion-dz.com/api';
-  
-  // State for fetched data
   const [properties, setProperties] = useState<any[]>(initialProperties || []);
   const [residences, setResidences] = useState<Residence[]>(initialResidences || []);
 
-  // Fetch data on mount (Client-side with Auth Token)
-  useEffect(() => {
-    const fetchData = async () => {
-        const token = localStorage.getItem('token');
-        if (!token) return;
+  const fetchData = async () => {
+    const token = localStorage.getItem('token');
+    if (!token) return;
 
-        try {
-            const [resRes, propRes] = await Promise.all([
-                fetch(`${API_URL}/residences`, {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                }),
-                fetch(`${API_URL}/properties`, {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                })
-            ]);
+    try {
+      const [resRes, propRes] = await Promise.all([
+        fetch(`${API_URL}/residences`, {
+          headers: { Authorization: `Bearer ${token}` }
+        }),
+        fetch(`${API_URL}/properties`, {
+          headers: { Authorization: `Bearer ${token}` }
+        })
+      ]);
 
-            if (resRes.ok) {
-                const resData = await resRes.json();
-                if (Array.isArray(resData)) setResidences(resData);
-            }
+      if (resRes.ok) {
+        const resData = await resRes.json();
+        if (Array.isArray(resData)) setResidences(resData);
+      }
 
-            if (propRes.ok) {
-                const propData = await propRes.json();
-                if (propData.success && Array.isArray(propData.data)) {
-                    setProperties(propData.data);
-                }
-            }
-        } catch (error) {
-            console.error("Failed to fetch data", error);
+      if (propRes.ok) {
+        const propData = await propRes.json();
+        if (propData.success && Array.isArray(propData.data)) {
+          setProperties(propData.data);
         }
-    };
+      }
+    } catch (error) {
+      console.error('Failed to fetch data', error);
+    }
+  };
 
+  useEffect(() => {
     fetchData();
   }, []);
 
-  // Sync state with props if they change (fallback)
   useEffect(() => {
     if (initialProperties && initialProperties.length > 0) {
       setProperties(initialProperties);
@@ -116,10 +205,6 @@ export default function PropertiesClient({ residences: initialResidences, proper
       setResidences(initialResidences);
     }
   }, [initialProperties, initialResidences]);
-
-  // Load properties from API when a residence is selected (optional optimization)
-  // For now, we rely on initialProperties passed from Server Component which still uses Prisma.
-  // TODO: Update Server Component to fetch from API too, or fetch here client-side.
   
   const handleResidenceClick = (residence: Residence) => {
     setSelectedResidence(residence);
@@ -131,16 +216,215 @@ export default function PropertiesClient({ residences: initialResidences, proper
     setView('residences');
   };
 
+  const handleOpenCreateResidence = () => {
+    setResidenceFormData(createResidenceForm());
+    setIsEditingResidence(false);
+    setShowResidenceModal(true);
+  };
+
+  const handleEditResidence = (event: React.MouseEvent<HTMLButtonElement>, residence: Residence) => {
+    event.stopPropagation();
+    setResidenceFormData(createResidenceForm(residence));
+    setIsEditingResidence(true);
+    setShowResidenceModal(true);
+  };
+
+  const handleResidenceInputChange = (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const target = event.currentTarget;
+    const { name, value } = target;
+
+    if (target instanceof HTMLInputElement && target.type === 'checkbox') {
+      setResidenceFormData(prev => ({ ...prev, [name]: target.checked }));
+      return;
+    }
+
+    if (target instanceof HTMLInputElement && target.type === 'number') {
+      setResidenceFormData(prev => ({ ...prev, [name]: value === '' ? 0 : Number(value) }));
+      return;
+    }
+
+    if (name === 'name') {
+      const inferredZone = inferZoneFromResidenceName(value);
+      setResidenceFormData(prev => ({
+        ...prev,
+        name: value,
+        zone: inferredZone || prev.zone
+      }));
+      return;
+    }
+
+    setResidenceFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  const readFileAsDataUrl = (file: File) =>
+    new Promise<string>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(String(reader.result || ''));
+      reader.onerror = () => reject(new Error('Lecture du fichier impossible'));
+      reader.readAsDataURL(file);
+    });
+
+  const uploadResidenceMedia = async (type: 'logo' | 'image', file: File) => {
+    const token = localStorage.getItem('token');
+    if (!token) throw new Error('Non authentifié');
+
+    if (!residenceFormData.id) throw new Error('Veuillez enregistrer la résidence avant le téléversement');
+
+    const allowed = new Set(['image/jpeg', 'image/png', 'image/webp']);
+    if (!allowed.has(file.type)) throw new Error('Format non supporté (JPG, PNG, WEBP)');
+    if (file.size > 5 * 1024 * 1024) throw new Error('Image trop grande (max 5MB)');
+
+    const dataUrl = await readFileAsDataUrl(file);
+    const response = await fetch(`${API_URL}/residences/${residenceFormData.id}/upload`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`
+      },
+      body: JSON.stringify({ type, dataUrl })
+    });
+
+    const json = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(json?.error || 'Téléversement impossible');
+
+    const url = String(json?.url || '');
+    if (!url) throw new Error('Téléversement impossible');
+
+    setResidenceFormData(prev => ({ ...prev, [type]: url }));
+  };
+
+  const handleUploadLogo = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    event.target.value = '';
+    if (!file) return;
+    setIsUploadingLogo(true);
+    try {
+      await uploadResidenceMedia('logo', file);
+    } catch (error) {
+      alert(error instanceof Error ? error.message : 'Téléversement impossible');
+    } finally {
+      setIsUploadingLogo(false);
+    }
+  };
+
+  const handleUploadCover = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    event.target.value = '';
+    if (!file) return;
+    setIsUploadingCover(true);
+    try {
+      await uploadResidenceMedia('image', file);
+    } catch (error) {
+      alert(error instanceof Error ? error.message : 'Téléversement impossible');
+    } finally {
+      setIsUploadingCover(false);
+    }
+  };
+
+  const handleResidenceSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setIsSavingResidence(true);
+
+    const token = localStorage.getItem('token');
+    const payload = {
+      ...residenceFormData,
+      image: residenceFormData.image || null,
+      logo: residenceFormData.logo || null,
+      occupancyRate: residenceFormData.occupancyRate || null,
+      managerName: residenceFormData.managerName || null,
+      zone: residenceFormData.zone || null,
+      blocks: residenceFormData.blocks || null,
+      description: residenceFormData.description || null
+    };
+
+    try {
+      const url = isEditingResidence
+        ? `${API_URL}/residences/${residenceFormData.id}`
+        : `${API_URL}/residences`;
+      const method = isEditingResidence ? 'PUT' : 'POST';
+
+      const response = await fetch(url, {
+        method,
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify(payload)
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => null);
+        throw new Error(errorData?.error || 'Erreur lors de la sauvegarde de la résidence');
+      }
+
+      const savedResidence = await response.json();
+      setResidences(prev => {
+        if (isEditingResidence) {
+          return prev.map((residence) => (
+            residence.id === savedResidence.id ? savedResidence : residence
+          ));
+        }
+
+        return [savedResidence, ...prev.filter((residence) => residence.id !== savedResidence.id)];
+      });
+      await fetchData();
+      setShowResidenceModal(false);
+      setResidenceFormData(createResidenceForm());
+      setIsEditingResidence(false);
+    } catch (error) {
+      console.error(error);
+      alert(error instanceof Error ? error.message : 'Impossible de sauvegarder la résidence.');
+    } finally {
+      setIsSavingResidence(false);
+    }
+  };
+
   const displayedProperties = selectedResidence 
     ? properties
         .filter(p => p.residenceId === selectedResidence.id)
-        // Filter out rentals as requested "pas des appartements en location"
         .filter(p => p.status !== 'Location')
     : [];
 
+  const getResidenceHighlights = (residence: Residence) => {
+    const items = [
+      residence.hasBasement ? 'Sous-sol' : null,
+      (residence.elevatorCount || 0) > 0 ? `${residence.elevatorCount} asc.` : null,
+      (residence.waterTankCount || 0) > 0 ? `${residence.waterTankCount} bâches` : null,
+      (residence.generatorCount || 0) > 0 ? `${residence.generatorCount} groupes` : null,
+      residence.hasGuardPost ? 'Poste garde' : null,
+      residence.hasVideoSurveillance ? 'Télésurv.' : null,
+      residence.hasPlayground ? 'Aire jeux' : null
+    ].filter(Boolean);
+
+    return items.slice(0, 4);
+  };
+
+  const toggleFields: Array<{ name: keyof ResidenceFormData; label: string }> = [
+    { name: 'hasBasement', label: 'Sous-sol' },
+    { name: 'hasSmokeExtraction', label: 'Désenfumage' },
+    { name: 'hasElectricCurtains', label: 'Rideaux électriques' },
+    { name: 'hasGuardPost', label: 'Poste de garde' },
+    { name: 'hasVideoSurveillance', label: 'Télésurveillance' },
+    { name: 'hasOutdoorLighting', label: 'Éclairage extérieur' },
+    { name: 'hasPlayground', label: 'Aire de jeux' }
+  ];
+
+  const groupedResidences = Object.entries(
+    residences.reduce<Record<string, Residence[]>>((accumulator, residence) => {
+      const zone = residence.zone || inferZoneFromResidenceName(residence.name) || 'Non définie';
+      if (!accumulator[zone]) {
+        accumulator[zone] = [];
+      }
+      accumulator[zone].push(residence);
+      return accumulator;
+    }, {})
+  ).sort(([zoneA], [zoneB]) => {
+    const order = ['Zone 1', 'Zone 2', 'Zone 3', 'Non définie'];
+    return order.indexOf(zoneA) - order.indexOf(zoneB);
+  });
+
   return (
     <div className="space-y-6">
-      {/* Header Area */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
           {view === 'properties' && (
@@ -163,6 +447,16 @@ export default function PropertiesClient({ residences: initialResidences, proper
           </div>
         </div>
         
+        {view === 'residences' && (
+          <button 
+            onClick={handleOpenCreateResidence}
+            className="flex items-center gap-2 rounded-lg bg-brand-blue px-4 py-2 text-sm font-bold text-white hover:bg-brand-blue/90 transition-colors shadow-sm"
+          >
+            <Plus className="h-4 w-4" />
+            Nouvelle résidence
+          </button>
+        )}
+
         {view === 'properties' && (
           <button 
             onClick={() => setShowAddModal(true)}
@@ -174,60 +468,110 @@ export default function PropertiesClient({ residences: initialResidences, proper
         )}
       </div>
 
-      {/* Residences Grid View */}
       {view === 'residences' && (
-        <div className="grid gap-6 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
-          {residences.map((residence) => (
-            <div 
-              key={residence.id} 
-              onClick={() => handleResidenceClick(residence)}
-              className="group cursor-pointer overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-slate-200 transition-all hover:shadow-xl hover:ring-brand-gold/50 hover:-translate-y-1"
-            >
-              <div className="relative h-48 w-full overflow-hidden">
-                <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent z-10" />
-                <img 
-                  src={residence.image || 'https://images.unsplash.com/photo-1560518883-ce09059eeffa?auto=format&fit=crop&w=500&q=60'} 
-                  alt={residence.name}
-                  className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
-                />
-                <div className="absolute bottom-4 left-4 z-20 text-white">
-                  <h3 className="text-xl font-bold">{residence.name}</h3>
-                  <div className="flex items-center gap-1 text-xs text-white/80">
-                    <MapPin className="h-3 w-3" />
-                    {residence.address}
-                  </div>
+        <div className="space-y-8">
+          {groupedResidences.map(([zone, zoneResidences]) => (
+            <section key={zone} className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-lg font-bold text-brand-blue">{zone}</h2>
+                  <p className="text-sm text-slate-500">{zoneResidences.length} résidence(s)</p>
                 </div>
               </div>
-              
-              <div className="p-5 space-y-4">
-                <p className="text-sm text-slate-600 line-clamp-2">
-                  {residence.description}
-                </p>
-                
-                <div className="grid grid-cols-2 gap-4 border-t border-slate-100 pt-4">
-                  <div className="flex flex-col">
-                    <span className="text-xs text-slate-500 uppercase tracking-wider font-semibold">Logements</span>
-                    <span className="text-lg font-bold text-brand-blue flex items-center gap-2">
-                      <Building className="h-4 w-4 text-brand-gold" />
-                      {residence.deliveredUnits} / {residence.totalUnits}
-                    </span>
-                    <span className="text-[10px] text-slate-400">Livrés / Total</span>
+              <div className="grid gap-6 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+                {zoneResidences.map((residence) => (
+                  <div 
+                    key={residence.id} 
+                    onClick={() => handleResidenceClick(residence)}
+                    className="group cursor-pointer overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-slate-200 transition-all hover:shadow-xl hover:ring-brand-gold/50 hover:-translate-y-1"
+                  >
+                    <div className="relative h-48 w-full overflow-hidden">
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent z-10" />
+                      <img 
+                        src={residence.image || 'https://images.unsplash.com/photo-1560518883-ce09059eeffa?auto=format&fit=crop&w=500&q=60'} 
+                        alt={residence.name}
+                        className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
+                      />
+                      <div className="absolute right-4 top-4 z-20 flex items-center gap-2">
+                        <span className="rounded-full bg-white/90 px-3 py-1 text-xs font-semibold text-brand-blue shadow-sm">
+                          {residence.zone || inferZoneFromResidenceName(residence.name) || 'Non définie'}
+                        </span>
+                        <button
+                          onClick={(event) => handleEditResidence(event, residence)}
+                          className="rounded-full bg-white/90 px-3 py-1 text-xs font-semibold text-brand-blue shadow-sm hover:bg-white"
+                        >
+                          Modifier
+                        </button>
+                      </div>
+                      <div className="absolute bottom-4 left-4 z-20 text-white">
+                        <h3 className="text-xl font-bold">{residence.name}</h3>
+                        <div className="flex items-center gap-1 text-xs text-white/80">
+                          <MapPin className="h-3 w-3" />
+                          {residence.address}
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="p-5 space-y-4">
+                      <p className="text-sm text-slate-600 line-clamp-2">
+                        {residence.description}
+                      </p>
+
+                      <div className="flex flex-wrap gap-2">
+                        {getResidenceHighlights(residence).length > 0 ? (
+                          getResidenceHighlights(residence).map((item) => (
+                            <span key={item} className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-600">
+                              {item}
+                            </span>
+                          ))
+                        ) : (
+                          <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-500">
+                            Équipements à compléter
+                          </span>
+                        )}
+                      </div>
+                      
+                      <div className="grid grid-cols-2 gap-4 border-t border-slate-100 pt-4">
+                        <div className="flex flex-col">
+                          <span className="text-xs text-slate-500 uppercase tracking-wider font-semibold">Logements</span>
+                          <span className="text-lg font-bold text-brand-blue flex items-center gap-2">
+                            <Building className="h-4 w-4 text-brand-gold" />
+                            {residence.deliveredUnits} / {residence.totalUnits}
+                          </span>
+                          <span className="text-[10px] text-slate-400">Livrés / Total</span>
+                        </div>
+                        <div className="flex flex-col">
+                          <span className="text-xs text-slate-500 uppercase tracking-wider font-semibold">Occupation</span>
+                          <span className="text-lg font-bold text-brand-blue flex items-center gap-2">
+                            <Users className="h-4 w-4 text-brand-gold" />
+                            {residence.occupancyRate}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="grid gap-2 border-t border-slate-100 pt-4 text-xs text-slate-500">
+                        <div className="flex items-center justify-between">
+                          <span>Blocs</span>
+                          <span className="font-medium text-slate-700">{residence.blocks || '-'}</span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span>Accueils</span>
+                          <span className="font-medium text-slate-700">{residence.receptionCount || 0}</span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span>Logo</span>
+                          <span className="font-medium text-slate-700">{residence.logo ? 'Renseigné' : 'Non renseigné'}</span>
+                        </div>
+                      </div>
+                    </div>
                   </div>
-                  <div className="flex flex-col">
-                    <span className="text-xs text-slate-500 uppercase tracking-wider font-semibold">Occupation</span>
-                    <span className="text-lg font-bold text-brand-blue flex items-center gap-2">
-                      <Users className="h-4 w-4 text-brand-gold" />
-                      {residence.occupancyRate}
-                    </span>
-                  </div>
-                </div>
+                ))}
               </div>
-            </div>
+            </section>
           ))}
         </div>
       )}
 
-      {/* Properties Grid View (Filtered by Residence) */}
       {view === 'properties' && (
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
           {displayedProperties.length > 0 ? (
@@ -318,7 +662,6 @@ export default function PropertiesClient({ residences: initialResidences, proper
         </div>
       )}
 
-      {/* Property Details Modal */}
       {selectedProperty && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 overflow-y-auto">
           <div className="w-full max-w-2xl rounded-2xl bg-white shadow-2xl animate-in fade-in zoom-in duration-200 my-8">
@@ -409,7 +752,6 @@ export default function PropertiesClient({ residences: initialResidences, proper
                 </div>
               </div>
 
-              {/* Réserves / Snag List */}
               <div className="mb-6">
                 <div className="flex items-center justify-between mb-2">
                   <h3 className="text-sm font-bold text-slate-500 uppercase tracking-wider">Réserves (État des lieux)</h3>
@@ -458,7 +800,6 @@ export default function PropertiesClient({ residences: initialResidences, proper
         </div>
       )}
 
-      {/* Add Property Modal - Static for now */}
       {showAddModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 overflow-y-auto">
           <div className="w-full max-w-2xl rounded-2xl bg-white shadow-2xl animate-in fade-in zoom-in duration-200 my-8">
@@ -469,6 +810,262 @@ export default function PropertiesClient({ residences: initialResidences, proper
             <div className="p-6 text-center text-slate-500">
                 La fonctionnalité d'ajout sera disponible prochainement.
             </div>
+          </div>
+        </div>
+      )}
+
+      {showResidenceModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 overflow-y-auto">
+          <div className="w-full max-w-4xl rounded-2xl bg-white shadow-2xl animate-in fade-in zoom-in duration-200 my-8">
+            <div className="flex items-center justify-between border-b border-slate-100 p-6">
+              <h2 className="text-xl font-bold text-brand-blue">
+                {isEditingResidence ? 'Modifier la résidence' : 'Nouvelle résidence'}
+              </h2>
+              <button
+                onClick={() => setShowResidenceModal(false)}
+                className="text-slate-400 hover:text-slate-600"
+              >
+                ✕
+              </button>
+            </div>
+
+            <form onSubmit={handleResidenceSubmit} className="p-6 space-y-6">
+              <div className="grid gap-4 md:grid-cols-2">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-slate-700">Identifiant</label>
+                  <input
+                    required
+                    type="text"
+                    name="id"
+                    value={residenceFormData.id}
+                    onChange={handleResidenceInputChange}
+                    disabled={isEditingResidence}
+                    className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-blue/20 disabled:bg-slate-50"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-slate-700">Nom</label>
+                  <input
+                    required
+                    type="text"
+                    name="name"
+                    value={residenceFormData.name}
+                    onChange={handleResidenceInputChange}
+                    className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-blue/20"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-slate-700">Zone</label>
+                  <input
+                    type="text"
+                    name="zone"
+                    value={residenceFormData.zone}
+                    readOnly
+                    className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-600 focus:outline-none"
+                  />
+                  <p className="text-xs text-slate-400">Zone affectée automatiquement selon le nom de la résidence.</p>
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-slate-700">Responsable</label>
+                  <input
+                    type="text"
+                    name="managerName"
+                    value={residenceFormData.managerName}
+                    onChange={handleResidenceInputChange}
+                    className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-blue/20"
+                  />
+                </div>
+                <div className="space-y-2 md:col-span-2">
+                  <label className="text-sm font-medium text-slate-700">Adresse</label>
+                  <input
+                    required
+                    type="text"
+                    name="address"
+                    value={residenceFormData.address}
+                    onChange={handleResidenceInputChange}
+                    className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-blue/20"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-slate-700">Logo</label>
+                  <div className="flex items-center gap-3">
+                    <label className={`inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 ${isUploadingLogo ? 'opacity-50' : ''}`}>
+                      <input
+                        type="file"
+                        accept="image/png,image/jpeg,image/webp"
+                        onChange={handleUploadLogo}
+                        disabled={isUploadingLogo || !residenceFormData.id || !isEditingResidence}
+                        className="hidden"
+                      />
+                      {isUploadingLogo ? 'Téléversement...' : 'Télécharger'}
+                    </label>
+                    <input
+                      type="text"
+                      name="logo"
+                      value={residenceFormData.logo}
+                      readOnly
+                      className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-600 focus:outline-none"
+                    />
+                  </div>
+                  {!isEditingResidence && (
+                    <p className="text-xs text-slate-400">Créez la résidence puis ouvrez “Modifier” pour téléverser le logo.</p>
+                  )}
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-slate-700">Image</label>
+                  <div className="flex items-center gap-3">
+                    <label className={`inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 ${isUploadingCover ? 'opacity-50' : ''}`}>
+                      <input
+                        type="file"
+                        accept="image/png,image/jpeg,image/webp"
+                        onChange={handleUploadCover}
+                        disabled={isUploadingCover || !residenceFormData.id || !isEditingResidence}
+                        className="hidden"
+                      />
+                      {isUploadingCover ? 'Téléversement...' : 'Télécharger'}
+                    </label>
+                    <input
+                      type="text"
+                      name="image"
+                      value={residenceFormData.image}
+                      readOnly
+                      className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-600 focus:outline-none"
+                    />
+                  </div>
+                  {!isEditingResidence && (
+                    <p className="text-xs text-slate-400">Créez la résidence puis ouvrez “Modifier” pour téléverser l’image.</p>
+                  )}
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-slate-700">Nombre total de lots</label>
+                  <input
+                    required
+                    type="number"
+                    name="totalUnits"
+                    value={residenceFormData.totalUnits}
+                    onChange={handleResidenceInputChange}
+                    className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-blue/20"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-slate-700">Logements livrés</label>
+                  <input
+                    type="number"
+                    name="deliveredUnits"
+                    value={residenceFormData.deliveredUnits}
+                    onChange={handleResidenceInputChange}
+                    className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-blue/20"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-slate-700">Taux d’occupation</label>
+                  <input
+                    type="text"
+                    name="occupancyRate"
+                    value={residenceFormData.occupancyRate}
+                    onChange={handleResidenceInputChange}
+                    className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-blue/20"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-slate-700">Blocs</label>
+                  <input
+                    type="text"
+                    name="blocks"
+                    value={residenceFormData.blocks}
+                    onChange={handleResidenceInputChange}
+                    placeholder="Ex: A, B, C"
+                    className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-blue/20"
+                  />
+                </div>
+              </div>
+
+              <div className="grid gap-4 md:grid-cols-4">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-slate-700">Ascenseurs</label>
+                  <input
+                    type="number"
+                    name="elevatorCount"
+                    value={residenceFormData.elevatorCount}
+                    onChange={handleResidenceInputChange}
+                    className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-blue/20"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-slate-700">Bâches à eau</label>
+                  <input
+                    type="number"
+                    name="waterTankCount"
+                    value={residenceFormData.waterTankCount}
+                    onChange={handleResidenceInputChange}
+                    className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-blue/20"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-slate-700">Groupes électrogènes</label>
+                  <input
+                    type="number"
+                    name="generatorCount"
+                    value={residenceFormData.generatorCount}
+                    onChange={handleResidenceInputChange}
+                    className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-blue/20"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-slate-700">Accueils</label>
+                  <input
+                    type="number"
+                    name="receptionCount"
+                    value={residenceFormData.receptionCount}
+                    onChange={handleResidenceInputChange}
+                    className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-blue/20"
+                  />
+                </div>
+              </div>
+
+              <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+                {toggleFields.map((field) => (
+                  <label key={field.name} className="flex items-center gap-3 rounded-xl border border-slate-200 px-4 py-3 text-sm text-slate-700">
+                    <input
+                      type="checkbox"
+                      name={field.name}
+                      checked={Boolean(residenceFormData[field.name])}
+                      onChange={handleResidenceInputChange}
+                      className="h-4 w-4 rounded border-slate-300 text-brand-blue focus:ring-brand-blue"
+                    />
+                    <span>{field.label}</span>
+                  </label>
+                ))}
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-slate-700">Description</label>
+                <textarea
+                  name="description"
+                  value={residenceFormData.description}
+                  onChange={handleResidenceInputChange}
+                  rows={4}
+                  className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-blue/20"
+                />
+              </div>
+
+              <div className="flex justify-end gap-3 border-t border-slate-100 pt-4">
+                <button
+                  type="button"
+                  onClick={() => setShowResidenceModal(false)}
+                  className="rounded-lg px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100"
+                >
+                  Annuler
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSavingResidence}
+                  className="rounded-lg bg-brand-blue px-6 py-2 text-sm font-bold text-white hover:bg-brand-blue/90 disabled:opacity-50"
+                >
+                  {isSavingResidence ? 'Enregistrement...' : isEditingResidence ? 'Enregistrer' : 'Créer la résidence'}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

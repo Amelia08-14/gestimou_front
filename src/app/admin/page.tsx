@@ -17,6 +17,7 @@ import {
   Check,
   X
 } from 'lucide-react';
+import { API_URL } from '@/utils/api';
 
 const users = [
   { id: 1, name: 'Admin Principal', email: 'admin@aymen.com', role: 'Super Admin', status: 'Actif', lastActive: 'Il y a 2 min' },
@@ -37,6 +38,8 @@ export default function AdminPage() {
   const [activeTab, setActiveTab] = useState('users');
   const [showAddUserModal, setShowAddUserModal] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isBackingUp, setIsBackingUp] = useState(false);
+  const [isRestoring, setIsRestoring] = useState(false);
   
   const [formData, setFormData] = useState({
     name: '',
@@ -54,8 +57,6 @@ export default function AdminPage() {
     fetchRequests();
   }, []);
 
-  const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
-
   const fetchRequests = () => {
     const token = localStorage.getItem('token');
     fetch(`${API_URL}/registrations`, {
@@ -66,6 +67,80 @@ export default function AdminPage() {
         if (Array.isArray(data)) setRequests(data);
       })
       .catch(err => console.error(err));
+  };
+
+  const downloadBlob = (filename: string, blob: Blob) => {
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
+  };
+
+  const readFileAsDataUrl = (file: File) =>
+    new Promise<string>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(String(reader.result || ''));
+      reader.onerror = () => reject(new Error('Lecture du fichier impossible'));
+      reader.readAsDataURL(file);
+    });
+
+  const handleCreateBackup = async () => {
+    const token = localStorage.getItem('token');
+    if (!token) return;
+
+    setIsBackingUp(true);
+    try {
+      const res = await fetch(`${API_URL}/admin/backup`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err?.error || 'Impossible de créer la sauvegarde');
+      }
+
+      const blob = await res.blob();
+      const disposition = res.headers.get('content-disposition') || '';
+      const match = disposition.match(/filename="([^"]+)"/);
+      const filename = match?.[1] || `backup_${new Date().toISOString().slice(0, 10)}.json`;
+      downloadBlob(filename, blob);
+    } catch (e) {
+      alert(e instanceof Error ? e.message : 'Erreur');
+    } finally {
+      setIsBackingUp(false);
+    }
+  };
+
+  const handleRestoreBackup = async (file: File) => {
+    const token = localStorage.getItem('token');
+    if (!token) return;
+
+    if (!confirm('Restaurer une sauvegarde va écraser/mettre à jour les données. Continuer ?')) return;
+
+    setIsRestoring(true);
+    try {
+      const dataUrl = await readFileAsDataUrl(file);
+      const res = await fetch(`${API_URL}/admin/restore`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({ dataUrl })
+      });
+
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(json?.error || 'Restauration impossible');
+
+      alert('Sauvegarde restaurée.');
+    } catch (e) {
+      alert(e instanceof Error ? e.message : 'Erreur');
+    } finally {
+      setIsRestoring(false);
+    }
   };
 
   const handleApproveRequest = async (id: string) => {
@@ -455,7 +530,11 @@ export default function AdminPage() {
               <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
                 <h3 className="font-bold text-slate-900 mb-4">Actions de maintenance</h3>
                 <div className="space-y-3">
-                  <button className="flex w-full items-center justify-between rounded-lg border border-slate-200 p-3 text-left hover:bg-slate-50 hover:border-brand-blue transition-colors">
+                  <button
+                    onClick={handleCreateBackup}
+                    disabled={isBackingUp}
+                    className="flex w-full items-center justify-between rounded-lg border border-slate-200 p-3 text-left hover:bg-slate-50 hover:border-brand-blue transition-colors disabled:opacity-50"
+                  >
                     <div className="flex items-center gap-3">
                       <Save className="h-5 w-5 text-brand-blue" />
                       <div>
@@ -464,7 +543,19 @@ export default function AdminPage() {
                       </div>
                     </div>
                   </button>
-                  <button className="flex w-full items-center justify-between rounded-lg border border-slate-200 p-3 text-left hover:bg-slate-50 hover:border-red-500 transition-colors group">
+                  <label className={`flex w-full items-center justify-between rounded-lg border border-slate-200 p-3 text-left hover:bg-slate-50 hover:border-red-500 transition-colors group ${isRestoring ? 'opacity-50' : ''}`}>
+                    <input
+                      type="file"
+                      accept="application/json"
+                      disabled={isRestoring}
+                      className="hidden"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        e.target.value = '';
+                        if (!file) return;
+                        handleRestoreBackup(file);
+                      }}
+                    />
                     <div className="flex items-center gap-3">
                       <RotateCcw className="h-5 w-5 text-slate-400 group-hover:text-red-500" />
                       <div>
@@ -472,7 +563,7 @@ export default function AdminPage() {
                         <div className="text-xs text-slate-500">Revenir à un état précédent</div>
                       </div>
                     </div>
-                  </button>
+                  </label>
                 </div>
               </div>
             </div>
