@@ -23,6 +23,7 @@ interface Property {
   status: string;
   residenceId: string;
   price?: string | null;
+  ownerId?: number | null;
 }
 
 interface ResidenceSummary {
@@ -69,6 +70,8 @@ export default function OwnersClient({ owners }: OwnersClientProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [isEditing, setIsEditing] = useState(false);
   const [properties, setProperties] = useState<Property[]>([]);
+  const [allProperties, setAllProperties] = useState<Property[]>([]);
+  const [selectedPropertyId, setSelectedPropertyId] = useState<number | ''>('');
   const [residences, setResidences] = useState<ResidenceSummary[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
@@ -117,7 +120,7 @@ export default function OwnersClient({ owners }: OwnersClientProps) {
     const token = localStorage.getItem('token');
 
     try {
-      const response = await fetch(`${API_URL}/owners`, {
+      const response = await fetch(`${API_URL}/owners?onlyResidents=true`, {
         cache: 'no-store',
         headers: {
           'Cache-Control': 'no-cache',
@@ -213,6 +216,7 @@ export default function OwnersClient({ owners }: OwnersClientProps) {
   const openOwnerDetails = async (owner: OwnerWithDetails, expandProperties = false) => {
     setSelectedOwner(owner);
     setShowProperties(expandProperties);
+    setSelectedPropertyId('');
 
     try {
       const token = localStorage.getItem('token');
@@ -233,6 +237,46 @@ export default function OwnersClient({ owners }: OwnersClientProps) {
       setProperties(data.properties || []);
     } catch (error) {
       console.error('Failed to load owner:', error);
+    }
+  };
+
+  const loadAllProperties = async () => {
+    try {
+      const response = await fetch(`${API_URL}/properties`, { cache: 'no-store' });
+      if (!response.ok) return;
+      const json = await response.json().catch(() => ({}));
+      const data = Array.isArray(json) ? json : (Array.isArray(json?.data) ? json.data : []);
+      setAllProperties(data);
+    } catch (error) {
+      console.error('Failed to load properties:', error);
+    }
+  };
+
+  useEffect(() => {
+    if (showProperties) {
+      loadAllProperties();
+    }
+  }, [showProperties]);
+
+  const handleAssignProperty = async () => {
+    if (!selectedOwner) return;
+    if (!selectedPropertyId) return;
+
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch(`${API_URL}/properties/${selectedPropertyId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({ ownerId: selectedOwner.id })
+      });
+      if (!res.ok) throw new Error('Assign failed');
+      await openOwnerDetails(selectedOwner, true);
+      await loadOwners();
+    } catch (e) {
+      alert("Impossible d'affecter ce bien.");
     }
   };
 
@@ -514,6 +558,32 @@ export default function OwnersClient({ owners }: OwnersClientProps) {
                     </button>
                   ) : (
                     <div className="mt-4 space-y-3 animate-in fade-in slide-in-from-top-2">
+                      <div className="rounded-lg border border-slate-200 bg-white p-3">
+                        <p className="text-xs font-medium text-slate-500">Affecter un bien</p>
+                        <div className="mt-2 flex gap-2">
+                          <select
+                            value={selectedPropertyId}
+                            onChange={(e) => setSelectedPropertyId(e.target.value ? Number(e.target.value) : '')}
+                            className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
+                          >
+                            <option value="">Sélectionner un bien</option>
+                            {allProperties
+                              .filter((p) => !p.ownerId)
+                              .map((p) => (
+                                <option key={p.id} value={p.id}>
+                                  {p.title} • {p.residenceId} • Lot {p.lotNumber || '-'}
+                                </option>
+                              ))}
+                          </select>
+                          <button
+                            onClick={handleAssignProperty}
+                            disabled={!selectedPropertyId}
+                            className="shrink-0 rounded-lg bg-brand-blue px-4 py-2 text-sm font-bold text-white disabled:opacity-50"
+                          >
+                            Affecter
+                          </button>
+                        </div>
+                      </div>
                       {properties.length > 0 ? (
                         <ul className="space-y-2">
                           {properties.map((property) => (
