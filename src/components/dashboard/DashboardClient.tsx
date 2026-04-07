@@ -68,7 +68,18 @@ export default function DashboardClient({
     };
 
     fetchData();
-  }, [API_URL]);
+
+    const onVisibility = () => {
+      if (document.visibilityState === 'visible') fetchData();
+    };
+    document.addEventListener('visibilitychange', onVisibility);
+
+    const interval = window.setInterval(fetchData, 15000);
+    return () => {
+      document.removeEventListener('visibilitychange', onVisibility);
+      window.clearInterval(interval);
+    };
+  }, []);
 
   const csvEscape = (value: unknown) => {
     const str = String(value ?? '');

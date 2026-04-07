@@ -55,6 +55,24 @@ export default function AdminPage() {
   React.useEffect(() => {
     fetchUsers();
     fetchRequests();
+
+    const onVisibility = () => {
+      if (document.visibilityState === 'visible') {
+        fetchUsers();
+        fetchRequests();
+      }
+    };
+    document.addEventListener('visibilitychange', onVisibility);
+
+    const interval = window.setInterval(() => {
+      fetchUsers();
+      fetchRequests();
+    }, 15000);
+
+    return () => {
+      document.removeEventListener('visibilitychange', onVisibility);
+      window.clearInterval(interval);
+    };
   }, []);
 
   const fetchRequests = () => {
