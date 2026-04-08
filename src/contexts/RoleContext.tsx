@@ -33,16 +33,22 @@ export function RoleProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     // Check for token on mount
     const checkAuth = () => {
-      const token = localStorage.getItem('token');
-      const storedUser = localStorage.getItem('user');
+      const token = sessionStorage.getItem('token') || localStorage.getItem('token');
+      const storedUser = sessionStorage.getItem('user') || localStorage.getItem('user');
 
       if (token && storedUser) {
         try {
           const parsedUser = JSON.parse(storedUser);
           setUser(parsedUser);
           setRoleState(parsedUser.role);
+          sessionStorage.setItem('token', token);
+          sessionStorage.setItem('user', storedUser);
+          localStorage.removeItem('token');
+          localStorage.removeItem('user');
         } catch (e) {
           console.error("Error parsing stored user", e);
+          sessionStorage.removeItem('token');
+          sessionStorage.removeItem('user');
           localStorage.removeItem('token');
           localStorage.removeItem('user');
         }
@@ -53,17 +59,53 @@ export function RoleProvider({ children }: { children: ReactNode }) {
     checkAuth();
   }, []);
 
+  useEffect(() => {
+    const isAuthed = !!user;
+    if (!isAuthed) return;
+
+    const key = 'auth_expires_at';
+    const INACTIVITY_MS = 30 * 60 * 1000;
+    const bump = () => {
+      sessionStorage.setItem(key, String(Date.now() + INACTIVITY_MS));
+    };
+
+    bump();
+
+    const onActivity = () => bump();
+    const onVisibility = () => {
+      if (document.visibilityState === 'visible') bump();
+    };
+
+    const events: Array<keyof WindowEventMap> = ['mousemove', 'keydown', 'click', 'scroll', 'touchstart'];
+    events.forEach((evt) => window.addEventListener(evt, onActivity, { passive: true }));
+    document.addEventListener('visibilitychange', onVisibility);
+
+    const interval = window.setInterval(() => {
+      const expiresAt = Number(sessionStorage.getItem(key) || '0');
+      if (expiresAt && Date.now() > expiresAt) {
+        logout();
+      }
+    }, 5000);
+
+    return () => {
+      events.forEach((evt) => window.removeEventListener(evt, onActivity));
+      document.removeEventListener('visibilitychange', onVisibility);
+      window.clearInterval(interval);
+    };
+  }, [user]);
+
   const login = (userData: User, token: string) => {
-    localStorage.setItem('token', token);
-    localStorage.setItem('user', JSON.stringify(userData));
+    sessionStorage.setItem('token', token);
+    sessionStorage.setItem('user', JSON.stringify(userData));
     setUser(userData);
     setRoleState(userData.role);
     router.push('/');
   };
 
   const logout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
+    sessionStorage.removeItem('token');
+    sessionStorage.removeItem('user');
+    sessionStorage.removeItem('auth_expires_at');
     setUser(null);
     setRoleState(null);
     router.push('/login');
@@ -75,7 +117,7 @@ export function RoleProvider({ children }: { children: ReactNode }) {
       const updatedUser = { ...user, role: newRole };
       setUser(updatedUser);
       setRoleState(newRole);
-      localStorage.setItem('user', JSON.stringify(updatedUser));
+      sessionStorage.setItem('user', JSON.stringify(updatedUser));
     }
   };
 

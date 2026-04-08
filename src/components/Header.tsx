@@ -24,7 +24,7 @@ export function Header() {
 
   useEffect(() => {
     const fetchNotifications = async () => {
-      const token = localStorage.getItem('token');
+      const token = sessionStorage.getItem('token');
       if (!token) return;
 
       try {
@@ -50,7 +50,7 @@ export function Header() {
   }, [user, API_URL]);
 
   const markAsRead = async (id: number) => {
-    const token = localStorage.getItem('token');
+    const token = sessionStorage.getItem('token');
     if (!token) return;
 
     try {
@@ -69,7 +69,7 @@ export function Header() {
   };
 
   const markAllAsRead = async () => {
-    const token = localStorage.getItem('token');
+    const token = sessionStorage.getItem('token');
     if (!token) return;
 
     try {

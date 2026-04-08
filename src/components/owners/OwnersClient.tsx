@@ -117,7 +117,7 @@ export default function OwnersClient({ owners }: OwnersClientProps) {
   };
 
   const loadOwners = async () => {
-    const token = localStorage.getItem('token');
+    const token = sessionStorage.getItem('token');
 
     try {
       const response = await fetch(`${API_URL}/owners?onlyResidents=true`, {
@@ -151,7 +151,7 @@ export default function OwnersClient({ owners }: OwnersClientProps) {
   };
 
   const loadResidences = async () => {
-    const token = localStorage.getItem('token');
+    const token = sessionStorage.getItem('token');
 
     try {
       const response = await fetch(`${API_URL}/residences`, {
@@ -226,7 +226,7 @@ export default function OwnersClient({ owners }: OwnersClientProps) {
     setSelectedPropertyId('');
 
     try {
-      const token = localStorage.getItem('token');
+      const token = sessionStorage.getItem('token');
       const response = await fetch(`${API_URL}/owners/${owner.id}`, {
         cache: 'no-store',
         headers: {
@@ -274,7 +274,7 @@ export default function OwnersClient({ owners }: OwnersClientProps) {
         const ok = confirm('Ce bien est déjà affecté à un autre propriétaire. Le réaffecter ?');
         if (!ok) return;
       }
-      const token = localStorage.getItem('token');
+      const token = sessionStorage.getItem('token');
       const res = await fetch(`${API_URL}/properties/${selectedPropertyId}`, {
         method: 'PUT',
         headers: {

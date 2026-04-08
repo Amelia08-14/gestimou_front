@@ -43,7 +43,7 @@ export default function DashboardClient({
 
   useEffect(() => {
     const fetchData = async () => {
-      const token = localStorage.getItem('token');
+      const token = sessionStorage.getItem('token');
       if (!token) return;
 
       setLoading(true);

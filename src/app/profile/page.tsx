@@ -23,7 +23,7 @@ export default function ProfilePage() {
     }
 
     setLoading(true);
-    const token = localStorage.getItem('token');
+    const token = sessionStorage.getItem('token');
 
     try {
       const res = await fetch(`${API_URL}/auth/password`, {

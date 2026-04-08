@@ -97,7 +97,7 @@ export default function DocumentsClient() {
     });
 
   const loadData = async () => {
-    const token = localStorage.getItem('token');
+    const token = sessionStorage.getItem('token');
     if (!token) return;
     setIsLoading(true);
 
@@ -176,7 +176,7 @@ export default function DocumentsClient() {
   };
 
   const handleDownload = async (doc: DocumentItem) => {
-    const token = localStorage.getItem('token');
+    const token = sessionStorage.getItem('token');
     if (!token) return;
 
     try {
@@ -204,7 +204,7 @@ export default function DocumentsClient() {
   };
 
   const handleDelete = async (doc: DocumentItem) => {
-    const token = localStorage.getItem('token');
+    const token = sessionStorage.getItem('token');
     if (!token) return;
     if (!confirm('Supprimer ce document ?')) return;
 
@@ -226,7 +226,7 @@ export default function DocumentsClient() {
   };
 
   const handleUploadFile = async (file: File) => {
-    const token = localStorage.getItem('token');
+    const token = sessionStorage.getItem('token');
     if (!token) throw new Error('Non authentifié');
     setIsUploading(true);
 

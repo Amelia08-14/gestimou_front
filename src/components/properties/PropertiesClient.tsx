@@ -164,7 +164,7 @@ export default function PropertiesClient({ residences: initialResidences, proper
   const [residences, setResidences] = useState<Residence[]>(initialResidences || []);
 
   const fetchData = async () => {
-    const token = localStorage.getItem('token');
+    const token = sessionStorage.getItem('token');
     if (!token) return;
 
     try {
@@ -265,7 +265,7 @@ export default function PropertiesClient({ residences: initialResidences, proper
     });
 
   const uploadResidenceMedia = async (type: 'logo' | 'image', file: File) => {
-    const token = localStorage.getItem('token');
+    const token = sessionStorage.getItem('token');
     if (!token) throw new Error('Non authentifié');
 
     if (!residenceFormData.id) throw new Error('Veuillez enregistrer la résidence avant le téléversement');
@@ -325,7 +325,7 @@ export default function PropertiesClient({ residences: initialResidences, proper
     event.preventDefault();
     setIsSavingResidence(true);
 
-    const token = localStorage.getItem('token');
+    const token = sessionStorage.getItem('token');
     const payload = {
       ...residenceFormData,
       image: residenceFormData.image || null,

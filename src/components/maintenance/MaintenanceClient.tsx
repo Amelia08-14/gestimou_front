@@ -229,7 +229,7 @@ export default function MaintenanceClient({ tickets: initialTickets }: Maintenan
 
   // Load intervenants for Admin assignment
   React.useEffect(() => {
-    const token = localStorage.getItem('token');
+    const token = sessionStorage.getItem('token');
     
     // Fetch Tickets
     fetch(`${API_URL}/maintenance`, {
@@ -269,7 +269,7 @@ export default function MaintenanceClient({ tickets: initialTickets }: Maintenan
 
   const handleStatusChange = async (ticketId: string, newStatus: string) => {
     try {
-        const token = localStorage.getItem('token');
+        const token = sessionStorage.getItem('token');
         const res = await fetch(`${API_URL}/maintenance/${ticketId}`, {
             method: 'PUT',
             headers: { 
@@ -296,7 +296,7 @@ export default function MaintenanceClient({ tickets: initialTickets }: Maintenan
     if (role !== 'ADMIN') return;
 
     try {
-        const token = localStorage.getItem('token');
+        const token = sessionStorage.getItem('token');
         const res = await fetch(`${API_URL}/maintenance/${ticketId}`, {
             method: 'PUT',
             headers: { 
@@ -348,7 +348,7 @@ export default function MaintenanceClient({ tickets: initialTickets }: Maintenan
             }
         }
 
-        const token = localStorage.getItem('token');
+        const token = sessionStorage.getItem('token');
         const res = await fetch(`${API_URL}/maintenance`, {
             method: 'POST',
             headers: { 

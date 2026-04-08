@@ -121,7 +121,7 @@ export default function FinancialClient() {
   const [draftFilters, setDraftFilters] = useState<FinanceFilters>(initialFilters);
 
   const loadData = async () => {
-    const token = localStorage.getItem('token');
+    const token = sessionStorage.getItem('token');
     if (!token) return;
 
     try {
@@ -170,7 +170,7 @@ export default function FinancialClient() {
     setIsGenerating(true);
 
     try {
-      const token = localStorage.getItem('token');
+      const token = sessionStorage.getItem('token');
       if (!token) throw new Error('Non authentifié');
       const response = await fetch(`${API_URL}/financial/generate-charges`, {
         method: 'POST',
@@ -202,7 +202,7 @@ export default function FinancialClient() {
       : (currentStatus === 'Payé' ? 'En attente' : 'Payé');
 
     try {
-      const token = localStorage.getItem('token');
+      const token = sessionStorage.getItem('token');
       if (!token) throw new Error('Non authentifié');
       const response = await fetch(`${API_URL}/financial/${id}`, {
         method: 'PUT',

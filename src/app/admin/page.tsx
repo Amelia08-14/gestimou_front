@@ -76,7 +76,7 @@ export default function AdminPage() {
   }, []);
 
   const fetchRequests = () => {
-    const token = localStorage.getItem('token');
+    const token = sessionStorage.getItem('token');
     fetch(`${API_URL}/registrations`, {
         headers: { 'Authorization': `Bearer ${token}` }
     })
@@ -107,7 +107,7 @@ export default function AdminPage() {
     });
 
   const handleCreateBackup = async () => {
-    const token = localStorage.getItem('token');
+    const token = sessionStorage.getItem('token');
     if (!token) return;
 
     setIsBackingUp(true);
@@ -133,7 +133,7 @@ export default function AdminPage() {
   };
 
   const handleRestoreBackup = async (file: File) => {
-    const token = localStorage.getItem('token');
+    const token = sessionStorage.getItem('token');
     if (!token) return;
 
     if (!confirm('Restaurer une sauvegarde va écraser/mettre à jour les données. Continuer ?')) return;
@@ -165,7 +165,7 @@ export default function AdminPage() {
     if (!confirm('Voulez-vous valider cette inscription ? Cela créera un compte utilisateur.')) return;
     
     try {
-        const token = localStorage.getItem('token');
+        const token = sessionStorage.getItem('token');
         const res = await fetch(`${API_URL}/registrations/${id}/approve`, {
             method: 'POST',
             headers: { 'Authorization': `Bearer ${token}` }
@@ -189,7 +189,7 @@ export default function AdminPage() {
     if (!confirm('Voulez-vous rejeter cette demande ?')) return;
 
     try {
-        const token = localStorage.getItem('token');
+        const token = sessionStorage.getItem('token');
         const res = await fetch(`${API_URL}/registrations/${id}/reject`, {
             method: 'POST',
             headers: { 'Authorization': `Bearer ${token}` }
