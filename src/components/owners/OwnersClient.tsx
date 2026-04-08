@@ -123,7 +123,6 @@ export default function OwnersClient({ owners }: OwnersClientProps) {
       const response = await fetch(`${API_URL}/owners?onlyResidents=true`, {
         cache: 'no-store',
         headers: {
-          'Cache-Control': 'no-cache',
           Authorization: `Bearer ${token}`
         }
       });
@@ -158,7 +157,6 @@ export default function OwnersClient({ owners }: OwnersClientProps) {
       const response = await fetch(`${API_URL}/residences`, {
         cache: 'no-store',
         headers: {
-          'Cache-Control': 'no-cache',
           Authorization: `Bearer ${token}`
         }
       });
@@ -232,7 +230,6 @@ export default function OwnersClient({ owners }: OwnersClientProps) {
       const response = await fetch(`${API_URL}/owners/${owner.id}`, {
         cache: 'no-store',
         headers: {
-          'Cache-Control': 'no-cache',
           Authorization: `Bearer ${token}`
         }
       });
@@ -272,6 +269,11 @@ export default function OwnersClient({ owners }: OwnersClientProps) {
     if (!selectedPropertyId) return;
 
     try {
+      const picked = allProperties.find((p) => p.id === selectedPropertyId);
+      if (picked?.ownerId && picked.ownerId !== selectedOwner.id) {
+        const ok = confirm('Ce bien est déjà affecté à un autre propriétaire. Le réaffecter ?');
+        if (!ok) return;
+      }
       const token = localStorage.getItem('token');
       const res = await fetch(`${API_URL}/properties/${selectedPropertyId}`, {
         method: 'PUT',
@@ -578,10 +580,11 @@ export default function OwnersClient({ owners }: OwnersClientProps) {
                           >
                             <option value="">Sélectionner un bien</option>
                             {allProperties
-                              .filter((p) => !p.ownerId)
+                              .filter((p) => (!selectedOwner.residenceId ? true : p.residenceId === selectedOwner.residenceId))
+                              .sort((a, b) => Number(Boolean(a.ownerId)) - Number(Boolean(b.ownerId)))
                               .map((p) => (
                                 <option key={p.id} value={p.id}>
-                                  {p.title} • {p.residenceId} • Lot {p.lotNumber || '-'}
+                                  {p.title} • {p.residenceId} • Lot {p.lotNumber || '-'}{p.ownerId ? ' • Déjà affecté' : ''}
                                 </option>
                               ))}
                           </select>
