@@ -47,6 +47,7 @@ interface Owner {
   firstName: string;
   lastName: string;
   avatar?: string | null;
+  email?: string;
 }
 
 interface Property {
@@ -162,6 +163,35 @@ export default function PropertiesClient({ residences: initialResidences, proper
 
   const [properties, setProperties] = useState<any[]>(initialProperties || []);
   const [residences, setResidences] = useState<Residence[]>(initialResidences || []);
+  const [owners, setOwners] = useState<Owner[]>([]);
+  const [isSavingProperty, setIsSavingProperty] = useState(false);
+  const [propertyForm, setPropertyForm] = useState({
+    title: '',
+    type: 'Appartement',
+    surface: '',
+    block: '',
+    floor: '',
+    lotNumber: '',
+    address: '',
+    price: '',
+    status: 'Libre',
+    ownerId: '',
+  });
+
+  const resetPropertyForm = () => {
+    setPropertyForm({
+      title: '',
+      type: 'Appartement',
+      surface: '',
+      block: '',
+      floor: '',
+      lotNumber: '',
+      address: '',
+      price: '',
+      status: 'Libre',
+      ownerId: '',
+    });
+  };
 
   const fetchData = async () => {
     const token = sessionStorage.getItem('token');
@@ -193,8 +223,25 @@ export default function PropertiesClient({ residences: initialResidences, proper
     }
   };
 
+  const fetchOwners = async () => {
+    const token = sessionStorage.getItem('token');
+    if (!token) return;
+    try {
+      const res = await fetch(`${API_URL}/owners?onlyResidents=true`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (!res.ok) return;
+      const data = await res.json().catch(() => null);
+      const list = Array.isArray(data) ? data : (Array.isArray((data as any)?.data) ? (data as any).data : []);
+      setOwners(list);
+    } catch (e) {
+      console.error('Failed to fetch owners', e);
+    }
+  };
+
   useEffect(() => {
     fetchData();
+    fetchOwners();
   }, []);
 
   useEffect(() => {
@@ -214,6 +261,70 @@ export default function PropertiesClient({ residences: initialResidences, proper
   const handleBackToResidences = () => {
     setSelectedResidence(null);
     setView('residences');
+  };
+
+  const handleOpenAddProperty = () => {
+    resetPropertyForm();
+    setShowAddModal(true);
+  };
+
+  const handlePropertyInputChange = (event: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { name, value } = event.target;
+    setPropertyForm((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleCreateProperty = async (event: React.FormEvent) => {
+    event.preventDefault();
+    const token = sessionStorage.getItem('token');
+    if (!token) return;
+    if (!selectedResidence?.id) return;
+    setIsSavingProperty(true);
+    try {
+      const surface = Number(String(propertyForm.surface).replace(',', '.'));
+      if (!Number.isFinite(surface) || surface <= 0) {
+        throw new Error('Surface invalide.');
+      }
+      const priceRaw = String(propertyForm.price || '').trim();
+      const price = priceRaw ? Number(priceRaw.replace(',', '.')) : null;
+      const ownerId = propertyForm.ownerId ? Number(propertyForm.ownerId) : null;
+
+      const payload = {
+        title: propertyForm.title.trim(),
+        type: propertyForm.type,
+        surface,
+        residenceId: selectedResidence.id,
+        status: propertyForm.status,
+        block: propertyForm.block.trim() || null,
+        floor: propertyForm.floor.trim() || null,
+        lotNumber: propertyForm.lotNumber.trim() || null,
+        address: propertyForm.address.trim() || null,
+        price: priceRaw ? price : null,
+        ownerId: ownerId && Number.isFinite(ownerId) ? ownerId : null,
+      };
+
+      const response = await fetch(`${API_URL}/properties`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify(payload)
+      });
+
+      const json = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        throw new Error(json?.error || 'Erreur lors de la création du bien');
+      }
+
+      const created = json?.data || json;
+      setProperties((prev) => [created, ...prev]);
+      setShowAddModal(false);
+      resetPropertyForm();
+    } catch (error) {
+      alert(error instanceof Error ? error.message : 'Impossible de créer le bien.');
+    } finally {
+      setIsSavingProperty(false);
+    }
   };
 
   const handleOpenCreateResidence = () => {
@@ -459,7 +570,7 @@ export default function PropertiesClient({ residences: initialResidences, proper
 
         {view === 'properties' && (
           <button 
-            onClick={() => setShowAddModal(true)}
+            onClick={handleOpenAddProperty}
             className="flex items-center gap-2 rounded-lg bg-brand-gold px-4 py-2 text-sm font-bold text-brand-blue hover:bg-brand-gold-hover transition-colors shadow-sm"
           >
             <Plus className="h-4 w-4" />
@@ -805,11 +916,164 @@ export default function PropertiesClient({ residences: initialResidences, proper
           <div className="w-full max-w-2xl rounded-2xl bg-white shadow-2xl animate-in fade-in zoom-in duration-200 my-8">
              <div className="flex items-center justify-between border-b border-slate-100 p-6">
               <h2 className="text-xl font-bold text-brand-blue">Ajouter un bien</h2>
-              <button onClick={() => setShowAddModal(false)} className="text-slate-400 hover:text-slate-600">✕</button>
+              <button
+                onClick={() => {
+                  setShowAddModal(false);
+                  resetPropertyForm();
+                }}
+                className="text-slate-400 hover:text-slate-600"
+              >
+                ✕
+              </button>
             </div>
-            <div className="p-6 text-center text-slate-500">
-                La fonctionnalité d'ajout sera disponible prochainement.
-            </div>
+            <form onSubmit={handleCreateProperty} className="p-6 space-y-6">
+              <div className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
+                Résidence : <span className="font-semibold text-slate-900">{selectedResidence?.name || '-'}</span>
+              </div>
+
+              <div className="grid gap-4 md:grid-cols-2">
+                <div className="space-y-2 md:col-span-2">
+                  <label className="text-sm font-medium text-slate-700">Titre</label>
+                  <input
+                    required
+                    name="title"
+                    value={propertyForm.title}
+                    onChange={handlePropertyInputChange}
+                    className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-blue/20"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-slate-700">Type</label>
+                  <select
+                    name="type"
+                    value={propertyForm.type}
+                    onChange={handlePropertyInputChange}
+                    className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
+                  >
+                    <option value="Appartement">Appartement</option>
+                    <option value="Duplex">Duplex</option>
+                    <option value="Local">Local</option>
+                    <option value="Parking">Parking</option>
+                    <option value="Autre">Autre</option>
+                  </select>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-slate-700">Surface (m²)</label>
+                  <input
+                    required
+                    name="surface"
+                    value={propertyForm.surface}
+                    onChange={handlePropertyInputChange}
+                    inputMode="decimal"
+                    className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-blue/20"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-slate-700">Statut</label>
+                  <select
+                    name="status"
+                    value={propertyForm.status}
+                    onChange={handlePropertyInputChange}
+                    className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
+                  >
+                    <option value="Libre">Libre</option>
+                    <option value="Occupé">Occupé</option>
+                    <option value="Vendu">Vendu</option>
+                  </select>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-slate-700">Prix / Charges (DA)</label>
+                  <input
+                    name="price"
+                    value={propertyForm.price}
+                    onChange={handlePropertyInputChange}
+                    inputMode="decimal"
+                    className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-blue/20"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-slate-700">Bloc</label>
+                  <input
+                    name="block"
+                    value={propertyForm.block}
+                    onChange={handlePropertyInputChange}
+                    className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-slate-700">Étage</label>
+                  <input
+                    name="floor"
+                    value={propertyForm.floor}
+                    onChange={handlePropertyInputChange}
+                    className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-slate-700">Lot</label>
+                  <input
+                    name="lotNumber"
+                    value={propertyForm.lotNumber}
+                    onChange={handlePropertyInputChange}
+                    className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
+                  />
+                </div>
+
+                <div className="space-y-2 md:col-span-2">
+                  <label className="text-sm font-medium text-slate-700">Adresse (optionnel)</label>
+                  <input
+                    name="address"
+                    value={propertyForm.address}
+                    onChange={handlePropertyInputChange}
+                    className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
+                  />
+                </div>
+
+                <div className="space-y-2 md:col-span-2">
+                  <label className="text-sm font-medium text-slate-700">Propriétaire (optionnel)</label>
+                  <select
+                    name="ownerId"
+                    value={propertyForm.ownerId}
+                    onChange={handlePropertyInputChange}
+                    className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
+                  >
+                    <option value="">Non assigné</option>
+                    {owners.map((o) => (
+                      <option key={o.id} value={o.id}>
+                        {o.firstName} {o.lastName}{o.email ? ` • ${o.email}` : ''}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              <div className="flex justify-end gap-3 border-t border-slate-100 pt-4">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowAddModal(false);
+                    resetPropertyForm();
+                  }}
+                  className="rounded-lg px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100"
+                >
+                  Annuler
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSavingProperty}
+                  className="rounded-lg bg-brand-blue px-6 py-2 text-sm font-bold text-white shadow-md hover:bg-brand-blue/90 disabled:opacity-50"
+                >
+                  {isSavingProperty ? 'Enregistrement...' : 'Créer le bien'}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}
