@@ -68,6 +68,8 @@ export default function OwnersClient({ owners }: OwnersClientProps) {
   const [selectedOwner, setSelectedOwner] = useState<OwnerWithDetails | null>(null);
   const [showProperties, setShowProperties] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const [selectedZone, setSelectedZone] = useState<string>('');
+  const [selectedResidenceId, setSelectedResidenceId] = useState<string>('');
   const [isEditing, setIsEditing] = useState(false);
   const [properties, setProperties] = useState<Property[]>([]);
   const [allProperties, setAllProperties] = useState<Property[]>([]);
@@ -89,13 +91,45 @@ export default function OwnersClient({ owners }: OwnersClientProps) {
     emergencyContactPhone: ''
   });
 
-  const filteredOwners = ownersList.filter((owner) =>
-    owner.firstName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    owner.lastName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    owner.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (owner.residence?.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (owner.block || '').toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const residenceById = new Map(residences.map((r) => [r.id, r]));
+  const zoneOrder = ['Zone 1', 'Zone 2', 'Zone 3', 'Non définie'];
+  const zones = Array.from(new Set(residences.map((r) => r.zone || 'Non définie')))
+    .sort((a, b) => (zoneOrder.indexOf(a) - zoneOrder.indexOf(b)) || a.localeCompare(b));
+
+  const residenceOptions = residences
+    .filter((r) => !selectedZone || (r.zone || 'Non définie') === selectedZone)
+    .slice()
+    .sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+
+  useEffect(() => {
+    if (!selectedResidenceId) return;
+    const r = residenceById.get(selectedResidenceId);
+    if (!r) {
+      setSelectedResidenceId('');
+      return;
+    }
+    const z = r.zone || 'Non définie';
+    if (selectedZone && z !== selectedZone) setSelectedResidenceId('');
+  }, [selectedZone, residences, selectedResidenceId]);
+
+  const filteredOwners = ownersList.filter((owner) => {
+    const term = searchTerm.trim().toLowerCase();
+    const ownerResidenceId = String(owner.residenceId || owner.residence?.id || '');
+    const ownerResidence = owner.residence || residenceById.get(ownerResidenceId) || null;
+    const ownerZone = ownerResidence?.zone || 'Non définie';
+
+    if (selectedZone && ownerZone !== selectedZone) return false;
+    if (selectedResidenceId && ownerResidenceId !== selectedResidenceId) return false;
+
+    if (!term) return true;
+    return (
+      owner.firstName.toLowerCase().includes(term) ||
+      owner.lastName.toLowerCase().includes(term) ||
+      owner.email.toLowerCase().includes(term) ||
+      (ownerResidence?.name || '').toLowerCase().includes(term) ||
+      (owner.block || '').toLowerCase().includes(term)
+    );
+  });
 
   const resetForm = () => {
     setFormData({
@@ -342,16 +376,44 @@ export default function OwnersClient({ owners }: OwnersClientProps) {
           <h1 className="text-2xl font-bold text-brand-blue">Propriétaires</h1>
           <p className="text-sm text-slate-500">Gérez les fiches propriétaires, leur résidence et leur localisation.</p>
         </div>
-        <div className="flex gap-3">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-            <input
-              type="text"
-              placeholder="Rechercher..."
-              value={searchTerm}
-              onChange={(event) => setSearchTerm(event.target.value)}
-              className="w-64 rounded-lg border border-slate-200 py-2 pl-10 pr-4 text-sm focus:border-brand-gold focus:outline-none focus:ring-2 focus:ring-brand-gold/50"
-            />
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+            <select
+              value={selectedZone}
+              onChange={(e) => setSelectedZone(e.target.value)}
+              className="w-40 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm focus:border-brand-gold focus:outline-none focus:ring-2 focus:ring-brand-gold/50"
+            >
+              <option value="">Toutes zones</option>
+              {zones.map((z) => (
+                <option key={z} value={z}>
+                  {z}
+                </option>
+              ))}
+            </select>
+
+            <select
+              value={selectedResidenceId}
+              onChange={(e) => setSelectedResidenceId(e.target.value)}
+              className="w-56 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm focus:border-brand-gold focus:outline-none focus:ring-2 focus:ring-brand-gold/50"
+            >
+              <option value="">Toutes résidences</option>
+              {residenceOptions.map((r) => (
+                <option key={r.id} value={r.id}>
+                  {r.name}
+                </option>
+              ))}
+            </select>
+
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+              <input
+                type="text"
+                placeholder="Rechercher..."
+                value={searchTerm}
+                onChange={(event) => setSearchTerm(event.target.value)}
+                className="w-64 rounded-lg border border-slate-200 py-2 pl-10 pr-4 text-sm focus:border-brand-gold focus:outline-none focus:ring-2 focus:ring-brand-gold/50"
+              />
+            </div>
           </div>
           <button
             onClick={() => {
@@ -571,7 +633,7 @@ export default function OwnersClient({ owners }: OwnersClientProps) {
                   ) : (
                     <div className="mt-4 space-y-3 animate-in fade-in slide-in-from-top-2">
                       <div className="rounded-lg border border-slate-200 bg-white p-3">
-                        <p className="text-xs font-medium text-slate-500">Affecter un bien</p>
+                        <p className="text-xs font-medium text-slate-500">Attribuer un bien</p>
                         <div className="mt-2 flex gap-2">
                           <select
                             value={selectedPropertyId}
@@ -593,7 +655,7 @@ export default function OwnersClient({ owners }: OwnersClientProps) {
                             disabled={!selectedPropertyId}
                             className="shrink-0 rounded-lg bg-brand-blue px-4 py-2 text-sm font-bold text-white disabled:opacity-50"
                           >
-                            Affecter
+                            Attribuer
                           </button>
                         </div>
                       </div>

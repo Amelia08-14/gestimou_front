@@ -163,6 +163,7 @@ export default function PropertiesClient({ residences: initialResidences, proper
 
   const [properties, setProperties] = useState<any[]>(initialProperties || []);
   const [residences, setResidences] = useState<Residence[]>(initialResidences || []);
+  const [activeZone, setActiveZone] = useState<'Zone 1' | 'Zone 2' | 'Zone 3'>('Zone 1');
   const [owners, setOwners] = useState<Owner[]>([]);
   const [isSavingProperty, setIsSavingProperty] = useState(false);
   const [propertyForm, setPropertyForm] = useState({
@@ -243,6 +244,22 @@ export default function PropertiesClient({ residences: initialResidences, proper
     fetchData();
     fetchOwners();
   }, []);
+
+  useEffect(() => {
+    if (residences.length === 0) return;
+    const zonesMap = residences.reduce<Record<string, Residence[]>>((accumulator, residence) => {
+      const zone = residence.zone || inferZoneFromResidenceName(residence.name) || 'Non définie';
+      if (!accumulator[zone]) accumulator[zone] = [];
+      accumulator[zone].push(residence);
+      return accumulator;
+    }, {});
+    const order: Array<'Zone 1' | 'Zone 2' | 'Zone 3'> = ['Zone 1', 'Zone 2', 'Zone 3'];
+    const currentList = zonesMap[activeZone] || [];
+    if (currentList.length === 0) {
+      const next = order.find((z) => (zonesMap[z]?.length || 0) > 0) || 'Zone 1';
+      setActiveZone(next);
+    }
+  }, [residences]);
 
   useEffect(() => {
     if (initialProperties && initialProperties.length > 0) {
@@ -520,19 +537,17 @@ export default function PropertiesClient({ residences: initialResidences, proper
     { name: 'hasPlayground', label: 'Aire de jeux' }
   ];
 
-  const groupedResidences = Object.entries(
-    residences.reduce<Record<string, Residence[]>>((accumulator, residence) => {
-      const zone = residence.zone || inferZoneFromResidenceName(residence.name) || 'Non définie';
-      if (!accumulator[zone]) {
-        accumulator[zone] = [];
-      }
-      accumulator[zone].push(residence);
-      return accumulator;
-    }, {})
-  ).sort(([zoneA], [zoneB]) => {
-    const order = ['Zone 1', 'Zone 2', 'Zone 3', 'Non définie'];
-    return order.indexOf(zoneA) - order.indexOf(zoneB);
-  });
+  const zonesMap = residences.reduce<Record<string, Residence[]>>((accumulator, residence) => {
+    const zone = residence.zone || inferZoneFromResidenceName(residence.name) || 'Non définie';
+    if (!accumulator[zone]) accumulator[zone] = [];
+    accumulator[zone].push(residence);
+    return accumulator;
+  }, {});
+
+  const zoneOrder: Array<'Zone 1' | 'Zone 2' | 'Zone 3'> = ['Zone 1', 'Zone 2', 'Zone 3'];
+  const zoneLabel: Record<string, string> = { 'Zone 1': 'Zone 01', 'Zone 2': 'Zone 02', 'Zone 3': 'Zone 03' };
+  const availableZones = zoneOrder.filter((z) => (zonesMap[z]?.length || 0) > 0);
+  const zoneResidences = zonesMap[activeZone] || [];
 
   return (
     <div className="space-y-6">
@@ -580,106 +595,125 @@ export default function PropertiesClient({ residences: initialResidences, proper
       </div>
 
       {view === 'residences' && (
-        <div className="space-y-8">
-          {groupedResidences.map(([zone, zoneResidences]) => (
-            <section key={zone} className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h2 className="text-lg font-bold text-brand-blue">{zone}</h2>
-                  <p className="text-sm text-slate-500">{zoneResidences.length} résidence(s)</p>
-                </div>
-              </div>
-              <div className="grid gap-6 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
-                {zoneResidences.map((residence) => (
-                  <div 
-                    key={residence.id} 
-                    onClick={() => handleResidenceClick(residence)}
-                    className="group cursor-pointer overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-slate-200 transition-all hover:shadow-xl hover:ring-brand-gold/50 hover:-translate-y-1"
+        <div className="space-y-6">
+          <div className="flex items-center justify-between gap-4">
+            <div className="grid grid-cols-3 gap-2">
+              {zoneOrder.map((zone) => {
+                const isAvailable = (zonesMap[zone]?.length || 0) > 0;
+                const isActive = activeZone === zone;
+                return (
+                  <button
+                    key={zone}
+                    type="button"
+                    onClick={() => isAvailable && setActiveZone(zone)}
+                    disabled={!isAvailable}
+                    className={`rounded-full px-4 py-2 text-sm font-semibold transition-colors ${
+                      isActive
+                        ? 'bg-brand-blue text-white'
+                        : isAvailable
+                            ? 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                            : 'bg-slate-50 text-slate-300'
+                    }`}
                   >
-                    <div className="relative h-48 w-full overflow-hidden">
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent z-10" />
-                      <img 
-                        src={residence.image || 'https://images.unsplash.com/photo-1560518883-ce09059eeffa?auto=format&fit=crop&w=500&q=60'} 
-                        alt={residence.name}
-                        className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
-                      />
-                      <div className="absolute right-4 top-4 z-20 flex items-center gap-2">
-                        <span className="rounded-full bg-white/90 px-3 py-1 text-xs font-semibold text-brand-blue shadow-sm">
-                          {residence.zone || inferZoneFromResidenceName(residence.name) || 'Non définie'}
-                        </span>
-                        <button
-                          onClick={(event) => handleEditResidence(event, residence)}
-                          className="rounded-full bg-white/90 px-3 py-1 text-xs font-semibold text-brand-blue shadow-sm hover:bg-white"
-                        >
-                          Modifier
-                        </button>
-                      </div>
-                      <div className="absolute bottom-4 left-4 z-20 text-white">
-                        <h3 className="text-xl font-bold">{residence.name}</h3>
-                        <div className="flex items-center gap-1 text-xs text-white/80">
-                          <MapPin className="h-3 w-3" />
-                          {residence.address}
-                        </div>
-                      </div>
-                    </div>
-                    
-                    <div className="p-5 space-y-4">
-                      <p className="text-sm text-slate-600 line-clamp-2">
-                        {residence.description}
-                      </p>
+                    {zoneLabel[zone] || zone}
+                  </button>
+                );
+              })}
+            </div>
+            <div className="text-sm text-slate-500 shrink-0">
+              {zoneResidences.length} résidence(s)
+            </div>
+          </div>
 
-                      <div className="flex flex-wrap gap-2">
-                        {getResidenceHighlights(residence).length > 0 ? (
-                          getResidenceHighlights(residence).map((item) => (
-                            <span key={item} className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-600">
-                              {item}
-                            </span>
-                          ))
-                        ) : (
-                          <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-500">
-                            Équipements à compléter
-                          </span>
-                        )}
-                      </div>
-                      
-                      <div className="grid grid-cols-2 gap-4 border-t border-slate-100 pt-4">
-                        <div className="flex flex-col">
-                          <span className="text-xs text-slate-500 uppercase tracking-wider font-semibold">Logements</span>
-                          <span className="text-lg font-bold text-brand-blue flex items-center gap-2">
-                            <Building className="h-4 w-4 text-brand-gold" />
-                            {residence.deliveredUnits} / {residence.totalUnits}
-                          </span>
-                          <span className="text-[10px] text-slate-400">Livrés / Total</span>
-                        </div>
-                        <div className="flex flex-col">
-                          <span className="text-xs text-slate-500 uppercase tracking-wider font-semibold">Occupation</span>
-                          <span className="text-lg font-bold text-brand-blue flex items-center gap-2">
-                            <Users className="h-4 w-4 text-brand-gold" />
-                            {residence.occupancyRate}
-                          </span>
-                        </div>
-                      </div>
-
-                      <div className="grid gap-2 border-t border-slate-100 pt-4 text-xs text-slate-500">
-                        <div className="flex items-center justify-between">
-                          <span>Blocs</span>
-                          <span className="font-medium text-slate-700">{residence.blocks || '-'}</span>
-                        </div>
-                        <div className="flex items-center justify-between">
-                          <span>Accueils</span>
-                          <span className="font-medium text-slate-700">{residence.receptionCount || 0}</span>
-                        </div>
-                        <div className="flex items-center justify-between">
-                          <span>Logo</span>
-                          <span className="font-medium text-slate-700">{residence.logo ? 'Renseigné' : 'Non renseigné'}</span>
-                        </div>
-                      </div>
+          <div className="grid gap-6 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+            {zoneResidences.map((residence) => (
+              <div 
+                key={residence.id} 
+                onClick={() => handleResidenceClick(residence)}
+                className="group cursor-pointer overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-slate-200 transition-all hover:shadow-xl hover:ring-brand-gold/50 hover:-translate-y-1"
+              >
+                <div className="relative h-48 w-full overflow-hidden">
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent z-10" />
+                  <img 
+                    src={residence.image || 'https://images.unsplash.com/photo-1560518883-ce09059eeffa?auto=format&fit=crop&w=500&q=60'} 
+                    alt={residence.name}
+                    className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
+                  />
+                  <div className="absolute right-4 top-4 z-20 flex items-center gap-2">
+                    <span className="rounded-full bg-white/90 px-3 py-1 text-xs font-semibold text-brand-blue shadow-sm">
+                      {residence.zone || inferZoneFromResidenceName(residence.name) || 'Non définie'}
+                    </span>
+                    <button
+                      onClick={(event) => handleEditResidence(event, residence)}
+                      className="rounded-full bg-white/90 px-3 py-1 text-xs font-semibold text-brand-blue shadow-sm hover:bg-white"
+                    >
+                      Modifier
+                    </button>
+                  </div>
+                  <div className="absolute bottom-4 left-4 z-20 text-white">
+                    <h3 className="text-xl font-bold">{residence.name}</h3>
+                    <div className="flex items-center gap-1 text-xs text-white/80">
+                      <MapPin className="h-3 w-3" />
+                      {residence.address}
                     </div>
                   </div>
-                ))}
+                </div>
+                
+                <div className="p-5 space-y-4">
+                  <p className="text-sm text-slate-600 line-clamp-2">
+                    {residence.description}
+                  </p>
+
+                  <div className="flex flex-wrap gap-2">
+                    {getResidenceHighlights(residence).length > 0 ? (
+                      getResidenceHighlights(residence).map((item) => (
+                        <span key={item} className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-600">
+                          {item}
+                        </span>
+                      ))
+                    ) : (
+                      <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-500">
+                        Équipements à compléter
+                      </span>
+                    )}
+                  </div>
+                  
+                  <div className="grid grid-cols-2 gap-4 border-t border-slate-100 pt-4">
+                    <div className="flex flex-col">
+                      <span className="text-xs text-slate-500 uppercase tracking-wider font-semibold">Logements</span>
+                      <span className="text-lg font-bold text-brand-blue flex items-center gap-2">
+                        <Building className="h-4 w-4 text-brand-gold" />
+                        {residence.deliveredUnits} / {residence.totalUnits}
+                      </span>
+                      <span className="text-[10px] text-slate-400">Livrés / Total</span>
+                    </div>
+                    <div className="flex flex-col">
+                      <span className="text-xs text-slate-500 uppercase tracking-wider font-semibold">Occupation</span>
+                      <span className="text-lg font-bold text-brand-blue flex items-center gap-2">
+                        <Users className="h-4 w-4 text-brand-gold" />
+                        {residence.occupancyRate}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="grid gap-2 border-t border-slate-100 pt-4 text-xs text-slate-500">
+                    <div className="flex items-center justify-between">
+                      <span>Blocs</span>
+                      <span className="font-medium text-slate-700">{residence.blocks || '-'}</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span>Accueils</span>
+                      <span className="font-medium text-slate-700">{residence.receptionCount || 0}</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span>Logo</span>
+                      <span className="font-medium text-slate-700">{residence.logo ? 'Renseigné' : 'Non renseigné'}</span>
+                    </div>
+                  </div>
+                </div>
               </div>
-            </section>
-          ))}
+            ))}
+          </div>
         </div>
       )}
 

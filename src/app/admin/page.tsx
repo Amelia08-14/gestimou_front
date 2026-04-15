@@ -51,6 +51,11 @@ export default function AdminPage() {
   });
   const [selectedUser, setSelectedUser] = useState<any | null>(null);
 
+  const roleLabel = (role: string) => {
+    if (role === 'MANAGER') return 'Responsable Sécurité';
+    return role;
+  };
+
   // Load users and requests on mount
   React.useEffect(() => {
     fetchUsers();
@@ -387,7 +392,7 @@ export default function AdminPage() {
                       <td className="px-6 py-4">
                         <span className="inline-flex items-center gap-1 rounded bg-slate-100 px-2 py-1 text-xs font-medium text-slate-600">
                           <Shield className="h-3 w-3" />
-                          {user.role}
+                          {roleLabel(user.role)}
                           {user.role === 'INTERVENANT' && user.profession && ` (${user.profession})`}
                         </span>
                       </td>
@@ -658,7 +663,7 @@ export default function AdminPage() {
                     <option value="RECOUVREMENT">Chargé du Recouvrement</option>
                     <option value="HSE">HSE</option>
                     <option value="INTERVENANT">Intervenant</option>
-                    <option value="MANAGER">Manager (Générique)</option>
+                    <option value="MANAGER">Responsable Sécurité</option>
                   </select>
                 </div>
                 {formData.role === 'INTERVENANT' && (
@@ -683,6 +688,7 @@ export default function AdminPage() {
                         className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-brand-blue focus:ring-1 focus:ring-brand-blue outline-none"
                     >
                         <option value="">Sélectionner une zone</option>
+                        <option value="ALL">Toutes les zones</option>
                         <option value="Zone 1">Zone 1 (Draria, El Achour...)</option>
                         <option value="Zone 2">Zone 2 (Ben Aknoun, Hydra...)</option>
                         <option value="Zone 3">Zone 3 (Les Sources, Birkhadem...)</option>
