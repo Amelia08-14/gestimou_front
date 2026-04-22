@@ -118,6 +118,9 @@ export default function MaintenanceClient({ tickets: initialTickets }: Maintenan
   const [activeTab, setActiveTab] = useState('all');
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [actionTicket, setActionTicket] = useState<MaintenanceTicket | null>(null);
+  const [isActionModalOpen, setIsActionModalOpen] = useState(false);
+  const [actionAttachmentFile, setActionAttachmentFile] = useState<File | null>(null);
   const [showFilters, setShowFilters] = useState(false);
   const [filters, setFilters] = useState({
     priority: '',
@@ -323,6 +326,73 @@ export default function MaintenanceClient({ tickets: initialTickets }: Maintenan
     } catch (e) {
         console.error(e);
         alert('Erreur technique');
+    }
+  };
+
+  const openActions = (ticket: MaintenanceTicket) => {
+    setActionTicket(ticket);
+    setActionAttachmentFile(null);
+    setIsActionModalOpen(true);
+  };
+
+  const handleDeleteTicket = async () => {
+    if (!actionTicket) return;
+    if (!confirm('Supprimer ce ticket ?')) return;
+
+    try {
+      const token = sessionStorage.getItem('token');
+      const res = await fetch(`${API_URL}/maintenance/${actionTicket.id}`, {
+        method: 'DELETE',
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      });
+      if (!res.ok) {
+        const json = await res.json().catch(() => ({}));
+        alert(json?.error || 'Suppression impossible');
+        return;
+      }
+      setTickets((prev) => prev.filter((t) => t.id !== actionTicket.id));
+      setIsActionModalOpen(false);
+      setActionTicket(null);
+    } catch (e) {
+      alert('Erreur technique');
+    }
+  };
+
+  const handleUploadAttachmentForExisting = async () => {
+    if (!actionTicket) return;
+    if (!actionAttachmentFile) {
+      alert('Veuillez sélectionner un fichier.');
+      return;
+    }
+    if (actionAttachmentFile.size > 2 * 1024 * 1024) {
+      alert('Fichier trop grand (max 2 Mo).');
+      return;
+    }
+
+    try {
+      const token = sessionStorage.getItem('token');
+      const fd = new FormData();
+      fd.append('file', actionAttachmentFile);
+      const res = await fetch(`${API_URL}/maintenance/${actionTicket.id}/attachment`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`
+        },
+        body: fd
+      });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        alert(json?.error || 'Upload impossible');
+        return;
+      }
+      setTickets((prev) => prev.map((t) => (t.id === actionTicket.id ? (json as MaintenanceTicket) : t)));
+      setActionTicket(json as MaintenanceTicket);
+      setActionAttachmentFile(null);
+      alert('Pièce jointe enregistrée.');
+    } catch (e) {
+      alert('Erreur technique');
     }
   };
 
@@ -557,7 +627,10 @@ export default function MaintenanceClient({ tickets: initialTickets }: Maintenan
                               <Download className="h-5 w-5" />
                             </a>
                           )}
-                          <button className="rounded p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600">
+                          <button
+                            onClick={() => openActions(ticket)}
+                            className="rounded p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600"
+                          >
                             <MoreHorizontal className="h-5 w-5" />
                           </button>
                         </div>
@@ -700,6 +773,79 @@ export default function MaintenanceClient({ tickets: initialTickets }: Maintenan
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {isActionModalOpen && actionTicket && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
+          <div className="w-full max-w-xl rounded-xl bg-white shadow-2xl">
+            <div className="flex items-center justify-between border-b border-slate-100 p-6">
+              <div className="flex flex-col">
+                <h2 className="text-xl font-bold text-slate-900">Actions ticket</h2>
+                <p className="text-xs text-slate-500">{actionTicket.id}</p>
+              </div>
+              <button
+                onClick={() => setIsActionModalOpen(false)}
+                className="rounded-full p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-600"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <div className="p-6 space-y-6">
+              <div>
+                <div className="text-sm font-semibold text-slate-900">{actionTicket.title}</div>
+                <div className="text-sm text-slate-600">{actionTicket.description}</div>
+                <div className="mt-2 text-xs text-slate-500">
+                  {new Date(actionTicket.createdAt).toLocaleString('fr-FR')}
+                </div>
+              </div>
+
+              <div className="rounded-lg border border-slate-200 p-4 space-y-3">
+                <div className="text-sm font-semibold text-slate-900">Pièce jointe (max 2 Mo)</div>
+                <div className="flex items-center justify-between gap-3">
+                  <input
+                    type="file"
+                    onChange={(e) => setActionAttachmentFile(e.target.files?.[0] || null)}
+                    className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
+                  />
+                </div>
+                <div className="flex items-center justify-between gap-2">
+                  <button
+                    onClick={handleUploadAttachmentForExisting}
+                    className="rounded-lg bg-brand-blue px-4 py-2 text-sm font-medium text-white hover:bg-blue-900"
+                  >
+                    Enregistrer la pièce jointe
+                  </button>
+                  {actionTicket.attachmentUrl && (
+                    <a
+                      href={`${uploadsBaseUrl}${actionTicket.attachmentUrl}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+                    >
+                      Télécharger
+                    </a>
+                  )}
+                </div>
+              </div>
+
+              <div className="flex justify-end gap-2 border-t border-slate-100 pt-4">
+                <button
+                  onClick={() => setIsActionModalOpen(false)}
+                  className="rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+                >
+                  Fermer
+                </button>
+                <button
+                  onClick={handleDeleteTicket}
+                  className="rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700"
+                >
+                  Supprimer
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}

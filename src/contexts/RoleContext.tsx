@@ -17,7 +17,7 @@ interface RoleContextType {
   user: User | null;
   isAuthenticated: boolean;
   isLoading: boolean;
-  login: (userData: User, token: string) => void;
+  login: (userData: User, token: string, redirectTo?: string) => void;
   logout: () => void;
   setRole: (role: Role) => void; // Deprecated, kept for compatibility
 }
@@ -94,12 +94,12 @@ export function RoleProvider({ children }: { children: ReactNode }) {
     };
   }, [user]);
 
-  const login = (userData: User, token: string) => {
+  const login = (userData: User, token: string, redirectTo?: string) => {
     sessionStorage.setItem('token', token);
     sessionStorage.setItem('user', JSON.stringify(userData));
     setUser(userData);
     setRoleState(userData.role);
-    router.push('/');
+    router.push(redirectTo || '/');
   };
 
   const logout = () => {

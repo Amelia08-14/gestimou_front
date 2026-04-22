@@ -114,7 +114,9 @@ export default function AdminPage() {
       .then(async (res) => {
         const json = await res.json().catch(() => null);
         if (!res.ok) {
-          const msg = json?.error || 'Impossible de charger les logs';
+          const msg = res.status === 404
+            ? 'Endpoint /audit-logs introuvable (backend non déployé ou non redémarré).'
+            : (json?.error || 'Impossible de charger les logs');
           throw new Error(msg);
         }
         return json;

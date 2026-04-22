@@ -37,7 +37,7 @@ export default function LoginPage() {
         name: data.name,
         email: data.email,
         role: data.role
-      }, data.token);
+      }, data.token, data.mustChangePassword ? '/profile' : '/');
       
     } catch (err: any) {
       setError(err.message);
