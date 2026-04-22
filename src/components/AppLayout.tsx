@@ -9,7 +9,7 @@ import { useEffect } from 'react';
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
-  const { isAuthenticated, isLoading } = useRole();
+  const { isAuthenticated, isLoading, user } = useRole();
   const isLoginPage = pathname === '/login';
 
   useEffect(() => {
@@ -17,6 +17,28 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       router.push('/login');
     }
   }, [isLoading, isAuthenticated, isLoginPage, router]);
+
+  useEffect(() => {
+    if (isLoading || isLoginPage || !isAuthenticated) return;
+    const role = user?.role || '';
+
+    const isAllowed = () => {
+      if (!role) return false;
+      if (pathname === '/profile') return true;
+      if (pathname === '/') return role !== 'RECOUVREMENT';
+      if (pathname === '/financial') return role === 'ADMIN' || role === 'RECOUVREMENT';
+      if (pathname === '/admin') return role === 'ADMIN';
+      if (pathname === '/documents') return role === 'ADMIN';
+      if (pathname === '/maintenance') return ['ADMIN', 'RESPONSABLE_ZONE', 'MANAGER', 'HSE', 'INTERVENANT'].includes(role);
+      if (pathname === '/owners') return ['ADMIN', 'RESPONSABLE_ZONE', 'MANAGER'].includes(role);
+      if (pathname === '/properties') return ['ADMIN', 'RESPONSABLE_ZONE', 'MANAGER'].includes(role);
+      return true;
+    };
+
+    if (!isAllowed()) {
+      router.push(role === 'RECOUVREMENT' ? '/financial' : '/');
+    }
+  }, [isAuthenticated, isLoginPage, isLoading, pathname, router, user?.role]);
 
   // Prevent flash of content while checking auth
   if (isLoading) {
