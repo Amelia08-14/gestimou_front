@@ -19,19 +19,6 @@ import {
 } from 'lucide-react';
 import { API_URL } from '@/utils/api';
 
-const users = [
-  { id: 1, name: 'Admin Principal', email: 'admin@aymen.com', role: 'Super Admin', status: 'Actif', lastActive: 'Il y a 2 min' },
-  { id: 2, name: 'Karim Gestion', email: 'karim@aymen.com', role: 'Gestionnaire', status: 'Actif', lastActive: 'Il y a 1h' },
-  { id: 3, name: 'Sarah Compta', email: 'sarah@aymen.com', role: 'Comptable', status: 'Inactif', lastActive: 'Il y a 2j' },
-];
-
-const logs = [
-  { id: 1, action: 'Connexion', user: 'Admin Principal', date: '28 Jan 2026 10:23', details: 'Connexion depuis IP 192.168.1.1' },
-  { id: 2, action: 'Ajout Résident', user: 'Karim Gestion', date: '28 Jan 2026 09:15', details: 'Ajout de M. Benali (Lot A12)' },
-  { id: 3, action: 'Modification Bien', user: 'Admin Principal', date: '27 Jan 2026 16:45', details: 'Mise à jour prix F4 Standing' },
-  { id: 4, action: 'Sauvegarde', user: 'Système', date: '27 Jan 2026 00:00', details: 'Backup automatique journalier' },
-];
-
 export default function AdminPage() {
   const [users, setUsers] = useState<any[]>([]);
   const [requests, setRequests] = useState<any[]>([]);
@@ -40,6 +27,9 @@ export default function AdminPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isBackingUp, setIsBackingUp] = useState(false);
   const [isRestoring, setIsRestoring] = useState(false);
+  const [auditLogs, setAuditLogs] = useState<any[]>([]);
+  const [isAuditLoading, setIsAuditLoading] = useState(false);
+  const [auditError, setAuditError] = useState<string>('');
   
   const [formData, setFormData] = useState({
     name: '',
@@ -80,6 +70,25 @@ export default function AdminPage() {
     };
   }, []);
 
+  React.useEffect(() => {
+    if (activeTab !== 'history') return;
+    fetchAuditLogs();
+
+    const onVisibility = () => {
+      if (document.visibilityState === 'visible') fetchAuditLogs();
+    };
+    document.addEventListener('visibilitychange', onVisibility);
+
+    const interval = window.setInterval(() => {
+      fetchAuditLogs();
+    }, 5000);
+
+    return () => {
+      document.removeEventListener('visibilitychange', onVisibility);
+      window.clearInterval(interval);
+    };
+  }, [activeTab]);
+
   const fetchRequests = () => {
     const token = sessionStorage.getItem('token');
     fetch(`${API_URL}/registrations`, {
@@ -90,6 +99,32 @@ export default function AdminPage() {
         if (Array.isArray(data)) setRequests(data);
       })
       .catch(err => console.error(err));
+  };
+
+  const fetchAuditLogs = () => {
+    const token = sessionStorage.getItem('token');
+    if (!token) return;
+
+    setIsAuditLoading(true);
+    setAuditError('');
+    fetch(`${API_URL}/audit-logs?limit=50`, {
+      cache: 'no-store',
+      headers: { Authorization: `Bearer ${token}` }
+    })
+      .then(async (res) => {
+        const json = await res.json().catch(() => null);
+        if (!res.ok) {
+          const msg = json?.error || 'Impossible de charger les logs';
+          throw new Error(msg);
+        }
+        return json;
+      })
+      .then((data) => {
+        if (Array.isArray(data)) setAuditLogs(data);
+        else setAuditLogs([]);
+      })
+      .catch((err) => setAuditError(err instanceof Error ? err.message : 'Erreur'))
+      .finally(() => setIsAuditLoading(false));
   };
 
   const downloadBlob = (filename: string, blob: Blob) => {
@@ -212,7 +247,11 @@ export default function AdminPage() {
   };
 
   const fetchUsers = () => {
-    fetch(`${API_URL}/users`)
+    const token = sessionStorage.getItem('token');
+    fetch(`${API_URL}/users`, {
+      cache: 'no-store',
+      headers: token ? { Authorization: `Bearer ${token}` } : undefined
+    })
       .then(res => res.json())
       .then(data => {
         if (Array.isArray(data)) {
@@ -247,6 +286,7 @@ export default function AdminPage() {
     e.preventDefault();
     setIsSubmitting(true);
     try {
+      const token = sessionStorage.getItem('token');
       const url = selectedUser ? `${API_URL}/users/${selectedUser.id}` : `${API_URL}/users`;
       const method = selectedUser ? 'PUT' : 'POST';
       
@@ -255,7 +295,7 @@ export default function AdminPage() {
 
       const res = await fetch(url, {
         method,
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
         body: JSON.stringify(body),
       });
 
@@ -500,26 +540,34 @@ export default function AdminPage() {
                 <h3 className="font-semibold text-slate-900">Journal d'audit (Logs)</h3>
               </div>
               <div className="divide-y divide-slate-100">
-                {logs.map((log) => (
-                  <div key={log.id} className="flex items-center justify-between px-6 py-4 hover:bg-slate-50">
-                    <div className="flex items-start gap-4">
-                      <div className="mt-1 rounded-full bg-slate-100 p-2 text-slate-500">
-                        <History className="h-4 w-4" />
-                      </div>
-                      <div>
-                        <p className="font-medium text-slate-900">{log.action}</p>
-                        <p className="text-sm text-slate-500">{log.details}</p>
-                        <div className="mt-1 flex items-center gap-2 text-xs text-slate-400">
-                          <Users className="h-3 w-3" />
-                          <span>{log.user}</span>
+                {isAuditLoading && auditLogs.length === 0 ? (
+                  <div className="px-6 py-8 text-center text-slate-500">Chargement des logs…</div>
+                ) : auditError ? (
+                  <div className="px-6 py-8 text-center text-red-600">{auditError}</div>
+                ) : auditLogs.length === 0 ? (
+                  <div className="px-6 py-8 text-center text-slate-500">Aucun log.</div>
+                ) : (
+                  auditLogs.map((log) => (
+                    <div key={log.id} className="flex items-center justify-between px-6 py-4 hover:bg-slate-50">
+                      <div className="flex items-start gap-4">
+                        <div className="mt-1 rounded-full bg-slate-100 p-2 text-slate-500">
+                          <History className="h-4 w-4" />
+                        </div>
+                        <div>
+                          <p className="font-medium text-slate-900">{log.action}</p>
+                          <p className="text-sm text-slate-500">{log.details}</p>
+                          <div className="mt-1 flex items-center gap-2 text-xs text-slate-400">
+                            <Users className="h-3 w-3" />
+                            <span>{log.userName || 'Système'}</span>
+                          </div>
                         </div>
                       </div>
+                      <div className="text-right text-xs text-slate-500">
+                        {log.createdAt ? new Date(log.createdAt).toLocaleString('fr-FR') : ''}
+                      </div>
                     </div>
-                    <div className="text-right text-xs text-slate-500">
-                      {log.date}
-                    </div>
-                  </div>
-                ))}
+                  ))
+                )}
               </div>
             </div>
           </div>

@@ -3,7 +3,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
 
-export type Role = 'ADMIN' | 'INTERVENANT' | 'RESPONSABLE_ZONE' | 'RECOUVREMENT' | 'HSE';
+export type Role = 'ADMIN' | 'INTERVENANT' | 'RESPONSABLE_ZONE' | 'RECOUVREMENT' | 'MANAGER' | 'HSE';
 
 export interface User {
   id: string;

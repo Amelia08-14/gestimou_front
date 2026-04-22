@@ -28,6 +28,11 @@ interface MaintenanceTicket {
   createdAt: string | Date;
   updatedAt: string | Date;
   residenceId?: string | null;
+  attachmentUrl?: string | null;
+  attachmentName?: string | null;
+  attachmentType?: string | null;
+  attachmentSize?: number | null;
+  residence?: { id: string; name: string; zone?: string | null } | null;
 }
 
 interface MaintenanceClientProps {
@@ -128,6 +133,7 @@ export default function MaintenanceClient({ tickets: initialTickets }: Maintenan
   
   const { role, user } = useRole();
   const [intervenants, setIntervenants] = useState<any[]>([]);
+  const uploadsBaseUrl = API_URL.replace(/\/api\/?$/, '');
 
   const normalizeText = (value: string) =>
     value
@@ -185,7 +191,7 @@ export default function MaintenanceClient({ tickets: initialTickets }: Maintenan
 
   const handleExport = () => {
     const rows: Array<Array<unknown>> = [
-      ['ID', 'Ticket', 'Catégorie', 'Priorité', 'Lieu', 'Demandeur', 'Intervenant', 'Statut', 'Date création'],
+      ['ID', 'Ticket', 'Catégorie', 'Priorité', 'Lieu', 'Demandeur', 'Intervenant', 'Statut', 'Date création', 'Heure création'],
       ...displayedTickets.map((t) => ([
         t.id,
         t.title,
@@ -195,7 +201,8 @@ export default function MaintenanceClient({ tickets: initialTickets }: Maintenan
         t.requester,
         t.assignee || '',
         t.status,
-        new Date(t.createdAt).toLocaleDateString('fr-FR')
+        new Date(t.createdAt).toLocaleDateString('fr-FR'),
+        new Date(t.createdAt).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
       ]))
     ];
     downloadCsv(`maintenance_${new Date().toISOString().slice(0, 10)}.csv`, rows);
@@ -328,6 +335,7 @@ export default function MaintenanceClient({ tickets: initialTickets }: Maintenan
     status: 'Signalé',
     assignee: ''
   });
+  const [attachmentFile, setAttachmentFile] = useState<File | null>(null);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -363,16 +371,36 @@ export default function MaintenanceClient({ tickets: initialTickets }: Maintenan
 
         if (res.ok) {
              const createdTicket = await res.json();
+             let finalTicket = createdTicket as unknown as MaintenanceTicket;
+
+             if (attachmentFile) {
+                const fd = new FormData();
+                fd.append('file', attachmentFile);
+                const uploadRes = await fetch(`${API_URL}/maintenance/${createdTicket.id}/attachment`, {
+                  method: 'POST',
+                  headers: {
+                    'Authorization': `Bearer ${token}`
+                  },
+                  body: fd
+                });
+                if (uploadRes.ok) {
+                  finalTicket = (await uploadRes.json()) as unknown as MaintenanceTicket;
+                } else {
+                  alert('Ticket créé, mais la pièce jointe n’a pas pu être uploadée (max 2 Mo).');
+                }
+             }
+
              // Ensure createdTicket matches MaintenanceTicket interface or close enough
              // The backend returns the Sequelize object, which has id, createdAt, etc.
              // We might need to map it if structure differs slightly, but usually it matches well enough for JS/TS if not strict.
              // With strict TS, we might cast it.
-             setTickets([createdTicket as unknown as MaintenanceTicket, ...tickets]); 
+             setTickets([finalTicket, ...tickets]); 
              setIsAddModalOpen(false);
              setNewTicket({
                 title: '', description: '', location: 'Parties Communes',
                 requester: '', priority: 'Moyenne', status: 'Signalé', assignee: ''
              });
+             setAttachmentFile(null);
         } else {
             alert("Erreur lors de la création");
         }
@@ -487,7 +515,12 @@ export default function MaintenanceClient({ tickets: initialTickets }: Maintenan
                         )}
                     </td>
                     <td className="px-6 py-4 text-slate-500">
-                        {new Date(ticket.createdAt).toLocaleDateString('fr-FR')}
+                        <div className="flex flex-col">
+                          <span>{new Date(ticket.createdAt).toLocaleDateString('fr-FR')}</span>
+                          <span className="text-xs text-slate-400">
+                            {new Date(ticket.createdAt).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
+                          </span>
+                        </div>
                     </td>
                     <td className="px-6 py-4">
                         <div className="flex items-center gap-2">
@@ -507,13 +540,27 @@ export default function MaintenanceClient({ tickets: initialTickets }: Maintenan
                             <option value="Signalé">Signalé</option>
                             <option value="En cours">En cours</option>
                             <option value="Terminé">Terminé</option>
+                            <option value="SAV">SAV</option>
                         </select>
                         </div>
                     </td>
                     <td className="px-6 py-4 text-right">
-                        <button className="rounded p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600">
-                        <MoreHorizontal className="h-5 w-5" />
-                        </button>
+                        <div className="flex items-center justify-end gap-2">
+                          {ticket.attachmentUrl && (
+                            <a
+                              href={`${uploadsBaseUrl}${ticket.attachmentUrl}`}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="rounded p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600"
+                              title={ticket.attachmentName || 'Pièce jointe'}
+                            >
+                              <Download className="h-5 w-5" />
+                            </a>
+                          )}
+                          <button className="rounded p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600">
+                            <MoreHorizontal className="h-5 w-5" />
+                          </button>
+                        </div>
                     </td>
                     </tr>
                 ))
@@ -622,6 +669,20 @@ export default function MaintenanceClient({ tickets: initialTickets }: Maintenan
                 </div>
               </div>
 
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Pièce jointe (max 2 Mo)</label>
+                <input
+                  type="file"
+                  onChange={(e) => setAttachmentFile(e.target.files?.[0] || null)}
+                  className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
+                />
+                {attachmentFile && (
+                  <p className="mt-1 text-xs text-slate-500">
+                    {attachmentFile.name} ({Math.round(attachmentFile.size / 1024)} Ko)
+                  </p>
+                )}
+              </div>
+
               <div className="mt-6 flex justify-end gap-3 pt-4 border-t border-slate-50">
                 <button
                   type="button"
@@ -685,6 +746,7 @@ export default function MaintenanceClient({ tickets: initialTickets }: Maintenan
                     <option value="Signalé">Signalé</option>
                     <option value="En cours">En cours</option>
                     <option value="Terminé">Terminé</option>
+                    <option value="SAV">SAV</option>
                   </select>
                 </div>
                 <div className="space-y-2">

@@ -18,12 +18,12 @@ import { clsx } from 'clsx';
 import { useRole } from '@/contexts/RoleContext';
 
 const navigation = [
-  { name: 'Tableau de bord', href: '/', icon: LayoutDashboard, roles: ['ADMIN', 'RESPONSABLE_ZONE', 'RECOUVREMENT', 'HSE', 'INTERVENANT'] },
-  { name: 'Biens', href: '/properties', icon: Building2, roles: ['ADMIN', 'RESPONSABLE_ZONE'] },
-  { name: 'Propriétaires', href: '/owners', icon: Key, roles: ['ADMIN', 'RESPONSABLE_ZONE', 'RECOUVREMENT'] },
+  { name: 'Tableau de bord', href: '/', icon: LayoutDashboard, roles: ['ADMIN', 'RESPONSABLE_ZONE', 'RECOUVREMENT', 'MANAGER', 'HSE', 'INTERVENANT'] },
+  { name: 'Biens', href: '/properties', icon: Building2, roles: ['ADMIN', 'RESPONSABLE_ZONE', 'MANAGER'] },
+  { name: 'Propriétaires', href: '/owners', icon: Key, roles: ['ADMIN', 'RESPONSABLE_ZONE', 'MANAGER'] },
   { name: 'Finances', href: '/financial', icon: Wallet, roles: ['ADMIN', 'RESPONSABLE_ZONE', 'RECOUVREMENT'] },
-  { name: 'Maintenance', href: '/maintenance', icon: Wrench, roles: ['ADMIN', 'RESPONSABLE_ZONE', 'HSE', 'INTERVENANT'] },
-  { name: 'Documents', href: '/documents', icon: FileText, roles: ['ADMIN', 'RESPONSABLE_ZONE', 'HSE', 'RECOUVREMENT', 'INTERVENANT'] },
+  { name: 'Maintenance', href: '/maintenance', icon: Wrench, roles: ['ADMIN', 'RESPONSABLE_ZONE', 'MANAGER', 'HSE', 'INTERVENANT'] },
+  { name: 'Documents', href: '/documents', icon: FileText, roles: ['ADMIN', 'RESPONSABLE_ZONE', 'MANAGER', 'HSE', 'INTERVENANT'] },
   { name: 'Administration', href: '/admin', icon: Settings, roles: ['ADMIN'] },
 ];
 
