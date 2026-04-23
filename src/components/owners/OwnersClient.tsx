@@ -91,6 +91,25 @@ export default function OwnersClient({ owners }: OwnersClientProps) {
     emergencyContactPhone: ''
   });
 
+  const clearAuthAndRedirect = (message = 'Session expirée, veuillez vous reconnecter.') => {
+    sessionStorage.removeItem('token');
+    sessionStorage.removeItem('user');
+    sessionStorage.removeItem('auth_expires_at');
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    alert(message);
+    window.location.href = '/login';
+  };
+
+  const requireToken = () => {
+    const token = sessionStorage.getItem('token') || localStorage.getItem('token');
+    if (!token || token === 'null' || token === 'undefined') {
+      clearAuthAndRedirect();
+      throw new Error('Not authenticated');
+    }
+    return token;
+  };
+
   const residenceById = new Map(residences.map((r) => [r.id, r]));
   const zoneOrder = ['Zone 1', 'Zone 2', 'Zone 3', 'Non définie'];
   const zones = Array.from(new Set(residences.map((r) => r.zone || 'Non définie')))
@@ -151,7 +170,7 @@ export default function OwnersClient({ owners }: OwnersClientProps) {
   };
 
   const loadOwners = async () => {
-    const token = sessionStorage.getItem('token');
+    const token = requireToken();
 
     try {
       const response = await fetch(`${API_URL}/owners?onlyResidents=true`, {
@@ -162,6 +181,10 @@ export default function OwnersClient({ owners }: OwnersClientProps) {
       });
 
       if (!response.ok) {
+        if (response.status === 401) {
+          clearAuthAndRedirect();
+          return;
+        }
         throw new Error('Failed to fetch owners');
       }
 
@@ -176,6 +199,10 @@ export default function OwnersClient({ owners }: OwnersClientProps) {
       });
 
       if (!usersRes.ok) {
+        if (usersRes.status === 401) {
+          clearAuthAndRedirect();
+          return;
+        }
         setOwnersList(ownersPayload);
         return;
       }
@@ -196,7 +223,7 @@ export default function OwnersClient({ owners }: OwnersClientProps) {
   };
 
   const loadResidences = async () => {
-    const token = sessionStorage.getItem('token');
+    const token = requireToken();
 
     try {
       const response = await fetch(`${API_URL}/residences`, {
@@ -207,6 +234,10 @@ export default function OwnersClient({ owners }: OwnersClientProps) {
       });
 
       if (!response.ok) {
+        if (response.status === 401) {
+          clearAuthAndRedirect();
+          return;
+        }
         throw new Error('Failed to fetch residences');
       }
 
@@ -271,7 +302,7 @@ export default function OwnersClient({ owners }: OwnersClientProps) {
     setSelectedPropertyId('');
 
     try {
-      const token = sessionStorage.getItem('token');
+      const token = requireToken();
       const response = await fetch(`${API_URL}/owners/${owner.id}`, {
         cache: 'no-store',
         headers: {
@@ -280,6 +311,10 @@ export default function OwnersClient({ owners }: OwnersClientProps) {
       });
 
       if (!response.ok) {
+        if (response.status === 401) {
+          clearAuthAndRedirect();
+          return;
+        }
         throw new Error('Failed to load owner');
       }
 
@@ -293,7 +328,13 @@ export default function OwnersClient({ owners }: OwnersClientProps) {
 
   const loadAllProperties = async () => {
     try {
-      const response = await fetch(`${API_URL}/properties`, { cache: 'no-store' });
+      const token = requireToken();
+      const response = await fetch(`${API_URL}/properties`, {
+        cache: 'no-store',
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      });
       if (!response.ok) return;
       const json = await response.json().catch(() => ({}));
       const data = Array.isArray(json) ? json : (Array.isArray(json?.data) ? json.data : []);
@@ -319,7 +360,7 @@ export default function OwnersClient({ owners }: OwnersClientProps) {
         const ok = confirm('Ce bien est déjà affecté à un autre propriétaire. Le réaffecter ?');
         if (!ok) return;
       }
-      const token = sessionStorage.getItem('token');
+      const token = requireToken();
       const res = await fetch(`${API_URL}/properties/${selectedPropertyId}`, {
         method: 'PUT',
         headers: {
@@ -328,6 +369,10 @@ export default function OwnersClient({ owners }: OwnersClientProps) {
         },
         body: JSON.stringify({ ownerId: selectedOwner.id })
       });
+      if (res.status === 401) {
+        clearAuthAndRedirect();
+        return;
+      }
       if (!res.ok) throw new Error('Assign failed');
       await openOwnerDetails(selectedOwner, true);
       await loadOwners();
@@ -341,7 +386,7 @@ export default function OwnersClient({ owners }: OwnersClientProps) {
     setIsSubmitting(true);
 
     try {
-      const token = localStorage.getItem('token');
+      const token = requireToken();
       const url = isEditing && selectedOwner ? `${API_URL}/owners/${selectedOwner.id}` : `${API_URL}/owners`;
       const method = isEditing ? 'PUT' : 'POST';
 
@@ -366,6 +411,10 @@ export default function OwnersClient({ owners }: OwnersClientProps) {
       });
 
       if (!response.ok) {
+        if (response.status === 401) {
+          clearAuthAndRedirect();
+          return;
+        }
         const err = await response.json().catch(() => ({}));
         throw new Error(err?.error || 'Erreur lors de la sauvegarde');
       }
