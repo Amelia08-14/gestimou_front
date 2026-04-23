@@ -168,7 +168,18 @@ export default function OwnersClient({ owners }: OwnersClientProps) {
       const data = await response.json().catch(() => null);
       const ownersPayload = Array.isArray(data) ? data : (Array.isArray((data as any)?.data) ? (data as any).data : []);
 
-      const usersRes = await fetch(`${API_URL}/users`, { cache: 'no-store' });
+      const usersRes = await fetch(`${API_URL}/users`, {
+        cache: 'no-store',
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      });
+
+      if (!usersRes.ok) {
+        setOwnersList(ownersPayload);
+        return;
+      }
+
       const usersData = await usersRes.json().catch(() => null);
       const usersList = Array.isArray(usersData) ? usersData : (Array.isArray((usersData as any)?.data) ? (usersData as any).data : []);
       const residentEmails = new Set(
