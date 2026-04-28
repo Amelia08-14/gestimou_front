@@ -149,6 +149,35 @@ const zoneMap = Object.fromEntries(zoneEntries) as Record<string, string>;
 
 const inferZoneFromResidenceName = (name: string) => zoneMap[normalizeResidenceName(name)] || '';
 
+const PROMOTER_NAME = 'Aymen Promotion Immobilière';
+
+const apartmentNumberFromLotNumber = (lotNumber?: string | null) => {
+  const raw = String(lotNumber || '').trim();
+  if (!raw) return '';
+  const parts = raw.split('-').filter(Boolean);
+  return (parts[parts.length - 1] || raw).trim();
+};
+
+const typologyFromSurface = (surface: unknown) => {
+  const s = Number(surface);
+  if (!Number.isFinite(s)) return 'F2';
+  if (s >= 100) return 'F4';
+  if (s >= 70) return 'F3';
+  return 'F2';
+};
+
+const getPropertyDisplayTitle = (property: any) => {
+  const number = apartmentNumberFromLotNumber(property?.lotNumber);
+  if (number) return `Appartement n° ${number}`;
+  return property?.title || 'Appartement';
+};
+
+const isPromoterOwner = (owner?: Owner | null) => {
+  if (!owner) return false;
+  const fullName = `${owner.firstName || ''} ${owner.lastName || ''}`.trim();
+  return /promotion/i.test(fullName);
+};
+
 export default function PropertiesClient({ residences: initialResidences, properties: initialProperties }: PropertiesClientProps) {
   const [view, setView] = useState<'residences' | 'properties'>('residences');
   const [selectedResidence, setSelectedResidence] = useState<Residence | null>(null);
@@ -706,8 +735,8 @@ export default function PropertiesClient({ residences: initialResidences, proper
                       <span className="font-medium text-slate-700">{residence.receptionCount || 0}</span>
                     </div>
                     <div className="flex items-center justify-between">
-                      <span>Logo</span>
-                      <span className="font-medium text-slate-700">{residence.logo ? 'Renseigné' : 'Non renseigné'}</span>
+                      <span>Promoteur</span>
+                      <span className="font-medium text-slate-700">{PROMOTER_NAME}</span>
                     </div>
                   </div>
                 </div>
@@ -725,7 +754,7 @@ export default function PropertiesClient({ residences: initialResidences, proper
                 <div className="relative aspect-video w-full overflow-hidden bg-slate-100">
                   <img 
                     src={property.image || 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?auto=format&fit=crop&w=500&q=60'} 
-                    alt={property.title}
+                    alt={getPropertyDisplayTitle(property)}
                     className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
                   />
                   <div className="absolute right-3 top-3">
@@ -741,9 +770,13 @@ export default function PropertiesClient({ residences: initialResidences, proper
                 <div className="p-5">
                   <div className="flex items-start justify-between">
                     <div>
-                      <h3 className="font-semibold text-brand-blue group-hover:text-brand-gold-dark transition-colors">{property.title}</h3>
-                      <p className="mt-1 text-sm font-bold text-brand-gold-dark">
-                         {property.price ? `${property.price} DA (Charges)` : 'N/A'}
+                      <h3 className="font-semibold text-brand-blue group-hover:text-brand-gold-dark transition-colors">{getPropertyDisplayTitle(property)}</h3>
+                      <p className="mt-1 text-sm font-semibold text-slate-700">
+                        {property.owner
+                          ? `${property.owner.firstName} ${property.owner.lastName}`
+                          : property.status === 'Libre'
+                            ? PROMOTER_NAME
+                            : 'Aucun propriétaire'}
                       </p>
                     </div>
                     <button className="text-slate-400 hover:text-slate-600">
@@ -757,7 +790,7 @@ export default function PropertiesClient({ residences: initialResidences, proper
                       <span className="truncate">{property.address}</span>
                     </div>
                     <div className="flex items-center gap-2 text-xs font-medium text-slate-600 bg-slate-50 p-1 rounded">
-                      <span>Lot {property.lotNumber || '-'}</span>
+                      <span>N° appartement {apartmentNumberFromLotNumber(property.lotNumber) || '-'}</span>
                       <span className="text-slate-300">•</span>
                       <span>Bloc {property.block || '-'}</span>
                       <span className="text-slate-300">•</span>
@@ -770,7 +803,7 @@ export default function PropertiesClient({ residences: initialResidences, proper
                       </div>
                       <div className="flex items-center gap-1.5">
                         <BedDouble className="h-4 w-4 text-brand-gold" />
-                        <span>{property.type}</span>
+                        <span>Typologie {property.type || typologyFromSurface(property.surface)}</span>
                       </div>
                     </div>
                   </div>
@@ -811,7 +844,7 @@ export default function PropertiesClient({ residences: initialResidences, proper
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 overflow-y-auto">
           <div className="w-full max-w-2xl rounded-2xl bg-white shadow-2xl animate-in fade-in zoom-in duration-200 my-8">
             <div className="flex items-center justify-between border-b border-slate-100 p-6">
-              <h2 className="text-xl font-bold text-brand-blue">{selectedProperty.title}</h2>
+              <h2 className="text-xl font-bold text-brand-blue">{getPropertyDisplayTitle(selectedProperty)}</h2>
               <button 
                 onClick={() => setSelectedProperty(null)}
                 className="text-slate-400 hover:text-slate-600"
@@ -824,7 +857,7 @@ export default function PropertiesClient({ residences: initialResidences, proper
               <div className="relative aspect-video w-full overflow-hidden rounded-xl bg-slate-100 mb-6">
                 <img 
                   src={selectedProperty.image || 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?auto=format&fit=crop&w=500&q=60'} 
-                  alt={selectedProperty.title}
+                  alt={getPropertyDisplayTitle(selectedProperty)}
                   className="h-full w-full object-cover"
                 />
                 <div className="absolute right-3 top-3">
@@ -855,7 +888,7 @@ export default function PropertiesClient({ residences: initialResidences, proper
                       </div>
                       <div className="flex items-center gap-2 text-slate-900">
                         <BedDouble className="h-5 w-5 text-brand-gold" />
-                        <span>{selectedProperty.type}</span>
+                        <span>Typologie {selectedProperty.type || typologyFromSurface(selectedProperty.surface)}</span>
                       </div>
                     </div>
                   </div>
@@ -868,23 +901,25 @@ export default function PropertiesClient({ residences: initialResidences, proper
                   </div>
                   <div>
                     <h3 className="text-sm font-bold text-slate-500 uppercase tracking-wider mb-1">Propriétaire Actuel</h3>
-                    {selectedProperty.owner ? (
+                    {selectedProperty.owner || selectedProperty.status === 'Libre' ? (
                       <div className="flex items-center gap-2 p-3 bg-slate-50 rounded-lg">
                         <div className="h-8 w-8 rounded-full bg-brand-blue/10 flex items-center justify-center text-brand-blue font-bold text-xs">
-                            {selectedProperty.owner.avatar || 'XX'}
+                            {selectedProperty.owner?.avatar || 'AP'}
                         </div>
                         <div>
                             <p className="text-sm font-bold text-slate-900">
-                                {selectedProperty.owner.firstName === 'Aymen' && selectedProperty.owner.lastName === 'Promotion' 
-                                    ? 'Aymen Promotion (Promoteur)'
+                                {selectedProperty.owner
+                                  ? isPromoterOwner(selectedProperty.owner)
+                                    ? `${selectedProperty.owner.firstName} ${selectedProperty.owner.lastName} (Promoteur)`
                                     : `${selectedProperty.owner.firstName} ${selectedProperty.owner.lastName}`
-                                }
+                                  : PROMOTER_NAME}
                             </p>
                             <p className="text-xs text-slate-500">
-                                {selectedProperty.owner.firstName === 'Aymen' && selectedProperty.owner.lastName === 'Promotion' 
+                                {selectedProperty.owner
+                                  ? isPromoterOwner(selectedProperty.owner)
                                     ? 'Non vendu'
                                     : `Depuis ${new Date(selectedProperty.createdAt).toLocaleDateString('fr-FR', { month: 'short', year: 'numeric' })}`
-                                }
+                                  : 'Non vendu'}
                             </p>
                         </div>
                       </div>

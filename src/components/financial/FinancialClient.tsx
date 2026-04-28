@@ -10,6 +10,16 @@ import {
 } from 'lucide-react';
 import { ChangeEvent, FormEvent, useEffect, useMemo, useState } from 'react';
 import { API_URL } from '@/utils/api';
+import { useRole } from '@/contexts/RoleContext';
+
+const PROMOTER_NAME = 'Aymen Promotion Immobilière';
+
+const apartmentNumberFromLotNumber = (lotNumber?: string | null) => {
+  const raw = String(lotNumber || '').trim();
+  if (!raw) return '';
+  const parts = raw.split('-').filter(Boolean);
+  return (parts[parts.length - 1] || raw).trim();
+};
 
 interface OwnerSummary {
   firstName: string;
@@ -57,6 +67,12 @@ interface Transaction {
   Residence?: ResidenceSummary | null;
   property?: PropertySummary | null;
   document?: DocumentSummary | null;
+}
+
+interface GenerateChargesResponse {
+  message?: string;
+  skipped?: boolean;
+  error?: string;
 }
 
 interface PropertyWithOwner extends PropertySummary {
@@ -139,6 +155,9 @@ const downloadCsv = (filename: string, rows: Array<Array<unknown>>) => {
 };
 
 export default function FinancialClient() {
+  const { role } = useRole();
+  const isRecouvrement = role === 'RECOUVREMENT';
+
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [properties, setProperties] = useState<PropertyWithOwner[]>([]);
   const [residences, setResidences] = useState<ResidenceSummary[]>([]);
@@ -149,6 +168,18 @@ export default function FinancialClient() {
   const [showFilters, setShowFilters] = useState(false);
   const [filters, setFilters] = useState<FinanceFilters>(initialFilters);
   const [draftFilters, setDraftFilters] = useState<FinanceFilters>(initialFilters);
+  const [trackingResidenceId, setTrackingResidenceId] = useState<string>('');
+  const [trackingStatus, setTrackingStatus] = useState<string>('');
+  const [trackingPage, setTrackingPage] = useState(1);
+  const [selectedChargeIds, setSelectedChargeIds] = useState<Set<number>>(new Set());
+  const [isBulkUpdating, setIsBulkUpdating] = useState(false);
+  const [historyResidenceId, setHistoryResidenceId] = useState<string>('');
+  const [historyPage, setHistoryPage] = useState(1);
+  const [expensesResidenceId, setExpensesResidenceId] = useState<string>('');
+  const [expensesStatus, setExpensesStatus] = useState<string>('');
+  const [expensesPage, setExpensesPage] = useState(1);
+  const [selectedExpenseIds, setSelectedExpenseIds] = useState<Set<number>>(new Set());
+  const [isExpensesBulkUpdating, setIsExpensesBulkUpdating] = useState(false);
   const [expenseTab, setExpenseTab] = useState<'UTIL_ELECTRICITY' | 'UTIL_WATER' | 'SUPPLIER_INVOICE' | 'MISC_PURCHASE'>('UTIL_ELECTRICITY');
   const [showAddExpenseModal, setShowAddExpenseModal] = useState(false);
   const [isSavingExpense, setIsSavingExpense] = useState(false);
@@ -172,10 +203,12 @@ export default function FinancialClient() {
           cache: 'no-store',
           headers: { Authorization: `Bearer ${token}` }
         }),
-        fetch(`${API_URL}/properties`, {
-          cache: 'no-store',
-          headers: { Authorization: `Bearer ${token}` }
-        }),
+        isRecouvrement
+          ? Promise.resolve(null)
+          : fetch(`${API_URL}/properties`, {
+              cache: 'no-store',
+              headers: { Authorization: `Bearer ${token}` }
+            }),
         fetch(`${API_URL}/residences`, {
           cache: 'no-store',
           headers: { Authorization: `Bearer ${token}` }
@@ -196,7 +229,7 @@ export default function FinancialClient() {
         }
       }
 
-      if (propertiesResponse.ok) {
+      if (propertiesResponse && propertiesResponse.ok) {
         const data = await propertiesResponse.json();
         if (data.success && Array.isArray(data.data)) {
           setProperties(data.data);
@@ -218,6 +251,29 @@ export default function FinancialClient() {
     loadData();
   }, []);
 
+  useEffect(() => {
+    if (isRecouvrement && activeTab !== 'tracking') {
+      setActiveTab('tracking');
+    }
+  }, [activeTab, isRecouvrement]);
+
+  useEffect(() => {
+    if (!isRecouvrement) return;
+    setFilters((prev) => (prev.type === 'Charge' ? prev : { ...prev, type: 'Charge' }));
+    setDraftFilters((prev) => (prev.type === 'Charge' ? prev : { ...prev, type: 'Charge' }));
+  }, [isRecouvrement]);
+
+  const yearOptions = useMemo(() => {
+    const base = new Date().getFullYear();
+    const years = new Set<number>([base, base + 1, base + 2, base + 3, selectedYear]);
+    return Array.from(years).sort((a, b) => a - b);
+  }, [selectedYear]);
+
+  const scopedTransactions = useMemo(() => {
+    if (!isRecouvrement) return transactions;
+    return transactions.filter((t) => t.type === 'Charge');
+  }, [isRecouvrement, transactions]);
+
   const handleGenerateCharges = async () => {
     setIsGenerating(true);
 
@@ -230,18 +286,27 @@ export default function FinancialClient() {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`
         },
-        body: JSON.stringify({ year: selectedYear })
+        body: JSON.stringify({
+          year: selectedYear,
+          force: selectedYear >= new Date().getFullYear()
+        })
       });
 
       if (!response.ok) {
-        throw new Error('Erreur lors de la génération');
+        const json = (await response.json().catch(() => ({}))) as GenerateChargesResponse;
+        throw new Error(json.error || 'Erreur lors de la génération');
       }
 
+      const json = (await response.json().catch(() => ({}))) as GenerateChargesResponse;
       await loadData();
-      alert('Charges générées avec succès.');
+      if (json.skipped) {
+        alert(json.message || 'Aucune charge générée.');
+        return;
+      }
+      alert(json.message || 'Charges générées avec succès.');
     } catch (error) {
       console.error(error);
-      alert('Erreur technique.');
+      alert(error instanceof Error ? error.message : 'Erreur technique.');
     } finally {
       setIsGenerating(false);
     }
@@ -377,6 +442,21 @@ export default function FinancialClient() {
     }
   };
 
+  const updateTransactionStatus = async (id: number, newStatus: string) => {
+    const token = sessionStorage.getItem('token');
+    if (!token) throw new Error('Non authentifié');
+    const response = await fetch(`${API_URL}/financial/${id}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`
+      },
+      body: JSON.stringify({ status: newStatus })
+    });
+    const json = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(json?.error || 'Failed to update status');
+  };
+
   const handleStatusChange = async (id: number, currentStatus: string) => {
     const transactionType = transactions.find((t) => t.id === id)?.type;
     const newStatus = transactionType === 'Charge'
@@ -384,21 +464,7 @@ export default function FinancialClient() {
       : (currentStatus === 'Payé' ? 'En attente' : 'Payé');
 
     try {
-      const token = sessionStorage.getItem('token');
-      if (!token) throw new Error('Non authentifié');
-      const response = await fetch(`${API_URL}/financial/${id}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`
-        },
-        body: JSON.stringify({ status: newStatus })
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to update status');
-      }
-
+      await updateTransactionStatus(id, newStatus);
       setTransactions((prev) => prev.map((transaction) => (
         transaction.id === id ? { ...transaction, status: newStatus } : transaction
       )));
@@ -408,6 +474,84 @@ export default function FinancialClient() {
       }
     } catch (error) {
       console.error('Failed to update status', error);
+    }
+  };
+
+  const handleBulkSetStatus = async (status: 'Payé' | 'Impayé') => {
+    const ids = Array.from(selectedChargeIds);
+    if (ids.length === 0) return;
+    setIsBulkUpdating(true);
+    try {
+      const settled = await Promise.allSettled(ids.map((id) => updateTransactionStatus(id, status)));
+      const succeeded = ids.filter((_, index) => settled[index].status === 'fulfilled');
+      if (succeeded.length > 0) {
+        const ok = new Set<number>(succeeded);
+        setTransactions((prev) => prev.map((t) => (ok.has(t.id) ? { ...t, status } : t)));
+        if (selectedTransaction && ok.has(selectedTransaction.id)) {
+          setSelectedTransaction({ ...selectedTransaction, status });
+        }
+      }
+      const failedCount = settled.filter((r) => r.status === 'rejected').length;
+      if (failedCount > 0) {
+        alert(`${failedCount} mise(s) à jour ont échoué.`);
+      }
+      setSelectedChargeIds(new Set());
+    } finally {
+      setIsBulkUpdating(false);
+    }
+  };
+
+  const handleBulkSetExpenseStatus = async (status: 'Payé' | 'En attente') => {
+    const ids = Array.from(selectedExpenseIds);
+    if (ids.length === 0) return;
+    setIsExpensesBulkUpdating(true);
+    try {
+      const settled = await Promise.allSettled(ids.map((id) => updateTransactionStatus(id, status)));
+      const succeeded = ids.filter((_, index) => settled[index].status === 'fulfilled');
+      if (succeeded.length > 0) {
+        const ok = new Set<number>(succeeded);
+        setTransactions((prev) => prev.map((t) => (ok.has(t.id) ? { ...t, status } : t)));
+        if (selectedTransaction && ok.has(selectedTransaction.id)) {
+          setSelectedTransaction({ ...selectedTransaction, status });
+        }
+      }
+      const failedCount = settled.filter((r) => r.status === 'rejected').length;
+      if (failedCount > 0) {
+        alert(`${failedCount} mise(s) à jour ont échoué.`);
+      }
+      setSelectedExpenseIds(new Set());
+    } finally {
+      setIsExpensesBulkUpdating(false);
+    }
+  };
+
+  const formatDateInput = (value?: string | null) => {
+    if (!value) return '';
+    const d = new Date(value);
+    if (Number.isNaN(d.getTime())) return '';
+    return d.toISOString().slice(0, 10);
+  };
+
+  const handlePeriodChange = async (id: number, field: 'periodStart' | 'periodEnd', value: string) => {
+    try {
+      const token = sessionStorage.getItem('token');
+      if (!token) throw new Error('Non authentifié');
+      const iso = value ? new Date(`${value}T00:00:00.000Z`).toISOString() : null;
+      const response = await fetch(`${API_URL}/financial/${id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({ [field]: iso })
+      });
+      if (!response.ok) throw new Error('Failed to update period');
+      setTransactions((prev) => prev.map((t) => (t.id === id ? { ...t, [field]: iso } : t)));
+      if (selectedTransaction?.id === id) {
+        setSelectedTransaction({ ...selectedTransaction, [field]: iso } as Transaction);
+      }
+    } catch (error) {
+      console.error('Failed to update period', error);
     }
   };
 
@@ -450,7 +594,7 @@ export default function FinancialClient() {
     const from = filters.dateFrom ? new Date(`${filters.dateFrom}T00:00:00`) : null;
     const to = filters.dateTo ? new Date(`${filters.dateTo}T23:59:59`) : null;
 
-    return transactions
+    return scopedTransactions
       .filter((transaction) => {
       if (type && transaction.type !== type) return false;
       if (status && transaction.status !== status) return false;
@@ -478,7 +622,34 @@ export default function FinancialClient() {
     })
       .slice()
       .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-  }, [filters, transactions]);
+  }, [filters, scopedTransactions]);
+
+  useEffect(() => {
+    setHistoryPage(1);
+  }, [historyResidenceId, filteredTransactions]);
+
+  const historyViewTransactions = useMemo(() => {
+    if (!historyResidenceId) return filteredTransactions;
+    return filteredTransactions.filter((t) => String(t.Residence?.id || '') === String(historyResidenceId));
+  }, [filteredTransactions, historyResidenceId]);
+
+  const historyPageSize = 25;
+  const historyTotalCount = historyViewTransactions.length;
+  const historyTotalPages = Math.max(1, Math.ceil(historyTotalCount / historyPageSize));
+
+  useEffect(() => {
+    if (historyPage > historyTotalPages) {
+      setHistoryPage(historyTotalPages);
+    }
+  }, [historyPage, historyTotalPages]);
+
+  const effectiveHistoryPage = Math.min(Math.max(1, historyPage), historyTotalPages);
+  const historyStartIndex = (effectiveHistoryPage - 1) * historyPageSize;
+  const historyEndIndex = Math.min(historyStartIndex + historyPageSize, historyTotalCount);
+
+  const pagedHistoryTransactions = useMemo(() => (
+    historyViewTransactions.slice(historyStartIndex, historyEndIndex)
+  ), [historyEndIndex, historyStartIndex, historyViewTransactions]);
 
   const filteredProperties = useMemo(() => {
     if (!filters.zone && !filters.residenceId) return properties;
@@ -532,6 +703,64 @@ export default function FinancialClient() {
       .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
   }, [expenseTransactions, expenseTab, selectedYear]);
 
+  useEffect(() => {
+    setExpensesPage(1);
+    setSelectedExpenseIds(new Set());
+  }, [expenseTab, expensesResidenceId, expensesStatus, selectedYear]);
+
+  const expensesViewTransactions = useMemo(() => {
+    return selectedExpenseTransactions.filter((t) => {
+      if (expensesResidenceId && String(t.Residence?.id || '') !== String(expensesResidenceId)) return false;
+      if (expensesStatus && String(t.status) !== String(expensesStatus)) return false;
+      return true;
+    });
+  }, [expensesResidenceId, expensesStatus, selectedExpenseTransactions]);
+
+  const expensesPageSize = 25;
+  const expensesTotalCount = expensesViewTransactions.length;
+  const expensesTotalPages = Math.max(1, Math.ceil(expensesTotalCount / expensesPageSize));
+
+  useEffect(() => {
+    if (expensesPage > expensesTotalPages) {
+      setExpensesPage(expensesTotalPages);
+    }
+  }, [expensesPage, expensesTotalPages]);
+
+  const effectiveExpensesPage = Math.min(Math.max(1, expensesPage), expensesTotalPages);
+  const expensesStartIndex = (effectiveExpensesPage - 1) * expensesPageSize;
+  const expensesEndIndex = Math.min(expensesStartIndex + expensesPageSize, expensesTotalCount);
+  const pagedExpenseTransactions = useMemo(() => (
+    expensesViewTransactions.slice(expensesStartIndex, expensesEndIndex)
+  ), [expensesEndIndex, expensesStartIndex, expensesViewTransactions]);
+
+  const selectableExpenseIdsOnPage = useMemo(() => pagedExpenseTransactions.map((t) => t.id), [pagedExpenseTransactions]);
+
+  const allSelectedExpensesOnPage = useMemo(() => {
+    if (selectableExpenseIdsOnPage.length === 0) return false;
+    return selectableExpenseIdsOnPage.every((id) => selectedExpenseIds.has(id));
+  }, [selectableExpenseIdsOnPage, selectedExpenseIds]);
+
+  const toggleSelectAllExpensesOnPage = () => {
+    setSelectedExpenseIds((prev) => {
+      const next = new Set<number>(prev);
+      if (allSelectedExpensesOnPage) {
+        selectableExpenseIdsOnPage.forEach((id) => next.delete(id));
+      } else {
+        selectableExpenseIdsOnPage.forEach((id) => next.add(id));
+      }
+      return next;
+    });
+  };
+
+  const toggleSelectExpense = (id: number) => {
+    setSelectedExpenseIds((prev) => {
+      const next = new Set<number>(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
   const selectedPeriodCharges = filteredProperties.map((property) => {
     const charge = filteredTransactions.find((transaction) => (
       transaction.propertyId === property.id &&
@@ -543,19 +772,136 @@ export default function FinancialClient() {
     return { property, charge };
   });
 
+  const recouvrementChargesForYear = useMemo(() => {
+    if (!isRecouvrement) return [];
+    return chargeTransactions
+      .filter((t) => {
+        const start = new Date(t.periodStart || t.date);
+        const end = new Date(t.periodEnd || t.date);
+        return start.getFullYear() === selectedYear && end.getFullYear() === selectedYear;
+      })
+      .slice()
+      .sort((a, b) => new Date(b.periodStart || b.date).getTime() - new Date(a.periodStart || a.date).getTime());
+  }, [chargeTransactions, isRecouvrement, selectedYear]);
+
+  const annualize = (value: unknown) => {
+    const n = Number(value);
+    if (!Number.isFinite(n)) return null;
+    return n * 12;
+  };
+
+  const isAnnualPeriod = (start?: string | null, end?: string | null) => {
+    if (!start || !end) return false;
+    const s = new Date(start);
+    const e = new Date(end);
+    if (Number.isNaN(s.getTime()) || Number.isNaN(e.getTime())) return false;
+    const days = Math.abs(e.getTime() - s.getTime()) / (1000 * 60 * 60 * 24);
+    return days >= 330 && days <= 400;
+  };
+
+  const displayAmount = (transaction: Transaction) => {
+    if (transaction.type === 'Charge' && isAnnualPeriod(transaction.periodStart, transaction.periodEnd)) {
+      const a = annualize(transaction.amount);
+      if (a != null) return a;
+    }
+    return Number(transaction.amount);
+  };
+
+  const filteredSelectedPeriodCharges = useMemo(() => {
+    if (isRecouvrement) return [];
+    return selectedPeriodCharges.filter(({ property, charge }) => {
+      if (trackingResidenceId && String(property.residenceId) !== String(trackingResidenceId)) return false;
+      if (trackingStatus) {
+        if (!charge) return false;
+        if (String(charge.status) !== String(trackingStatus)) return false;
+      }
+      return true;
+    });
+  }, [isRecouvrement, selectedPeriodCharges, trackingResidenceId, trackingStatus]);
+
+  const filteredRecouvrementChargesForYear = useMemo(() => {
+    if (!isRecouvrement) return [];
+    return recouvrementChargesForYear.filter((charge) => {
+      if (trackingResidenceId && String(charge.Residence?.id || '') !== String(trackingResidenceId)) return false;
+      if (trackingStatus && String(charge.status) !== String(trackingStatus)) return false;
+      return true;
+    });
+  }, [isRecouvrement, recouvrementChargesForYear, trackingResidenceId, trackingStatus]);
+
+  useEffect(() => {
+    setTrackingPage(1);
+    setSelectedChargeIds(new Set());
+  }, [selectedYear, trackingResidenceId, trackingStatus, isRecouvrement]);
+
+  const trackingPageSize = 25;
+  const trackingTotalCount = isRecouvrement ? filteredRecouvrementChargesForYear.length : filteredSelectedPeriodCharges.length;
+  const trackingTotalPages = Math.max(1, Math.ceil(trackingTotalCount / trackingPageSize));
+
+  useEffect(() => {
+    if (trackingPage > trackingTotalPages) {
+      setTrackingPage(trackingTotalPages);
+    }
+  }, [trackingPage, trackingTotalPages]);
+
+  const effectiveTrackingPage = Math.min(Math.max(1, trackingPage), trackingTotalPages);
+  const trackingStartIndex = (effectiveTrackingPage - 1) * trackingPageSize;
+  const trackingEndIndex = Math.min(trackingStartIndex + trackingPageSize, trackingTotalCount);
+
+  const pagedRecouvrementCharges = useMemo(() => (
+    isRecouvrement ? filteredRecouvrementChargesForYear.slice(trackingStartIndex, trackingEndIndex) : []
+  ), [filteredRecouvrementChargesForYear, isRecouvrement, trackingEndIndex, trackingStartIndex]);
+
+  const pagedSelectedPeriodCharges = useMemo(() => (
+    !isRecouvrement ? filteredSelectedPeriodCharges.slice(trackingStartIndex, trackingEndIndex) : []
+  ), [filteredSelectedPeriodCharges, isRecouvrement, trackingEndIndex, trackingStartIndex]);
+
+  const selectableChargeIdsOnPage = useMemo(() => {
+    if (isRecouvrement) return pagedRecouvrementCharges.map((c) => c.id);
+    return pagedSelectedPeriodCharges
+      .filter(({ charge }) => Boolean(charge))
+      .map(({ charge }) => (charge as Transaction).id);
+  }, [isRecouvrement, pagedRecouvrementCharges, pagedSelectedPeriodCharges]);
+
+  const allSelectedOnPage = useMemo(() => {
+    if (selectableChargeIdsOnPage.length === 0) return false;
+    return selectableChargeIdsOnPage.every((id) => selectedChargeIds.has(id));
+  }, [selectableChargeIdsOnPage, selectedChargeIds]);
+
+  const toggleSelectAllOnPage = () => {
+    setSelectedChargeIds((prev) => {
+      const next = new Set<number>(prev);
+      if (allSelectedOnPage) {
+        selectableChargeIdsOnPage.forEach((id) => next.delete(id));
+      } else {
+        selectableChargeIdsOnPage.forEach((id) => next.add(id));
+      }
+      return next;
+    });
+  };
+
+  const toggleSelectCharge = (id: number) => {
+    setSelectedChargeIds((prev) => {
+      const next = new Set<number>(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
   const handleOpenFilters = () => {
     setDraftFilters(filters);
     setShowFilters(true);
   };
 
   const handleApplyFilters = () => {
-    setFilters(draftFilters);
+    setFilters(isRecouvrement ? { ...draftFilters, type: 'Charge' } : draftFilters);
     setShowFilters(false);
   };
 
   const handleResetFilters = () => {
-    setFilters(initialFilters);
-    setDraftFilters(initialFilters);
+    const next = isRecouvrement ? { ...initialFilters, type: 'Charge' } : initialFilters;
+    setFilters(next);
+    setDraftFilters(next);
     setShowFilters(false);
   };
 
@@ -579,11 +925,13 @@ export default function FinancialClient() {
           'Étage',
           'Propriétaire'
         ],
-        ...filteredTransactions.map((transaction) => ([
+        ...historyViewTransactions.map((transaction) => ([
           transaction.id,
           transaction.type,
           stripTaggedCategory(transaction.description),
-          transaction.amount,
+          transaction.type === 'Charge' && isAnnualPeriod(transaction.periodStart, transaction.periodEnd)
+            ? (annualize(transaction.amount) ?? transaction.amount)
+            : transaction.amount,
           transaction.status,
           formatDateFr(transaction.date),
           formatDateFr(transaction.periodStart),
@@ -643,7 +991,12 @@ export default function FinancialClient() {
       ['ID', transaction.id],
       ['Type', transaction.type],
       ['Description', stripTaggedCategory(transaction.description)],
-      ['Montant', transaction.amount],
+      [
+        'Montant',
+        transaction.type === 'Charge' && isAnnualPeriod(transaction.periodStart, transaction.periodEnd)
+          ? (annualize(transaction.amount) ?? transaction.amount)
+          : transaction.amount
+      ],
       ['Statut', transaction.status],
       ['Date', formatDateFr(transaction.date)],
       ['Date début paiement', formatDateFr(transaction.periodStart)],
@@ -686,16 +1039,20 @@ export default function FinancialClient() {
       </div>
 
       <div className="grid gap-6 sm:grid-cols-2 xl:grid-cols-4">
-        <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-          <p className="text-sm font-medium text-slate-500">Nbr consistances</p>
-          <div className="mt-2 text-3xl font-bold text-brand-blue">{consistenciesCount}</div>
-          <p className="mt-3 text-sm text-slate-500">Lots enregistrés dans la plateforme</p>
-        </div>
-        <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-          <p className="text-sm font-medium text-slate-500">Nbr logements vendus</p>
-          <div className="mt-2 text-3xl font-bold text-slate-900">{soldHousingCount}</div>
-          <p className="mt-3 text-sm text-slate-500">Biens marqués comme vendus</p>
-        </div>
+        {!isRecouvrement && (
+          <>
+            <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+              <p className="text-sm font-medium text-slate-500">Nbr consistances</p>
+              <div className="mt-2 text-3xl font-bold text-brand-blue">{consistenciesCount}</div>
+              <p className="mt-3 text-sm text-slate-500">Lots enregistrés dans la plateforme</p>
+            </div>
+            <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+              <p className="text-sm font-medium text-slate-500">Nbr logements vendus</p>
+              <div className="mt-2 text-3xl font-bold text-slate-900">{soldHousingCount}</div>
+              <p className="mt-3 text-sm text-slate-500">Biens marqués comme vendus</p>
+            </div>
+          </>
+        )}
         <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
           <p className="text-sm font-medium text-slate-500">Nbr charges payées</p>
           <div className="mt-2 text-3xl font-bold text-emerald-600">{paidChargesCount}</div>
@@ -708,19 +1065,21 @@ export default function FinancialClient() {
         </div>
       </div>
 
-      <div className="grid gap-6 sm:grid-cols-3">
-        <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-          <p className="text-sm font-medium text-slate-500">Solde global</p>
-          <div className="mt-2 flex items-baseline gap-2">
-            <span className={`text-3xl font-bold ${totalBalance >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
-              {totalBalance.toLocaleString()} DA
-            </span>
+      <div className={`grid gap-6 ${isRecouvrement ? 'sm:grid-cols-1' : 'sm:grid-cols-3'}`}>
+        {!isRecouvrement && (
+          <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+            <p className="text-sm font-medium text-slate-500">Solde global</p>
+            <div className="mt-2 flex items-baseline gap-2">
+              <span className={`text-3xl font-bold ${totalBalance >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
+                {totalBalance.toLocaleString()} DA
+              </span>
+            </div>
+            <div className={`mt-4 flex w-fit items-center gap-2 rounded px-2 py-1 text-sm ${totalBalance >= 0 ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-600'}`}>
+              {totalBalance >= 0 ? <ArrowUpRight className="h-4 w-4" /> : <ArrowDownRight className="h-4 w-4" />}
+              <span>Paiements reçus - dépenses effectuées</span>
+            </div>
           </div>
-          <div className={`mt-4 flex w-fit items-center gap-2 rounded px-2 py-1 text-sm ${totalBalance >= 0 ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-600'}`}>
-            {totalBalance >= 0 ? <ArrowUpRight className="h-4 w-4" /> : <ArrowDownRight className="h-4 w-4" />}
-            <span>Paiements reçus - dépenses effectuées</span>
-          </div>
-        </div>
+        )}
         <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
           <p className="text-sm font-medium text-slate-500">Paiements reçus</p>
           <div className="mt-2 flex items-baseline gap-2">
@@ -731,40 +1090,51 @@ export default function FinancialClient() {
             <span>Charges payées par les locataires</span>
           </div>
         </div>
-        <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-          <p className="text-sm font-medium text-slate-500">Dépenses effectuées</p>
-          <div className="mt-2 flex items-baseline gap-2">
-            <span className="text-3xl font-bold text-slate-900">{paidExpensesAmount.toLocaleString()} DA</span>
+        {!isRecouvrement && (
+          <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+            <p className="text-sm font-medium text-slate-500">Dépenses effectuées</p>
+            <div className="mt-2 flex items-baseline gap-2">
+              <span className="text-3xl font-bold text-slate-900">{paidExpensesAmount.toLocaleString()} DA</span>
+            </div>
+            <div className="mt-4 flex items-center gap-2 text-sm text-red-600">
+              <ArrowDownRight className="h-4 w-4" />
+              <span>En attente: {unpaidExpensesAmount.toLocaleString()} DA</span>
+            </div>
           </div>
-          <div className="mt-4 flex items-center gap-2 text-sm text-red-600">
-            <ArrowDownRight className="h-4 w-4" />
-            <span>En attente: {unpaidExpensesAmount.toLocaleString()} DA</span>
-          </div>
-        </div>
+        )}
       </div>
 
       <div className="flex gap-4 border-b border-slate-200">
-        <button
-          onClick={() => setActiveTab('history')}
-          className={`border-b-2 px-4 py-2 text-sm font-medium transition-colors ${activeTab === 'history' ? 'border-brand-blue text-brand-blue' : 'border-transparent text-slate-500 hover:text-slate-700'}`}
-        >
-          Historique des transactions
-        </button>
-        <button
-          onClick={() => setActiveTab('tracking')}
-          className={`border-b-2 px-4 py-2 text-sm font-medium transition-colors ${activeTab === 'tracking' ? 'border-brand-blue text-brand-blue' : 'border-transparent text-slate-500 hover:text-slate-700'}`}
-        >
-          Suivi des paiements
-        </button>
-        <button
-          onClick={() => setActiveTab('expenses')}
-          className={`border-b-2 px-4 py-2 text-sm font-medium transition-colors ${activeTab === 'expenses' ? 'border-brand-blue text-brand-blue' : 'border-transparent text-slate-500 hover:text-slate-700'}`}
-        >
-          Dépenses
-        </button>
+        {!isRecouvrement && (
+          <>
+            <button
+              onClick={() => setActiveTab('history')}
+              className={`border-b-2 px-4 py-2 text-sm font-medium transition-colors ${activeTab === 'history' ? 'border-brand-blue text-brand-blue' : 'border-transparent text-slate-500 hover:text-slate-700'}`}
+            >
+              Historique des transactions
+            </button>
+            <button
+              onClick={() => setActiveTab('tracking')}
+              className={`border-b-2 px-4 py-2 text-sm font-medium transition-colors ${activeTab === 'tracking' ? 'border-brand-blue text-brand-blue' : 'border-transparent text-slate-500 hover:text-slate-700'}`}
+            >
+              Suivi des paiements
+            </button>
+            <button
+              onClick={() => setActiveTab('expenses')}
+              className={`border-b-2 px-4 py-2 text-sm font-medium transition-colors ${activeTab === 'expenses' ? 'border-brand-blue text-brand-blue' : 'border-transparent text-slate-500 hover:text-slate-700'}`}
+            >
+              Dépenses
+            </button>
+          </>
+        )}
+        {isRecouvrement && (
+          <div className="border-b-2 border-brand-blue px-4 py-2 text-sm font-medium text-brand-blue">
+            Suivi des paiements
+          </div>
+        )}
       </div>
 
-      {activeTab === 'tracking' && (
+      {(activeTab === 'tracking' || isRecouvrement) && (
         <div className="space-y-6 rounded-xl border border-slate-200 bg-white p-6 shadow-sm overflow-hidden">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
@@ -774,24 +1144,84 @@ export default function FinancialClient() {
                 onChange={(event) => setSelectedYear(Number(event.target.value))}
                 className="rounded-lg border border-slate-200 px-3 py-1.5 text-sm"
               >
-                <option value={2024}>2024</option>
-                <option value={2025}>2025</option>
-                <option value={2026}>2026</option>
+                {yearOptions.map((y) => (
+                  <option key={y} value={y}>{y}</option>
+                ))}
+              </select>
+              <select
+                value={trackingResidenceId}
+                onChange={(event) => setTrackingResidenceId(event.target.value)}
+                className="rounded-lg border border-slate-200 px-3 py-1.5 text-sm"
+              >
+                <option value="">Toutes résidences</option>
+                {residences
+                  .slice()
+                  .filter((r) => r.id)
+                  .sort((a, b) => a.name.localeCompare(b.name, 'fr'))
+                  .map((r) => (
+                    <option key={r.id} value={String(r.id)}>{r.name}</option>
+                  ))}
+              </select>
+              <select
+                value={trackingStatus}
+                onChange={(event) => setTrackingStatus(event.target.value)}
+                className="rounded-lg border border-slate-200 px-3 py-1.5 text-sm"
+              >
+                <option value="">Tous statuts</option>
+                <option value="Payé">Payé</option>
+                <option value="Impayé">Impayé</option>
               </select>
             </div>
-            <button
-              onClick={handleGenerateCharges}
-              disabled={isGenerating}
-              className="flex items-center gap-2 rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700 disabled:opacity-50"
-            >
-              {isGenerating ? 'Génération...' : 'Générer les charges annuelles'}
-            </button>
+            <div className="flex items-center gap-3">
+              {selectedChargeIds.size > 0 && (
+                <>
+                  <button
+                    onClick={() => handleBulkSetStatus('Payé')}
+                    disabled={isBulkUpdating}
+                    className="rounded-lg bg-brand-blue px-4 py-2 text-sm font-medium text-white hover:bg-brand-blue/90 disabled:opacity-50"
+                  >
+                    Marquer payé ({selectedChargeIds.size})
+                  </button>
+                  <button
+                    onClick={() => handleBulkSetStatus('Impayé')}
+                    disabled={isBulkUpdating}
+                    className="rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+                  >
+                    Marquer impayé
+                  </button>
+                  <button
+                    onClick={() => setSelectedChargeIds(new Set())}
+                    disabled={isBulkUpdating}
+                    className="rounded-lg px-3 py-2 text-sm font-medium text-slate-500 hover:bg-slate-50 disabled:opacity-50"
+                  >
+                    Annuler
+                  </button>
+                </>
+              )}
+              {!isRecouvrement && (
+                <button
+                  onClick={handleGenerateCharges}
+                  disabled={isGenerating}
+                  className="flex items-center gap-2 rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700 disabled:opacity-50"
+                >
+                  {isGenerating ? 'Génération...' : 'Générer les charges annuelles'}
+                </button>
+              )}
+            </div>
           </div>
 
           <div className="overflow-x-auto">
             <table className="w-full text-left text-sm">
               <thead className="bg-slate-50 text-slate-500">
                 <tr>
+                  <th className="px-6 py-4 font-medium">
+                    <input
+                      type="checkbox"
+                      checked={allSelectedOnPage}
+                      onChange={toggleSelectAllOnPage}
+                      className="h-4 w-4 rounded border-slate-300"
+                    />
+                  </th>
                   <th className="px-6 py-4 font-medium">Propriétaire</th>
                   <th className="px-6 py-4 font-medium">Résidence / Bien</th>
                   <th className="px-6 py-4 font-medium">Date début</th>
@@ -802,60 +1232,225 @@ export default function FinancialClient() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {selectedPeriodCharges.map(({ property, charge }) => (
-                  <tr key={property.id} className="hover:bg-slate-50/50">
-                    <td className="px-6 py-4 font-medium text-slate-900">
-                      {property.owner ? `${property.owner.firstName} ${property.owner.lastName}` : <span className="italic text-slate-400">Non assigné</span>}
-                    </td>
-                    <td className="px-6 py-4 text-slate-600">
-                      <div className="flex flex-col">
-                        <span className="font-medium text-slate-900">{charge?.Residence?.name || residenceById.get(property.residenceId)?.name || '-'}</span>
-                        <span className="text-xs text-slate-500">
-                          {property.title} • Lot {property.lotNumber || '-'} • Bloc {property.block || '-'}
-                        </span>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 text-slate-600">
-                      {charge?.periodStart ? new Date(charge.periodStart).toLocaleDateString('fr-FR') : '-'}
-                    </td>
-                    <td className="px-6 py-4 text-slate-600">
-                      {charge?.periodEnd ? new Date(charge.periodEnd).toLocaleDateString('fr-FR') : '-'}
-                    </td>
-                    <td className="px-6 py-4 font-bold text-slate-900">
-                      {charge ? `${Number(charge.amount).toLocaleString()} DA` : property.price ? `${Number(property.price).toLocaleString()} DA` : '-'}
-                    </td>
-                    <td className="px-6 py-4">
-                      {charge ? (
-                        <span className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ${
-                          charge.status === 'Payé'
-                            ? 'bg-emerald-50 text-emerald-700 ring-1 ring-inset ring-emerald-600/10'
-                            : 'bg-yellow-50 text-yellow-700 ring-1 ring-inset ring-yellow-600/10'
-                        }`}>
-                          {charge.status}
-                        </span>
-                      ) : (
-                        <span className="text-xs italic text-slate-400">Non généré</span>
-                      )}
-                    </td>
-                    <td className="px-6 py-4 text-right">
-                      {charge && (
-                        <button
-                          onClick={() => handleStatusChange(charge.id, charge.status)}
-                          className="text-xs font-medium text-brand-blue hover:underline"
-                        >
-                          {charge.status === 'Payé' ? 'Marquer impayé' : 'Marquer payé'}
-                        </button>
-                      )}
-                    </td>
-                  </tr>
-                ))}
+                {isRecouvrement ? (
+                  filteredRecouvrementChargesForYear.length === 0 ? (
+                    <tr>
+                      <td colSpan={8} className="px-6 py-10 text-center text-slate-500">
+                        Aucune charge trouvée pour {selectedYear}.
+                      </td>
+                    </tr>
+                  ) : (
+                    pagedRecouvrementCharges.map((charge) => (
+                      <tr key={charge.id} className="hover:bg-slate-50/50">
+                        <td className="px-6 py-4">
+                          <input
+                            type="checkbox"
+                            checked={selectedChargeIds.has(charge.id)}
+                            onChange={() => toggleSelectCharge(charge.id)}
+                            disabled={isBulkUpdating}
+                            className="h-4 w-4 rounded border-slate-300"
+                          />
+                        </td>
+                        <td className="px-6 py-4 font-medium text-slate-900">
+                          {charge.property?.owner
+                            ? `${charge.property.owner.firstName} ${charge.property.owner.lastName}`
+                            : charge.property?.status === 'Libre'
+                              ? PROMOTER_NAME
+                              : <span className="italic text-slate-400">Non assigné</span>}
+                        </td>
+                        <td className="px-6 py-4 text-slate-600">
+                          <div className="flex flex-col">
+                            <span className="font-medium text-slate-900">{charge.Residence?.name || '—'}</span>
+                            <span className="text-xs text-slate-500">
+                              {charge.property?.title || '—'} • N° appartement {apartmentNumberFromLotNumber(charge.property?.lotNumber) || '-'} • Bloc {charge.property?.block || '-'}
+                            </span>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 text-slate-600">
+                          {charge.periodStart ? (
+                            isRecouvrement ? (
+                              new Date(charge.periodStart).toLocaleDateString('fr-FR')
+                            ) : (
+                              <input
+                                type="date"
+                                value={formatDateInput(charge.periodStart)}
+                                onChange={(event) => handlePeriodChange(charge.id, 'periodStart', event.target.value)}
+                                className="rounded-lg border border-slate-200 px-3 py-1.5 text-sm"
+                              />
+                            )
+                          ) : (
+                            '—'
+                          )}
+                        </td>
+                        <td className="px-6 py-4 text-slate-600">
+                          {charge.periodEnd ? (
+                            isRecouvrement ? (
+                              new Date(charge.periodEnd).toLocaleDateString('fr-FR')
+                            ) : (
+                              <input
+                                type="date"
+                                value={formatDateInput(charge.periodEnd)}
+                                onChange={(event) => handlePeriodChange(charge.id, 'periodEnd', event.target.value)}
+                                className="rounded-lg border border-slate-200 px-3 py-1.5 text-sm"
+                              />
+                            )
+                          ) : (
+                            '—'
+                          )}
+                        </td>
+                        <td className="px-6 py-4 font-bold text-slate-900">
+                          {(annualize(charge.amount) ?? Number(charge.amount)).toLocaleString()} DA
+                        </td>
+                        <td className="px-6 py-4">
+                          <span className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ${
+                            charge.status === 'Payé'
+                              ? 'bg-emerald-50 text-emerald-700 ring-1 ring-inset ring-emerald-600/10'
+                              : 'bg-yellow-50 text-yellow-700 ring-1 ring-inset ring-yellow-600/10'
+                          }`}>
+                            {charge.status}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 text-right">
+                          <button
+                            onClick={() => handleStatusChange(charge.id, charge.status)}
+                            disabled={isBulkUpdating}
+                            className="text-xs font-medium text-brand-blue hover:underline"
+                          >
+                            {charge.status === 'Payé' ? 'Marquer impayé' : 'Marquer payé'}
+                          </button>
+                        </td>
+                      </tr>
+                    ))
+                  )
+                ) : (
+                  filteredSelectedPeriodCharges.length === 0 ? (
+                    <tr>
+                      <td colSpan={8} className="px-6 py-10 text-center text-slate-500">
+                        Aucune charge trouvée pour {selectedYear}.
+                      </td>
+                    </tr>
+                  ) : (
+                  pagedSelectedPeriodCharges.map(({ property, charge }) => (
+                    <tr key={property.id} className="hover:bg-slate-50/50">
+                      <td className="px-6 py-4">
+                        {charge ? (
+                          <input
+                            type="checkbox"
+                            checked={selectedChargeIds.has(charge.id)}
+                            onChange={() => toggleSelectCharge(charge.id)}
+                            disabled={isBulkUpdating}
+                            className="h-4 w-4 rounded border-slate-300"
+                          />
+                        ) : null}
+                      </td>
+                      <td className="px-6 py-4 font-medium text-slate-900">
+                        {property.owner
+                          ? `${property.owner.firstName} ${property.owner.lastName}`
+                          : property.status === 'Libre'
+                            ? PROMOTER_NAME
+                            : <span className="italic text-slate-400">Non assigné</span>}
+                      </td>
+                      <td className="px-6 py-4 text-slate-600">
+                        <div className="flex flex-col">
+                          <span className="font-medium text-slate-900">{charge?.Residence?.name || residenceById.get(property.residenceId)?.name || '-'}</span>
+                          <span className="text-xs text-slate-500">
+                            {property.title} • N° appartement {apartmentNumberFromLotNumber(property.lotNumber) || '-'} • Bloc {property.block || '-'}
+                          </span>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 text-slate-600">
+                        {charge ? (
+                          <input
+                            type="date"
+                            value={formatDateInput(charge.periodStart)}
+                            onChange={(event) => handlePeriodChange(charge.id, 'periodStart', event.target.value)}
+                            className="rounded-lg border border-slate-200 px-3 py-1.5 text-sm"
+                          />
+                        ) : (
+                          '-'
+                        )}
+                      </td>
+                      <td className="px-6 py-4 text-slate-600">
+                        {charge ? (
+                          <input
+                            type="date"
+                            value={formatDateInput(charge.periodEnd)}
+                            onChange={(event) => handlePeriodChange(charge.id, 'periodEnd', event.target.value)}
+                            className="rounded-lg border border-slate-200 px-3 py-1.5 text-sm"
+                          />
+                        ) : (
+                          '-'
+                        )}
+                      </td>
+                      <td className="px-6 py-4 font-bold text-slate-900">
+                        {charge
+                          ? `${(annualize(charge.amount) ?? Number(charge.amount)).toLocaleString()} DA`
+                          : property.price
+                            ? `${(annualize(property.price) ?? Number(property.price)).toLocaleString()} DA`
+                            : '-'}
+                      </td>
+                      <td className="px-6 py-4">
+                        {charge ? (
+                          <span className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ${
+                            charge.status === 'Payé'
+                              ? 'bg-emerald-50 text-emerald-700 ring-1 ring-inset ring-emerald-600/10'
+                              : 'bg-yellow-50 text-yellow-700 ring-1 ring-inset ring-yellow-600/10'
+                          }`}>
+                            {charge.status}
+                          </span>
+                        ) : (
+                          <span className="text-xs italic text-slate-400">Non généré</span>
+                        )}
+                      </td>
+                      <td className="px-6 py-4 text-right">
+                        {charge && (
+                          <button
+                            onClick={() => handleStatusChange(charge.id, charge.status)}
+                            disabled={isBulkUpdating}
+                            className="text-xs font-medium text-brand-blue hover:underline"
+                          >
+                            {charge.status === 'Payé' ? 'Marquer impayé' : 'Marquer payé'}
+                          </button>
+                        )}
+                      </td>
+                    </tr>
+                  )))
+                )}
               </tbody>
             </table>
           </div>
+          {trackingTotalCount > 0 && (
+            <div className="flex items-center justify-between border-t border-slate-100 pt-4">
+              <p className="text-sm text-slate-500">
+                Affichage {trackingStartIndex + 1}-{trackingEndIndex} sur {trackingTotalCount}
+              </p>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setTrackingPage((p) => Math.max(1, p - 1))}
+                  disabled={effectiveTrackingPage <= 1}
+                  className="rounded-lg border border-slate-200 px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+                >
+                  Précédent
+                </button>
+                <span className="text-sm font-medium text-slate-700">
+                  {effectiveTrackingPage}/{trackingTotalPages}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setTrackingPage((p) => Math.min(trackingTotalPages, p + 1))}
+                  disabled={effectiveTrackingPage >= trackingTotalPages}
+                  className="rounded-lg border border-slate-200 px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+                >
+                  Suivant
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
-      {activeTab === 'expenses' && (
+      {!isRecouvrement && activeTab === 'expenses' && (
         <div className="space-y-6">
           <div className="flex flex-col gap-4 rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -877,16 +1472,64 @@ export default function FinancialClient() {
                 ))}
               </div>
 
-              <div className="flex items-center gap-3">
+              <div className="flex flex-wrap items-center justify-end gap-3">
                 <select
                   value={selectedYear}
                   onChange={(event) => setSelectedYear(Number(event.target.value))}
                   className="rounded-lg border border-slate-200 px-3 py-2 text-sm"
                 >
-                  <option value={2024}>2024</option>
-                  <option value={2025}>2025</option>
-                  <option value={2026}>2026</option>
+                  {yearOptions.map((y) => (
+                    <option key={y} value={y}>{y}</option>
+                  ))}
                 </select>
+                <select
+                  value={expensesResidenceId}
+                  onChange={(event) => setExpensesResidenceId(event.target.value)}
+                  className="rounded-lg border border-slate-200 px-3 py-2 text-sm"
+                >
+                  <option value="">Toutes résidences</option>
+                  {residences
+                    .slice()
+                    .filter((r) => r.id)
+                    .sort((a, b) => a.name.localeCompare(b.name, 'fr'))
+                    .map((r) => (
+                      <option key={r.id} value={String(r.id)}>{r.name}</option>
+                    ))}
+                </select>
+                <select
+                  value={expensesStatus}
+                  onChange={(event) => setExpensesStatus(event.target.value)}
+                  className="rounded-lg border border-slate-200 px-3 py-2 text-sm"
+                >
+                  <option value="">Tous statuts</option>
+                  <option value="Payé">Payé</option>
+                  <option value="En attente">En attente</option>
+                </select>
+                {selectedExpenseIds.size > 0 && (
+                  <>
+                    <button
+                      onClick={() => handleBulkSetExpenseStatus('Payé')}
+                      disabled={isExpensesBulkUpdating}
+                      className="rounded-lg bg-brand-blue px-4 py-2 text-sm font-medium text-white hover:bg-brand-blue/90 disabled:opacity-50"
+                    >
+                      Marquer payé ({selectedExpenseIds.size})
+                    </button>
+                    <button
+                      onClick={() => handleBulkSetExpenseStatus('En attente')}
+                      disabled={isExpensesBulkUpdating}
+                      className="rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+                    >
+                      Mettre en attente
+                    </button>
+                    <button
+                      onClick={() => setSelectedExpenseIds(new Set())}
+                      disabled={isExpensesBulkUpdating}
+                      className="rounded-lg px-3 py-2 text-sm font-medium text-slate-500 hover:bg-slate-50 disabled:opacity-50"
+                    >
+                      Annuler
+                    </button>
+                  </>
+                )}
                 <button
                   onClick={handleOpenAddExpense}
                   className="rounded-lg bg-brand-gold px-4 py-2 text-sm font-bold text-brand-blue hover:bg-brand-gold-hover"
@@ -900,6 +1543,14 @@ export default function FinancialClient() {
               <table className="w-full text-left text-sm">
                 <thead className="bg-slate-50 text-slate-500">
                   <tr>
+                    <th className="px-6 py-4 font-medium">
+                      <input
+                        type="checkbox"
+                        checked={allSelectedExpensesOnPage}
+                        onChange={toggleSelectAllExpensesOnPage}
+                        className="h-4 w-4 rounded border-slate-300"
+                      />
+                    </th>
                     <th className="px-6 py-4 font-medium">Catégorie</th>
                     <th className="px-6 py-4 font-medium">Résidence</th>
                     <th className="px-6 py-4 font-medium">Description</th>
@@ -910,27 +1561,40 @@ export default function FinancialClient() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
-                  {selectedExpenseTransactions.length === 0 ? (
+                  {pagedExpenseTransactions.length === 0 ? (
                     <tr>
-                      <td colSpan={7} className="px-6 py-8 text-center text-slate-500">
+                      <td colSpan={8} className="px-6 py-8 text-center text-slate-500">
                         Aucune dépense trouvée.
                       </td>
                     </tr>
                   ) : (
-                    selectedExpenseTransactions.map((t) => (
+                    pagedExpenseTransactions.map((t) => (
                       <tr key={t.id} className="hover:bg-slate-50/50">
+                        <td className="px-6 py-4">
+                          <input
+                            type="checkbox"
+                            checked={selectedExpenseIds.has(t.id)}
+                            onChange={() => toggleSelectExpense(t.id)}
+                            disabled={isExpensesBulkUpdating}
+                            className="h-4 w-4 rounded border-slate-300"
+                          />
+                        </td>
                         <td className="px-6 py-4 font-medium text-slate-900">{expenseLabel(getExpenseCategory(t))}</td>
                         <td className="px-6 py-4 text-slate-600">{t.Residence?.name || '—'}</td>
                         <td className="px-6 py-4 text-slate-600">{stripTaggedCategory(t.description)}</td>
                         <td className="px-6 py-4 text-slate-500">{formatDateFr(t.date)}</td>
                         <td className="px-6 py-4">
-                          <span className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ${
-                            t.status === 'Payé'
-                              ? 'bg-emerald-50 text-emerald-700 ring-1 ring-inset ring-emerald-600/10'
-                              : 'bg-yellow-50 text-yellow-700 ring-1 ring-inset ring-yellow-600/10'
-                          }`}>
+                          <button
+                            onClick={() => handleStatusChange(t.id, t.status)}
+                            disabled={isExpensesBulkUpdating}
+                            className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium transition-opacity hover:opacity-80 ${
+                              t.status === 'Payé'
+                                ? 'bg-emerald-50 text-emerald-700 ring-1 ring-inset ring-emerald-600/10'
+                                : 'bg-yellow-50 text-yellow-700 ring-1 ring-inset ring-yellow-600/10'
+                            }`}
+                          >
                             {t.status}
-                          </span>
+                          </button>
                         </td>
                         <td className="px-6 py-4 text-right font-bold text-slate-900">-{Number(t.amount).toLocaleString()} DA</td>
                         <td className="px-6 py-4 text-right">
@@ -951,14 +1615,58 @@ export default function FinancialClient() {
                 </tbody>
               </table>
             </div>
+            {expensesTotalCount > 0 && (
+              <div className="flex items-center justify-between border-t border-slate-100 pt-4">
+                <p className="text-sm text-slate-500">
+                  Affichage {expensesStartIndex + 1}-{expensesEndIndex} sur {expensesTotalCount}
+                </p>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setExpensesPage((p) => Math.max(1, p - 1))}
+                    disabled={effectiveExpensesPage <= 1}
+                    className="rounded-lg border border-slate-200 px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+                  >
+                    Précédent
+                  </button>
+                  <span className="text-sm font-medium text-slate-700">
+                    {effectiveExpensesPage}/{expensesTotalPages}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setExpensesPage((p) => Math.min(expensesTotalPages, p + 1))}
+                    disabled={effectiveExpensesPage >= expensesTotalPages}
+                    className="rounded-lg border border-slate-200 px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+                  >
+                    Suivant
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}
 
-      {activeTab === 'history' && (
+      {!isRecouvrement && activeTab === 'history' && (
         <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
-          <div className="border-b border-slate-100 px-6 py-4">
+          <div className="flex flex-col gap-3 border-b border-slate-100 px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
             <h3 className="font-bold text-slate-900">Historique des transactions</h3>
+            <div className="flex items-center gap-2">
+              <select
+                value={historyResidenceId}
+                onChange={(event) => setHistoryResidenceId(event.target.value)}
+                className="rounded-lg border border-slate-200 px-3 py-2 text-sm"
+              >
+                <option value="">Toutes résidences</option>
+                {residences
+                  .slice()
+                  .filter((r) => r.id)
+                  .sort((a, b) => a.name.localeCompare(b.name, 'fr'))
+                  .map((r) => (
+                    <option key={r.id} value={String(r.id)}>{r.name}</option>
+                  ))}
+              </select>
+            </div>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-left text-sm">
@@ -974,72 +1682,110 @@ export default function FinancialClient() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {filteredTransactions.map((transaction) => (
-                  <tr
-                    key={transaction.id}
-                    className="cursor-pointer transition-colors hover:bg-slate-50/50"
-                    onClick={() => setSelectedTransaction(transaction)}
-                  >
-                    <td className="px-6 py-4 font-medium text-slate-900">
-                      <div className="flex items-center gap-3">
-                        <div className={`rounded-full p-2 ${transaction.type === 'Charge' ? 'bg-emerald-100 text-emerald-600' : 'bg-red-100 text-red-600'}`}>
-                          {transaction.type === 'Charge' ? <ArrowUpRight className="h-4 w-4" /> : <ArrowDownRight className="h-4 w-4" />}
-                        </div>
-                        {stripTaggedCategory(transaction.description)}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 text-slate-600">
-                      <div className="flex flex-col">
-                        <span className="font-medium text-slate-900">{transaction.Residence?.name || '—'}</span>
-                        {transaction.property && (
-                          <span className="text-xs text-slate-500">
-                            {transaction.property.title} (Lot {transaction.property.lotNumber || '-'})
-                          </span>
-                        )}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 text-slate-600">
-                      {transaction.property?.owner
-                        ? `${transaction.property.owner.firstName} ${transaction.property.owner.lastName}`
-                        : <span className="text-xs italic text-slate-400">Non assigné</span>}
-                    </td>
-                    <td className="px-6 py-4 text-slate-500">
-                      {transaction.periodStart && transaction.periodEnd
-                        ? `${new Date(transaction.periodStart).toLocaleDateString('fr-FR')} - ${new Date(transaction.periodEnd).toLocaleDateString('fr-FR')}`
-                        : new Date(transaction.date).toLocaleDateString('fr-FR')}
-                    </td>
-                    <td className="px-6 py-4">
-                      <button
-                        onClick={(event) => {
-                          event.stopPropagation();
-                          handleStatusChange(transaction.id, transaction.status);
-                        }}
-                        className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium transition-opacity hover:opacity-80 ${
-                          transaction.status === 'Payé'
-                            ? 'bg-emerald-50 text-emerald-700 ring-1 ring-inset ring-emerald-600/10'
-                            : 'bg-yellow-50 text-yellow-700 ring-1 ring-inset ring-yellow-600/10'
-                        }`}
-                      >
-                        {transaction.status}
-                      </button>
-                    </td>
-                    <td className={`px-6 py-4 text-right font-bold ${transaction.type === 'Charge' ? 'text-emerald-600' : 'text-slate-900'}`}>
-                      {transaction.type === 'Charge' ? '+' : '-'}{Number(transaction.amount).toLocaleString()} DA
-                    </td>
-                    <td className="px-6 py-4 text-right">
-                      <button className="rounded p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600">
-                        <MoreHorizontal className="h-5 w-5" />
-                      </button>
+                {pagedHistoryTransactions.length === 0 ? (
+                  <tr>
+                    <td colSpan={7} className="px-6 py-10 text-center text-slate-500">
+                      Aucune transaction trouvée.
                     </td>
                   </tr>
-                ))}
+                ) : (
+                  pagedHistoryTransactions.map((transaction) => (
+                    <tr
+                      key={transaction.id}
+                      className="cursor-pointer transition-colors hover:bg-slate-50/50"
+                      onClick={() => setSelectedTransaction(transaction)}
+                    >
+                      <td className="px-6 py-4 font-medium text-slate-900">
+                        <div className="flex items-center gap-3">
+                          <div className={`rounded-full p-2 ${transaction.type === 'Charge' ? 'bg-emerald-100 text-emerald-600' : 'bg-red-100 text-red-600'}`}>
+                            {transaction.type === 'Charge' ? <ArrowUpRight className="h-4 w-4" /> : <ArrowDownRight className="h-4 w-4" />}
+                          </div>
+                          {stripTaggedCategory(transaction.description)}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 text-slate-600">
+                        <div className="flex flex-col">
+                          <span className="font-medium text-slate-900">{transaction.Residence?.name || '—'}</span>
+                          {transaction.property && (
+                            <span className="text-xs text-slate-500">
+                              {transaction.property.title} (N° appartement {apartmentNumberFromLotNumber(transaction.property.lotNumber) || '-'})
+                            </span>
+                          )}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 text-slate-600">
+                        {transaction.property?.owner
+                          ? `${transaction.property.owner.firstName} ${transaction.property.owner.lastName}`
+                          : transaction.property?.status === 'Libre'
+                            ? PROMOTER_NAME
+                            : <span className="text-xs italic text-slate-400">Non assigné</span>}
+                      </td>
+                      <td className="px-6 py-4 text-slate-500">
+                        {transaction.periodStart && transaction.periodEnd
+                          ? `${new Date(transaction.periodStart).toLocaleDateString('fr-FR')} - ${new Date(transaction.periodEnd).toLocaleDateString('fr-FR')}`
+                          : new Date(transaction.date).toLocaleDateString('fr-FR')}
+                      </td>
+                      <td className="px-6 py-4">
+                        <button
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            handleStatusChange(transaction.id, transaction.status);
+                          }}
+                          className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium transition-opacity hover:opacity-80 ${
+                            transaction.status === 'Payé'
+                              ? 'bg-emerald-50 text-emerald-700 ring-1 ring-inset ring-emerald-600/10'
+                              : 'bg-yellow-50 text-yellow-700 ring-1 ring-inset ring-yellow-600/10'
+                          }`}
+                        >
+                          {transaction.status}
+                        </button>
+                      </td>
+                      <td className={`px-6 py-4 text-right font-bold ${transaction.type === 'Charge' ? 'text-emerald-600' : 'text-slate-900'}`}>
+                        {transaction.type === 'Charge' ? '+' : '-'}{displayAmount(transaction).toLocaleString()} DA
+                      </td>
+                      <td className="px-6 py-4 text-right">
+                        <button className="rounded p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600">
+                          <MoreHorizontal className="h-5 w-5" />
+                        </button>
+                      </td>
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
           </div>
+          {historyTotalCount > 0 && (
+            <div className="flex items-center justify-between border-t border-slate-100 px-6 py-4">
+              <p className="text-sm text-slate-500">
+                Affichage {historyStartIndex + 1}-{historyEndIndex} sur {historyTotalCount}
+              </p>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setHistoryPage((p) => Math.max(1, p - 1))}
+                  disabled={effectiveHistoryPage <= 1}
+                  className="rounded-lg border border-slate-200 px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+                >
+                  Précédent
+                </button>
+                <span className="text-sm font-medium text-slate-700">
+                  {effectiveHistoryPage}/{historyTotalPages}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setHistoryPage((p) => Math.min(historyTotalPages, p + 1))}
+                  disabled={effectiveHistoryPage >= historyTotalPages}
+                  className="rounded-lg border border-slate-200 px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+                >
+                  Suivant
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
-      {selectedTransaction && (
+      {!isRecouvrement && selectedTransaction && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm overflow-y-auto">
           <div className="w-full max-w-lg rounded-2xl bg-white shadow-2xl animate-in fade-in zoom-in duration-200">
             <div className="flex items-center justify-between border-b border-slate-100 p-6">
@@ -1052,7 +1798,7 @@ export default function FinancialClient() {
               <div className="flex items-center justify-between">
                 <span className="text-sm text-slate-500">Montant</span>
                 <span className={`text-2xl font-bold ${selectedTransaction.type === 'Charge' ? 'text-emerald-600' : 'text-slate-900'}`}>
-                  {selectedTransaction.type === 'Charge' ? '+' : '-'}{Number(selectedTransaction.amount).toLocaleString()} DA
+                  {selectedTransaction.type === 'Charge' ? '+' : '-'}{displayAmount(selectedTransaction).toLocaleString()} DA
                 </span>
               </div>
 
@@ -1111,7 +1857,7 @@ export default function FinancialClient() {
                   <p className="mt-1 text-slate-900">{selectedTransaction.Residence?.name || 'N/A'}</p>
                   {selectedTransaction.property && (
                     <p className="text-sm text-slate-500">
-                      {selectedTransaction.property.title} (Lot {selectedTransaction.property.lotNumber || '-'})
+                      {selectedTransaction.property.title} (N° appartement {apartmentNumberFromLotNumber(selectedTransaction.property.lotNumber) || '-'})
                     </p>
                   )}
                 </div>
@@ -1120,7 +1866,9 @@ export default function FinancialClient() {
                   <p className="mt-1 text-slate-900">
                     {selectedTransaction.property?.owner
                       ? `${selectedTransaction.property.owner.firstName} ${selectedTransaction.property.owner.lastName}`
-                      : 'Non spécifié'}
+                      : selectedTransaction.property?.status === 'Libre'
+                        ? PROMOTER_NAME
+                        : 'Non spécifié'}
                   </p>
                 </div>
                 <div>
@@ -1327,13 +2075,14 @@ export default function FinancialClient() {
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-slate-700">Type</label>
                   <select
-                    value={draftFilters.type}
+                    value={isRecouvrement ? 'Charge' : draftFilters.type}
                     onChange={(event) => setDraftFilters((prev) => ({ ...prev, type: event.target.value }))}
+                    disabled={isRecouvrement}
                     className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-blue/20"
                   >
-                    <option value="">Tous</option>
+                    {!isRecouvrement && <option value="">Tous</option>}
                     <option value="Charge">Charge</option>
-                    <option value="Dépense">Dépense</option>
+                    {!isRecouvrement && <option value="Dépense">Dépense</option>}
                   </select>
                 </div>
                 <div className="space-y-2">

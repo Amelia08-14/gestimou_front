@@ -39,6 +39,21 @@ interface MaintenanceClientProps {
   tickets: MaintenanceTicket[];
 }
 
+interface ResidenceSummary {
+  id: string;
+  name: string;
+  zone?: string | null;
+}
+
+interface StaffUser {
+  id: string | number;
+  name: string;
+  email?: string;
+  role?: string;
+  profession?: string | null;
+  zone?: string | null;
+}
+
 interface ProblemCategory {
   category: string;
   items: string[];
@@ -135,8 +150,24 @@ export default function MaintenanceClient({ tickets: initialTickets }: Maintenan
   const [draftFilters, setDraftFilters] = useState(filters);
   
   const { role, user } = useRole();
-  const [intervenants, setIntervenants] = useState<any[]>([]);
+  const [intervenants, setIntervenants] = useState<StaffUser[]>([]);
+  const [residences, setResidences] = useState<ResidenceSummary[]>([]);
   const uploadsBaseUrl = API_URL.replace(/\/api\/?$/, '');
+
+  const extractPayloadArray = <T,>(value: unknown): T[] => {
+    if (Array.isArray(value)) return value as T[];
+    if (value && typeof value === 'object') {
+      const obj = value as { data?: unknown };
+      if (Array.isArray(obj.data)) return obj.data as T[];
+    }
+    return [];
+  };
+
+  const isStaffUser = (value: unknown): value is StaffUser => {
+    if (!value || typeof value !== 'object') return false;
+    const v = value as { id?: unknown; name?: unknown };
+    return (typeof v.id === 'string' || typeof v.id === 'number') && typeof v.name === 'string';
+  };
 
   const normalizeText = (value: string) =>
     value
@@ -194,12 +225,14 @@ export default function MaintenanceClient({ tickets: initialTickets }: Maintenan
 
   const handleExport = () => {
     const rows: Array<Array<unknown>> = [
-      ['ID', 'Ticket', 'Catégorie', 'Priorité', 'Lieu', 'Demandeur', 'Intervenant', 'Statut', 'Date création', 'Heure création'],
+      ['ID', 'Ticket', 'Catégorie', 'Priorité', 'Résidence', 'Zone', 'Lieu', 'Demandeur', 'Intervenant', 'Statut', 'Date création', 'Heure création'],
       ...displayedTickets.map((t) => ([
         t.id,
         t.title,
         t.category || '',
         t.priority,
+        t.residence?.name || '',
+        t.residence?.zone || '',
         t.location,
         t.requester,
         t.assignee || '',
@@ -257,19 +290,35 @@ export default function MaintenanceClient({ tickets: initialTickets }: Maintenan
     .catch(err => console.error(err));
 
     if (role === 'ADMIN') {
-        // Fetch from new Express API
-        fetch(`${API_URL}/users?role=INTERVENANT`, {
-             headers: {
-                'Authorization': `Bearer ${token}`
-            }
-        }) 
-            .then(res => res.json())
-            .then(data => {
-                if (Array.isArray(data)) {
-                    setIntervenants(data);
-                }
-            })
-            .catch(err => console.error("Failed to load intervenants", err));
+      fetch(`${API_URL}/residences`, {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      })
+        .then((res) => res.json())
+        .then((data) => {
+          const payload = extractPayloadArray<ResidenceSummary>(data);
+          setResidences(payload);
+        })
+        .catch((err) => console.error('Failed to load residences', err));
+
+      const fetchUsersByRole = (r: string) =>
+        fetch(`${API_URL}/users?role=${encodeURIComponent(r)}`, {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        }).then((res) => res.json().catch(() => []));
+
+      Promise.all([fetchUsersByRole('INTERVENANT'), fetchUsersByRole('RESPONSABLE_ZONE')])
+        .then(([a, b]) => {
+          const listA = extractPayloadArray<unknown>(a).filter(isStaffUser);
+          const listB = extractPayloadArray<unknown>(b).filter(isStaffUser);
+          const merged = [...listA, ...listB];
+          const byId = new Map<string, StaffUser>();
+          merged.forEach((u) => byId.set(String(u.id), u));
+          setIntervenants(Array.from(byId.values()));
+        })
+        .catch((err) => console.error('Failed to load intervenants', err));
     }
   }, [role]);
 
@@ -403,7 +452,8 @@ export default function MaintenanceClient({ tickets: initialTickets }: Maintenan
     requester: '',
     priority: 'Moyenne',
     status: 'Signalé',
-    assignee: ''
+    assignee: '',
+    residenceId: ''
   });
   const [attachmentFile, setAttachmentFile] = useState<File | null>(null);
 
@@ -435,6 +485,7 @@ export default function MaintenanceClient({ tickets: initialTickets }: Maintenan
             },
             body: JSON.stringify({
                 ...newTicket,
+                residenceId: newTicket.residenceId || null,
                 category: category 
             })
         });
@@ -468,7 +519,7 @@ export default function MaintenanceClient({ tickets: initialTickets }: Maintenan
              setIsAddModalOpen(false);
              setNewTicket({
                 title: '', description: '', location: 'Parties Communes',
-                requester: '', priority: 'Moyenne', status: 'Signalé', assignee: ''
+                requester: '', priority: 'Moyenne', status: 'Signalé', assignee: '', residenceId: ''
              });
              setAttachmentFile(null);
         } else {
@@ -562,7 +613,11 @@ export default function MaintenanceClient({ tickets: initialTickets }: Maintenan
                     </td>
                     <td className="px-6 py-4">
                         <div className="flex flex-col">
-                        <span className="text-slate-900">{ticket.location || 'Parties Communes'}</span>
+                        {ticket.residence?.name ? (
+                          <span className="text-slate-900">{ticket.residence.name}{ticket.residence.zone ? ` (${ticket.residence.zone})` : ''}</span>
+                        ) : (
+                          <span className="text-slate-900">{ticket.location || 'Parties Communes'}</span>
+                        )}
                         <span className="text-xs text-slate-500">Par {ticket.requester}</span>
                         </div>
                     </td>
@@ -574,9 +629,9 @@ export default function MaintenanceClient({ tickets: initialTickets }: Maintenan
                                 className="text-sm bg-transparent border border-transparent hover:border-slate-200 rounded px-1 py-0.5 focus:border-brand-blue focus:ring-0"
                             >
                                 <option value="">Non assigné</option>
-                                {intervenants.map((intervenant: any) => (
+                                {intervenants.map((intervenant) => (
                                     <option key={intervenant.id} value={intervenant.name}>
-                                        {intervenant.name} ({intervenant.profession || 'Intervenant'})
+                                        {intervenant.name} ({intervenant.role === 'RESPONSABLE_ZONE' ? (intervenant.zone ? `Responsable ${intervenant.zone}` : 'Responsable de zone') : (intervenant.profession || 'Intervenant')})
                                     </option>
                                 ))}
                             </select>
@@ -717,6 +772,39 @@ export default function MaintenanceClient({ tickets: initialTickets }: Maintenan
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Résidence</label>
+                  <select
+                    name="residenceId"
+                    value={newTicket.residenceId}
+                    onChange={handleInputChange}
+                    className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-brand-blue focus:ring-1 focus:ring-brand-blue"
+                  >
+                    <option value="">Non spécifiée</option>
+                    {residences
+                      .slice()
+                      .sort((a, b) => (a.name || '').localeCompare(b.name || '', 'fr'))
+                      .map((r) => (
+                        <option key={r.id} value={r.id}>
+                          {r.name}
+                        </option>
+                      ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Zone</label>
+                  <input
+                    readOnly
+                    value={
+                      (residences.find((r) => r.id === newTicket.residenceId)?.zone as string) ||
+                      'Non définie'
+                    }
+                    className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-500 cursor-not-allowed"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
                   <label className="block text-sm font-medium text-slate-700 mb-1">Priorité</label>
                   <select 
                     name="priority" 
@@ -731,14 +819,23 @@ export default function MaintenanceClient({ tickets: initialTickets }: Maintenan
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">Assigné à</label>
-                  <input 
-                    name="assignee" 
-                    value={newTicket.assignee} 
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Intervenant</label>
+                  <select
+                    name="assignee"
+                    value={newTicket.assignee}
                     onChange={handleInputChange}
-                    placeholder="Prestataire..."
-                    className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-brand-blue focus:ring-1 focus:ring-brand-blue" 
-                  />
+                    className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-brand-blue focus:ring-1 focus:ring-brand-blue"
+                  >
+                    <option value="">Non assigné</option>
+                    {intervenants
+                      .slice()
+                      .sort((a, b) => String(a.name || '').localeCompare(String(b.name || ''), 'fr'))
+                      .map((intervenant) => (
+                        <option key={intervenant.id} value={intervenant.name}>
+                          {intervenant.name} ({intervenant.role === 'RESPONSABLE_ZONE' ? (intervenant.zone ? `Responsable ${intervenant.zone}` : 'Responsable de zone') : (intervenant.profession || 'Intervenant')})
+                        </option>
+                      ))}
+                  </select>
                 </div>
               </div>
 
@@ -797,6 +894,13 @@ export default function MaintenanceClient({ tickets: initialTickets }: Maintenan
               <div>
                 <div className="text-sm font-semibold text-slate-900">{actionTicket.title}</div>
                 <div className="text-sm text-slate-600">{actionTicket.description}</div>
+                {(actionTicket.residence?.name || actionTicket.location) && (
+                  <div className="mt-2 text-xs text-slate-500">
+                    {actionTicket.residence?.name
+                      ? `${actionTicket.residence.name}${actionTicket.residence.zone ? ` (${actionTicket.residence.zone})` : ''}`
+                      : (actionTicket.location || '')}
+                  </div>
+                )}
                 <div className="mt-2 text-xs text-slate-500">
                   {new Date(actionTicket.createdAt).toLocaleString('fr-FR')}
                 </div>

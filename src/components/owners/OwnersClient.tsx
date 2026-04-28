@@ -12,6 +12,13 @@ import {
 import { useEffect, useState } from 'react';
 import { API_URL } from '@/utils/api';
 
+const apartmentNumberFromLotNumber = (lotNumber?: string | null) => {
+  const raw = String(lotNumber || '').trim();
+  if (!raw) return '';
+  const parts = raw.split('-').filter(Boolean);
+  return (parts[parts.length - 1] || raw).trim();
+};
+
 interface Property {
   id: number;
   title: string;
@@ -706,7 +713,7 @@ export default function OwnersClient({ owners }: OwnersClientProps) {
                               .sort((a, b) => Number(Boolean(a.ownerId)) - Number(Boolean(b.ownerId)))
                               .map((p) => (
                                 <option key={p.id} value={p.id}>
-                                  {p.title} • {p.residenceId} • Lot {p.lotNumber || '-'}{p.ownerId ? ' • Déjà affecté' : ''}
+                                  {p.title} • {p.residenceId} • N° appartement {apartmentNumberFromLotNumber(p.lotNumber) || '-'}{p.ownerId ? ' • Déjà affecté' : ''}
                                 </option>
                               ))}
                           </select>
@@ -725,7 +732,7 @@ export default function OwnersClient({ owners }: OwnersClientProps) {
                             <li key={property.id} className="rounded border border-slate-200 bg-white p-2 text-sm text-slate-700">
                               <span className="block font-semibold">{property.title}</span>
                               <span className="text-xs text-slate-500">
-                                {property.type} - Lot {property.lotNumber || '-'} - {property.floor ? `Étage ${property.floor}` : 'Étage -'}
+                                {property.type} - N° appartement {apartmentNumberFromLotNumber(property.lotNumber) || '-'} - {property.floor ? `Étage ${property.floor}` : 'Étage -'}
                               </span>
                             </li>
                           ))}
