@@ -494,7 +494,11 @@ export default function AdminPage() {
                                         <td className="px-6 py-4">
                                             <div className="text-slate-900 font-medium">{req.residenceId === 'prestige' ? 'Résidence Prestige' : req.residenceId}</div>
                                             <div className="text-xs text-slate-500">
-                                                Bloc {req.block}, Etage {req.floor}, Porte {req.door}
+                                                {[
+                                                  req.block ? `Bloc ${req.block}` : null,
+                                                  req.floor ? `Étage ${req.floor}` : null,
+                                                  req.door ? `N° appartement ${req.door}` : null,
+                                                ].filter(Boolean).join(' - ')}
                                             </div>
                                         </td>
                                         <td className="px-6 py-4">
