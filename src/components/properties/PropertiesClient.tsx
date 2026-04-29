@@ -655,7 +655,15 @@ export default function PropertiesClient({ residences: initialResidences, proper
           </div>
 
           <div className="grid gap-6 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
-            {zoneResidences.map((residence) => (
+            {zoneResidences.map((residence) => {
+              const residenceProperties = properties
+                .filter((p) => p?.residenceId === residence.id)
+                .filter((p) => p?.status !== 'Location');
+              const totalUnits = residence.totalUnits || residenceProperties.length || 0;
+              const soldUnits = residenceProperties.filter((p) => p?.status === 'Vendu').length;
+              const occupancyRate = totalUnits > 0 ? `${Math.round((soldUnits / totalUnits) * 100)}%` : '0%';
+
+              return (
               <div 
                 key={residence.id} 
                 onClick={() => handleResidenceClick(residence)}
@@ -712,15 +720,15 @@ export default function PropertiesClient({ residences: initialResidences, proper
                       <span className="text-xs text-slate-500 uppercase tracking-wider font-semibold">Logements</span>
                       <span className="text-lg font-bold text-brand-blue flex items-center gap-2">
                         <Building className="h-4 w-4 text-brand-gold" />
-                        {residence.deliveredUnits} / {residence.totalUnits}
+                        {soldUnits} / {totalUnits}
                       </span>
-                      <span className="text-[10px] text-slate-400">Livrés / Total</span>
+                      <span className="text-[10px] text-slate-400">Vendus / Total</span>
                     </div>
                     <div className="flex flex-col">
                       <span className="text-xs text-slate-500 uppercase tracking-wider font-semibold">Occupation</span>
                       <span className="text-lg font-bold text-brand-blue flex items-center gap-2">
                         <Users className="h-4 w-4 text-brand-gold" />
-                        {residence.occupancyRate}
+                        {residence.occupancyRate || occupancyRate}
                       </span>
                     </div>
                   </div>
@@ -741,7 +749,8 @@ export default function PropertiesClient({ residences: initialResidences, proper
                   </div>
                 </div>
               </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       )}
