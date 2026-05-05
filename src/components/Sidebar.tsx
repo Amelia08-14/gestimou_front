@@ -22,6 +22,7 @@ const navigation = [
   { name: 'Biens', href: '/properties', icon: Building2, roles: ['ADMIN', 'RESPONSABLE_ZONE', 'MANAGER'] },
   { name: 'Propriétaires', href: '/owners', icon: Key, roles: ['ADMIN', 'RESPONSABLE_ZONE', 'MANAGER'] },
   { name: 'Finances', href: '/financial', icon: Wallet, roles: ['ADMIN', 'RECOUVREMENT'] },
+  { name: 'Appel de fonds', href: '/appel-de-fonds', icon: FileText, roles: ['ADMIN', 'RECOUVREMENT'] },
   { name: 'Maintenance', href: '/maintenance', icon: Wrench, roles: ['ADMIN', 'RESPONSABLE_ZONE', 'MANAGER', 'HSE', 'INTERVENANT'] },
   { name: 'Documents', href: '/documents', icon: FileText, roles: ['ADMIN'] },
   { name: 'Administration', href: '/admin', icon: Settings, roles: ['ADMIN'] },

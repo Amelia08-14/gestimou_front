@@ -10,6 +10,9 @@ export interface User {
   name: string;
   email: string;
   role: Role;
+  profession?: string | null;
+  zone?: string | null;
+  mustChangePassword?: boolean;
 }
 
 interface RoleContextType {

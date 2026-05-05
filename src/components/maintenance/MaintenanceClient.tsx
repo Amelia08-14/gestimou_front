@@ -25,6 +25,8 @@ interface MaintenanceTicket {
   location: string;
   requester: string;
   assignee?: string | null;
+  responsible?: string | null;
+  subcontractorId?: string | null;
   createdAt: string | Date;
   updatedAt: string | Date;
   residenceId?: string | null;
@@ -33,6 +35,7 @@ interface MaintenanceTicket {
   attachmentType?: string | null;
   attachmentSize?: number | null;
   residence?: { id: string; name: string; zone?: string | null } | null;
+  subcontractor?: { id: string; name: string; specialty?: string | null } | null;
 }
 
 interface MaintenanceClientProps {
@@ -52,6 +55,12 @@ interface StaffUser {
   role?: string;
   profession?: string | null;
   zone?: string | null;
+}
+
+interface SubcontractorRow {
+  id: string;
+  name: string;
+  specialty?: string | null;
 }
 
 interface ProblemCategory {
@@ -151,6 +160,8 @@ export default function MaintenanceClient({ tickets: initialTickets }: Maintenan
   
   const { role, user } = useRole();
   const [intervenants, setIntervenants] = useState<StaffUser[]>([]);
+  const [responsables, setResponsables] = useState<StaffUser[]>([]);
+  const [subcontractors, setSubcontractors] = useState<SubcontractorRow[]>([]);
   const [residences, setResidences] = useState<ResidenceSummary[]>([]);
   const uploadsBaseUrl = API_URL.replace(/\/api\/?$/, '');
 
@@ -289,7 +300,8 @@ export default function MaintenanceClient({ tickets: initialTickets }: Maintenan
     })
     .catch(err => console.error(err));
 
-    if (role === 'ADMIN') {
+    const shouldLoadStaffLists = role === 'ADMIN' || role === 'RESPONSABLE_ZONE' || role === 'MANAGER';
+    if (shouldLoadStaffLists) {
       fetch(`${API_URL}/residences`, {
         headers: {
           Authorization: `Bearer ${token}`
@@ -309,16 +321,35 @@ export default function MaintenanceClient({ tickets: initialTickets }: Maintenan
           }
         }).then((res) => res.json().catch(() => []));
 
-      Promise.all([fetchUsersByRole('INTERVENANT'), fetchUsersByRole('RESPONSABLE_ZONE')])
-        .then(([a, b]) => {
-          const listA = extractPayloadArray<unknown>(a).filter(isStaffUser);
-          const listB = extractPayloadArray<unknown>(b).filter(isStaffUser);
-          const merged = [...listA, ...listB];
+      const isSecurity = (u: StaffUser) => {
+        const prof = (u.profession || '').toLowerCase();
+        return prof.includes('sécur') || prof.includes('secur');
+      };
+
+      Promise.all([fetchUsersByRole('RESPONSABLE_ZONE'), fetchUsersByRole('MANAGER')])
+        .then(([zones, managers]) => {
+          const zoneManagers = extractPayloadArray<unknown>(zones).filter(isStaffUser);
+          const securityManagers = extractPayloadArray<unknown>(managers).filter(isStaffUser).filter(isSecurity);
+          const merged = [...zoneManagers, ...securityManagers];
           const byId = new Map<string, StaffUser>();
           merged.forEach((u) => byId.set(String(u.id), u));
-          setIntervenants(Array.from(byId.values()));
+          const list = Array.from(byId.values());
+          setResponsables(list);
+          setIntervenants(list);
         })
-        .catch((err) => console.error('Failed to load intervenants', err));
+        .catch((err) => console.error('Failed to load responsables', err));
+
+      fetch(`${API_URL}/subcontractors`, {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      })
+        .then((res) => res.json())
+        .then((data) => {
+          const list = extractPayloadArray<SubcontractorRow>(data);
+          setSubcontractors(list);
+        })
+        .catch((err) => console.error('Failed to load subcontractors', err));
     }
   }, [role]);
 
@@ -352,22 +383,49 @@ export default function MaintenanceClient({ tickets: initialTickets }: Maintenan
   };
 
   const handleAssigneeChange = async (ticketId: string, newAssignee: string) => {
-    if (role !== 'ADMIN') return;
+    const token = sessionStorage.getItem('token');
+    const currentName = user?.name || '';
+    const currentRole = role || '';
+    const currentProfession = (user?.profession || '').toLowerCase();
+    const isSecurityManager = currentRole === 'MANAGER' && (currentProfession.includes('sécur') || currentProfession.includes('secur'));
+    const ticket = tickets.find((t) => t.id === ticketId);
+    const inZone =
+      currentRole === 'RESPONSABLE_ZONE' &&
+      !!ticket?.residence?.zone &&
+      !!user?.zone &&
+      ticket.residence.zone === user.zone;
+    const canAssign = currentRole === 'ADMIN' || ((ticket?.responsible ? ticket.responsible === currentName : (inZone || isSecurityManager)));
+    if (!canAssign) return;
 
     try {
-        const token = sessionStorage.getItem('token');
+        const payload: Record<string, unknown> = {};
+        if (!newAssignee) {
+          payload.assignee = null;
+          payload.subcontractorId = null;
+        } else if (newAssignee.startsWith('sub:')) {
+          payload.subcontractorId = newAssignee.slice(4);
+          payload.assignee = null;
+        } else if (newAssignee.startsWith('staff:')) {
+          payload.assignee = newAssignee.slice(6);
+          payload.subcontractorId = null;
+        } else {
+          payload.assignee = newAssignee;
+          payload.subcontractorId = null;
+        }
+
         const res = await fetch(`${API_URL}/maintenance/${ticketId}`, {
             method: 'PUT',
             headers: { 
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${token}`
             },
-            body: JSON.stringify({ assignee: newAssignee })
+            body: JSON.stringify(payload)
         });
 
         if (res.ok) {
+            const updated = await res.json().catch(() => null);
             setTickets(tickets.map(t => 
-                t.id === ticketId ? { ...t, assignee: newAssignee } : t
+                t.id === ticketId ? { ...t, ...(updated || {}) } : t
             ));
         } else {
             alert("Impossible d'assigner l'intervenant");
@@ -375,6 +433,30 @@ export default function MaintenanceClient({ tickets: initialTickets }: Maintenan
     } catch (e) {
         console.error(e);
         alert('Erreur technique');
+    }
+  };
+
+  const handleResponsibleChange = async (ticketId: string, responsibleName: string) => {
+    if (role !== 'ADMIN') return;
+    try {
+      const token = sessionStorage.getItem('token');
+      const res = await fetch(`${API_URL}/maintenance/${ticketId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({ responsible: responsibleName || null })
+      });
+
+      if (res.ok) {
+        const updated = await res.json().catch(() => null);
+        setTickets(tickets.map((t) => (t.id === ticketId ? { ...t, ...(updated || {}) } : t)));
+      } else {
+        alert("Impossible d'affecter le responsable");
+      }
+    } catch (e) {
+      alert('Erreur technique');
     }
   };
 
@@ -452,6 +534,7 @@ export default function MaintenanceClient({ tickets: initialTickets }: Maintenan
     requester: '',
     priority: 'Moyenne',
     status: 'Signalé',
+    responsible: '',
     assignee: '',
     residenceId: ''
   });
@@ -485,8 +568,10 @@ export default function MaintenanceClient({ tickets: initialTickets }: Maintenan
             },
             body: JSON.stringify({
                 ...newTicket,
+                description: String(newTicket.description || '').slice(0, 100),
                 residenceId: newTicket.residenceId || null,
-                category: category 
+                category: category,
+                responsible: newTicket.responsible || null
             })
         });
 
@@ -519,7 +604,7 @@ export default function MaintenanceClient({ tickets: initialTickets }: Maintenan
              setIsAddModalOpen(false);
              setNewTicket({
                 title: '', description: '', location: 'Parties Communes',
-                requester: '', priority: 'Moyenne', status: 'Signalé', assignee: '', residenceId: ''
+                requester: '', priority: 'Moyenne', status: 'Signalé', responsible: '', assignee: '', residenceId: ''
              });
              setAttachmentFile(null);
         } else {
@@ -576,6 +661,7 @@ export default function MaintenanceClient({ tickets: initialTickets }: Maintenan
                 <th className="px-6 py-4 font-medium">Ticket</th>
                 <th className="px-6 py-4 font-medium">Priorité</th>
                 <th className="px-6 py-4 font-medium">Lieu & Demandeur</th>
+                <th className="px-6 py-4 font-medium">Responsable</th>
                 <th className="px-6 py-4 font-medium">Intervenant</th>
                 <th className="px-6 py-4 font-medium">Date</th>
                 <th className="px-6 py-4 font-medium">Statut</th>
@@ -585,7 +671,7 @@ export default function MaintenanceClient({ tickets: initialTickets }: Maintenan
             <tbody className="divide-y divide-slate-100">
               {displayedTickets.length === 0 ? (
                   <tr>
-                      <td colSpan={7} className="px-6 py-8 text-center text-slate-500">
+                      <td colSpan={8} className="px-6 py-8 text-center text-slate-500">
                         {role === 'INTERVENANT' 
                             ? `Aucun ticket assigné à ${user?.name || 'moi'}.`
                             : "Aucun ticket trouvé."}
@@ -622,22 +708,72 @@ export default function MaintenanceClient({ tickets: initialTickets }: Maintenan
                         </div>
                     </td>
                     <td className="px-6 py-4 text-slate-600">
-                        {role === 'ADMIN' ? (
-                            <select
-                                value={ticket.assignee || ''}
-                                onChange={(e) => handleAssigneeChange(ticket.id, e.target.value)}
-                                className="text-sm bg-transparent border border-transparent hover:border-slate-200 rounded px-1 py-0.5 focus:border-brand-blue focus:ring-0"
-                            >
-                                <option value="">Non assigné</option>
-                                {intervenants.map((intervenant) => (
-                                    <option key={intervenant.id} value={intervenant.name}>
-                                        {intervenant.name} ({intervenant.role === 'RESPONSABLE_ZONE' ? (intervenant.zone ? `Responsable ${intervenant.zone}` : 'Responsable de zone') : (intervenant.profession || 'Intervenant')})
-                                    </option>
+                      {role === 'ADMIN' ? (
+                        <select
+                          value={ticket.responsible || ''}
+                          onChange={(e) => handleResponsibleChange(ticket.id, e.target.value)}
+                          className="text-sm bg-transparent border border-transparent hover:border-slate-200 rounded px-1 py-0.5 focus:border-brand-blue focus:ring-0"
+                        >
+                          <option value="">Non affecté</option>
+                          {responsables.map((r) => (
+                            <option key={r.id} value={r.name}>
+                              {r.name} ({r.role === 'RESPONSABLE_ZONE' ? (r.zone ? `Responsable ${r.zone}` : 'Responsable de zone') : (r.profession || 'Responsable')})
+                            </option>
+                          ))}
+                        </select>
+                      ) : (
+                        <span>{ticket.responsible || '-'}</span>
+                      )}
+                    </td>
+                    <td className="px-6 py-4 text-slate-600">
+                      {(() => {
+                        const currentName = user?.name || '';
+                        const currentRole = role || '';
+                        const currentProfession = (user?.profession || '').toLowerCase();
+                        const isSecurityManager = currentRole === 'MANAGER' && (currentProfession.includes('sécur') || currentProfession.includes('secur'));
+                        const inZone =
+                          currentRole === 'RESPONSABLE_ZONE' &&
+                          !!ticket.residence?.zone &&
+                          !!user?.zone &&
+                          ticket.residence.zone === user.zone;
+                        const canAssign = currentRole === 'ADMIN' || (ticket.responsible ? ticket.responsible === currentName : (inZone || isSecurityManager));
+
+                        const currentValue = ticket.subcontractor?.id
+                          ? `sub:${ticket.subcontractor.id}`
+                          : (ticket.assignee ? `staff:${ticket.assignee}` : '');
+
+                        const displayLabel = ticket.subcontractor?.name || ticket.assignee || '-';
+
+                        if (!canAssign) return <span>{displayLabel}</span>;
+
+                        return (
+                          <select
+                            value={currentValue}
+                            onChange={(e) => handleAssigneeChange(ticket.id, e.target.value)}
+                            className="text-sm bg-transparent border border-transparent hover:border-slate-200 rounded px-1 py-0.5 focus:border-brand-blue focus:ring-0"
+                          >
+                            <option value="">Non assigné</option>
+                            {subcontractors.length > 0 && (
+                              <optgroup label="Prestataires">
+                                {subcontractors.map((s) => (
+                                  <option key={s.id} value={`sub:${s.id}`}>
+                                    {s.name}{s.specialty ? ` (${s.specialty})` : ''}
+                                  </option>
                                 ))}
-                            </select>
-                        ) : (
-                            <span>{ticket.assignee || '-'}</span>
-                        )}
+                              </optgroup>
+                            )}
+                            {intervenants.length > 0 && (
+                              <optgroup label="Responsables">
+                                {intervenants.map((i) => (
+                                  <option key={i.id} value={`staff:${i.name}`}>
+                                    {i.name} ({i.role === 'RESPONSABLE_ZONE' ? (i.zone ? `Responsable ${i.zone}` : 'Responsable de zone') : (i.profession || 'Responsable')})
+                                  </option>
+                                ))}
+                              </optgroup>
+                            )}
+                          </select>
+                        );
+                      })()}
                     </td>
                     <td className="px-6 py-4 text-slate-500">
                         <div className="flex flex-col">
@@ -736,10 +872,10 @@ export default function MaintenanceClient({ tickets: initialTickets }: Maintenan
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1">Description</label>
                 <textarea 
-                  required 
                   name="description" 
                   value={newTicket.description} 
                   onChange={handleInputChange}
+                  maxLength={100}
                   rows={3}
                   placeholder="Détaillez le problème..."
                   className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-brand-blue focus:ring-1 focus:ring-brand-blue" 
@@ -819,20 +955,20 @@ export default function MaintenanceClient({ tickets: initialTickets }: Maintenan
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">Intervenant</label>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Responsable</label>
                   <select
-                    name="assignee"
-                    value={newTicket.assignee}
+                    name="responsible"
+                    value={newTicket.responsible}
                     onChange={handleInputChange}
                     className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-brand-blue focus:ring-1 focus:ring-brand-blue"
                   >
-                    <option value="">Non assigné</option>
-                    {intervenants
+                    <option value="">Non affecté</option>
+                    {responsables
                       .slice()
                       .sort((a, b) => String(a.name || '').localeCompare(String(b.name || ''), 'fr'))
-                      .map((intervenant) => (
-                        <option key={intervenant.id} value={intervenant.name}>
-                          {intervenant.name} ({intervenant.role === 'RESPONSABLE_ZONE' ? (intervenant.zone ? `Responsable ${intervenant.zone}` : 'Responsable de zone') : (intervenant.profession || 'Intervenant')})
+                      .map((r) => (
+                        <option key={r.id} value={r.name}>
+                          {r.name} ({r.role === 'RESPONSABLE_ZONE' ? (r.zone ? `Responsable ${r.zone}` : 'Responsable de zone') : (r.profession || 'Responsable')})
                         </option>
                       ))}
                   </select>

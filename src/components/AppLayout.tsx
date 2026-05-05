@@ -27,6 +27,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       if (pathname === '/profile') return true;
       if (pathname === '/') return role !== 'RECOUVREMENT';
       if (pathname === '/financial') return role === 'ADMIN' || role === 'RECOUVREMENT';
+      if (pathname === '/appel-de-fonds') return role === 'ADMIN' || role === 'RECOUVREMENT';
       if (pathname === '/admin') return role === 'ADMIN';
       if (pathname === '/documents') return role === 'ADMIN';
       if (pathname === '/maintenance') return ['ADMIN', 'RESPONSABLE_ZONE', 'MANAGER', 'HSE', 'INTERVENANT'].includes(role);
