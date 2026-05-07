@@ -7,6 +7,11 @@ interface ResidenceSummary {
   id: string;
   name: string;
   zone?: string | null;
+  properties?: Array<{
+    id: number | string;
+    status?: string | null;
+    ownerId?: number | string | null;
+  }>;
 }
 
 interface DocumentItem {
@@ -87,6 +92,39 @@ export default function AppelDeFondsClient() {
   });
 
   const token = typeof window !== 'undefined' ? sessionStorage.getItem('token') : null;
+
+  const soldOwnerCountForResidence = (rid: string) => {
+    const r = residences.find((x) => String(x.id) === String(rid));
+    const props = Array.isArray(r?.properties) ? r.properties : [];
+    const sold = props.filter((p) => String(p?.status || '') === 'Vendu');
+    const owners = new Set(sold.map((p) => String(p?.ownerId ?? '')).filter((v) => v && v !== 'null' && v !== 'undefined'));
+    const count = owners.size;
+    if (count > 0) return count;
+    return sold.length;
+  };
+
+  useEffect(() => {
+    const rid = createForm.residenceId;
+    if (!rid) {
+      if (createForm.queteParProprietaire !== '') {
+        setCreateForm((prev) => ({ ...prev, queteParProprietaire: '' }));
+      }
+      return;
+    }
+    const cost = Number(String(createForm.coutEstimeGlobal || '').replace(',', '.'));
+    const count = soldOwnerCountForResidence(rid);
+    if (!Number.isFinite(cost) || cost <= 0 || !count) {
+      if (createForm.queteParProprietaire !== '0') {
+        setCreateForm((prev) => ({ ...prev, queteParProprietaire: '0' }));
+      }
+      return;
+    }
+    const per = Math.round((cost / count) * 100) / 100;
+    const next = String(per);
+    if (createForm.queteParProprietaire !== next) {
+      setCreateForm((prev) => ({ ...prev, queteParProprietaire: next }));
+    }
+  }, [createForm.coutEstimeGlobal, createForm.residenceId, residences]);
 
   const selectedResidence = useMemo(() => {
     const rid = selected?.residenceId || '';
@@ -245,7 +283,6 @@ export default function AppelDeFondsClient() {
           residenceId: createForm.residenceId,
           probleme: createForm.probleme,
           coutEstimeGlobal: createForm.coutEstimeGlobal,
-          queteParProprietaire: createForm.queteParProprietaire,
           status: 'DRAFT',
         }),
       });
@@ -650,10 +687,14 @@ export default function AppelDeFondsClient() {
                   <label className="text-xs font-semibold text-slate-500">Quête par propriétaire</label>
                   <input
                     value={createForm.queteParProprietaire}
-                    onChange={(e) => setCreateForm((p) => ({ ...p, queteParProprietaire: safeNumberInput(e.target.value) }))}
-                    className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
+                    readOnly
+                    className="mt-1 w-full cursor-not-allowed rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700"
                     placeholder="0.00"
                   />
+                  <p className="mt-1 text-[11px] text-slate-500">
+                    Calcul automatique = coût estimé ÷ nombre de propriétaires vendus
+                    {createForm.residenceId ? ` (${soldOwnerCountForResidence(createForm.residenceId)} vendu(s))` : ''}
+                  </p>
                 </div>
               </div>
 
