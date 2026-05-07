@@ -21,6 +21,7 @@ import { API_URL } from '@/utils/api';
 
 export default function AdminPage() {
   const [users, setUsers] = useState<any[]>([]);
+  const [userRoleFilter, setUserRoleFilter] = useState<string>('');
   const [requests, setRequests] = useState<any[]>([]);
   const [activeTab, setActiveTab] = useState('users');
   const [showAddUserModal, setShowAddUserModal] = useState(false);
@@ -68,7 +69,7 @@ export default function AdminPage() {
       document.removeEventListener('visibilitychange', onVisibility);
       window.clearInterval(interval);
     };
-  }, []);
+  }, [userRoleFilter]);
 
   React.useEffect(() => {
     if (activeTab !== 'history') return;
@@ -250,21 +251,42 @@ export default function AdminPage() {
 
   const fetchUsers = () => {
     const token = sessionStorage.getItem('token');
-    fetch(`${API_URL}/users`, {
+    const query = userRoleFilter ? `?role=${encodeURIComponent(userRoleFilter)}` : '';
+    fetch(`${API_URL}/users${query}`, {
       cache: 'no-store',
       headers: token ? { Authorization: `Bearer ${token}` } : undefined
     })
       .then(res => res.json())
       .then(data => {
         if (Array.isArray(data)) {
-            // Filter out residents (mobile app users)
-            const staffUsers = data.filter((u: any) => u.role !== 'RESIDENT');
-            setUsers(staffUsers);
+            setUsers(data);
         } else {
             setUsers([]);
         }
       })
       .catch(err => console.error(err));
+  };
+
+  const handleResetPassword = async (user: any) => {
+    if (!confirm(`Réinitialiser le mot de passe de ${user?.email || 'cet utilisateur'} ?`)) return;
+    try {
+      const token = sessionStorage.getItem('token');
+      const res = await fetch(`${API_URL}/users/${user.id}/reset-password`, {
+        method: 'POST',
+        headers: token ? { Authorization: `Bearer ${token}` } : undefined
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        alert(data?.error || 'Erreur lors de la réinitialisation');
+        return;
+      }
+      const temp = String(data?.tempPassword || '');
+      const emailSent = Boolean(data?.emailSent);
+      alert(`Mot de passe temporaire: ${temp}\nEmail envoyé: ${emailSent ? 'Oui' : 'Non'}`);
+    } catch (e) {
+      console.error(e);
+      alert('Erreur technique');
+    }
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -384,13 +406,29 @@ export default function AdminPage() {
         {activeTab === 'users' && (
           <div className="space-y-6 animate-in fade-in duration-300">
             <div className="flex justify-between items-center">
-              <div className="relative w-64">
-                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-                <input
-                  type="text"
-                  placeholder="Rechercher un utilisateur..."
-                  className="w-full rounded-lg border border-slate-200 pl-10 pr-4 py-2 text-sm focus:border-brand-blue focus:outline-none focus:ring-1 focus:ring-brand-blue"
-                />
+              <div className="flex items-center gap-3">
+                <div className="relative w-64">
+                  <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                  <input
+                    type="text"
+                    placeholder="Rechercher un utilisateur..."
+                    className="w-full rounded-lg border border-slate-200 pl-10 pr-4 py-2 text-sm focus:border-brand-blue focus:outline-none focus:ring-1 focus:ring-brand-blue"
+                  />
+                </div>
+                <select
+                  value={userRoleFilter}
+                  onChange={(e) => setUserRoleFilter(e.target.value)}
+                  className="rounded-lg border border-slate-200 px-3 py-2 text-sm"
+                >
+                  <option value="">Tous rôles</option>
+                  <option value="ADMIN">Admin</option>
+                  <option value="MANAGER">Manager</option>
+                  <option value="RESPONSABLE_ZONE">Responsable zone</option>
+                  <option value="INTERVENANT">Intervenant</option>
+                  <option value="RECOUVREMENT">Recouvrement</option>
+                  <option value="HSE">HSE</option>
+                  <option value="RESIDENT">Résident</option>
+                </select>
               </div>
               <button 
                 onClick={() => setShowAddUserModal(true)}
@@ -447,12 +485,20 @@ export default function AdminPage() {
                         {new Date(user.createdAt).toLocaleDateString()}
                       </td>
                       <td className="px-6 py-4 text-right">
-                        <button 
-                            onClick={() => handleEdit(user)}
-                            className="text-brand-blue hover:underline text-xs font-medium"
-                        >
-                            Modifier
-                        </button>
+                        <div className="flex items-center justify-end gap-3">
+                          <button 
+                              onClick={() => handleResetPassword(user)}
+                              className="text-rose-700 hover:underline text-xs font-medium"
+                          >
+                              Réinitialiser MDP
+                          </button>
+                          <button 
+                              onClick={() => handleEdit(user)}
+                              className="text-brand-blue hover:underline text-xs font-medium"
+                          >
+                              Modifier
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   )))}
