@@ -71,6 +71,7 @@ interface OwnersClientProps {
 
 export default function OwnersClient({ owners }: OwnersClientProps) {
   const [ownersList, setOwnersList] = useState<OwnerWithDetails[]>(owners);
+  const [openMenuOwnerId, setOpenMenuOwnerId] = useState<number | null>(null);
   const [showAddModal, setShowAddModal] = useState(false);
   const [selectedOwner, setSelectedOwner] = useState<OwnerWithDetails | null>(null);
   const [showProperties, setShowProperties] = useState(false);
@@ -115,6 +116,42 @@ export default function OwnersClient({ owners }: OwnersClientProps) {
       throw new Error('Not authenticated');
     }
     return token;
+  };
+
+  useEffect(() => {
+    if (openMenuOwnerId == null) return;
+    const onDown = (e: MouseEvent) => {
+      const target = e.target as HTMLElement | null;
+      if (!target) return;
+      if (target.closest(`[data-owner-menu="${openMenuOwnerId}"]`)) return;
+      setOpenMenuOwnerId(null);
+    };
+    document.addEventListener('mousedown', onDown);
+    return () => document.removeEventListener('mousedown', onDown);
+  }, [openMenuOwnerId]);
+
+  const handleResetOwnerPassword = async (owner: OwnerWithDetails) => {
+    if (!confirm(`Réinitialiser le mot de passe du compte lié à ${owner.email} ?`)) return;
+    try {
+      const token = requireToken();
+      const res = await fetch(`${API_URL}/owners/${owner.id}/reset-password`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        alert(data?.error || 'Erreur lors de la réinitialisation');
+        return;
+      }
+      const temp = String(data?.tempPassword || '');
+      const emailSent = Boolean(data?.emailSent);
+      alert(`Mot de passe temporaire: ${temp}\nEmail envoyé: ${emailSent ? 'Oui' : 'Non'}`);
+    } catch (e) {
+      console.error(e);
+      alert('Erreur technique');
+    } finally {
+      setOpenMenuOwnerId(null);
+    }
   };
 
   const residenceById = new Map(residences.map((r) => [r.id, r]));
@@ -223,7 +260,7 @@ export default function OwnersClient({ owners }: OwnersClientProps) {
       );
 
       const filtered = ownersPayload.filter((o: any) => residentEmails.has(String(o?.email || '').toLowerCase()));
-      setOwnersList(filtered);
+      setOwnersList(filtered.length > 0 ? filtered : ownersPayload);
     } catch (error) {
       console.error('Error fetching owners:', error);
     }
@@ -520,9 +557,42 @@ export default function OwnersClient({ owners }: OwnersClientProps) {
                     </div>
                   </div>
                 </div>
-                <button className="text-slate-400 hover:text-brand-blue">
-                  <MoreVertical className="h-5 w-5" />
-                </button>
+                <div className="relative" data-owner-menu={owner.id}>
+                  <button
+                    onClick={() => setOpenMenuOwnerId((prev) => (prev === owner.id ? null : owner.id))}
+                    className="text-slate-400 hover:text-brand-blue"
+                  >
+                    <MoreVertical className="h-5 w-5" />
+                  </button>
+                  {openMenuOwnerId === owner.id ? (
+                    <div className="absolute right-0 z-20 mt-2 w-56 overflow-hidden rounded-lg border border-slate-200 bg-white shadow-lg">
+                      <button
+                        onClick={() => handleResetOwnerPassword(owner)}
+                        className="block w-full px-4 py-2 text-left text-sm text-rose-700 hover:bg-slate-50"
+                      >
+                        Réinitialiser MDP
+                      </button>
+                      <button
+                        onClick={() => {
+                          setOpenMenuOwnerId(null);
+                          openOwnerDetails(owner);
+                        }}
+                        className="block w-full px-4 py-2 text-left text-sm text-slate-700 hover:bg-slate-50"
+                      >
+                        Détails
+                      </button>
+                      <button
+                        onClick={() => {
+                          setOpenMenuOwnerId(null);
+                          openOwnerDetails(owner, true);
+                        }}
+                        className="block w-full px-4 py-2 text-left text-sm text-slate-700 hover:bg-slate-50"
+                      >
+                        Voir biens
+                      </button>
+                    </div>
+                  ) : null}
+                </div>
               </div>
 
               <div className="mt-6 space-y-3">

@@ -1,9 +1,14 @@
 import OwnersClient from '@/components/owners/OwnersClient';
 import { API_URL } from '@/utils/api';
 
+export const dynamic = 'force-dynamic';
+
 async function getOwners() {
   try {
-    const res = await fetch(`${API_URL}/owners?onlyResidents=true`, { cache: 'no-store' });
+    const res = await fetch(`${API_URL}/owners?onlyResidents=true`, {
+      cache: 'no-store',
+      headers: { Authorization: `Bearer ${process.env.API_TOKEN || ''}` },
+    });
     if (!res.ok) return [];
     return res.json();
   } catch (error) {
