@@ -6,6 +6,7 @@ import {
   Users, 
   History, 
   Database, 
+  Building2,
   Save, 
   RotateCcw,
   CheckCircle,
@@ -23,6 +24,7 @@ export default function AdminPage() {
   const [users, setUsers] = useState<any[]>([]);
   const [userRoleFilter, setUserRoleFilter] = useState<string>('');
   const [requests, setRequests] = useState<any[]>([]);
+  const [propertyAddRequests, setPropertyAddRequests] = useState<any[]>([]);
   const [activeTab, setActiveTab] = useState('users');
   const [showAddUserModal, setShowAddUserModal] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -51,11 +53,13 @@ export default function AdminPage() {
   React.useEffect(() => {
     fetchUsers();
     fetchRequests();
+    fetchPropertyAddRequests();
 
     const onVisibility = () => {
       if (document.visibilityState === 'visible') {
         fetchUsers();
         fetchRequests();
+        fetchPropertyAddRequests();
       }
     };
     document.addEventListener('visibilitychange', onVisibility);
@@ -63,6 +67,7 @@ export default function AdminPage() {
     const interval = window.setInterval(() => {
       fetchUsers();
       fetchRequests();
+      fetchPropertyAddRequests();
     }, 15000);
 
     return () => {
@@ -98,6 +103,18 @@ export default function AdminPage() {
       .then(res => res.json())
       .then(data => {
         if (Array.isArray(data)) setRequests(data);
+      })
+      .catch(err => console.error(err));
+  };
+
+  const fetchPropertyAddRequests = () => {
+    const token = sessionStorage.getItem('token');
+    fetch(`${API_URL}/property-add-requests`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    })
+      .then(res => res.json())
+      .then(data => {
+        if (Array.isArray(data)) setPropertyAddRequests(data);
       })
       .catch(err => console.error(err));
   };
@@ -249,6 +266,53 @@ export default function AdminPage() {
     }
   };
 
+  const handleApprovePropertyAddRequest = async (id: string) => {
+    if (!confirm('Valider cette demande et attribuer un bien correspondant ?')) return;
+    try {
+      const token = sessionStorage.getItem('token');
+      const res = await fetch(`${API_URL}/property-add-requests/${id}/approve`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        alert(data?.error || 'Erreur lors de la validation.');
+        return;
+      }
+      alert('Demande validée.');
+      fetchPropertyAddRequests();
+    } catch (e) {
+      console.error(e);
+      alert('Erreur technique');
+    }
+  };
+
+  const handleRejectPropertyAddRequest = async (id: string) => {
+    if (!confirm('Voulez-vous rejeter cette demande ?')) return;
+    const reason = window.prompt('Raison du refus (optionnel) :') || '';
+    try {
+      const token = sessionStorage.getItem('token');
+      const res = await fetch(`${API_URL}/property-add-requests/${id}/reject`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ reason })
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        alert(data?.error || 'Erreur lors du rejet.');
+        return;
+      }
+      alert('Demande rejetée.');
+      fetchPropertyAddRequests();
+    } catch (e) {
+      console.error(e);
+      alert('Erreur technique');
+    }
+  };
+
   const fetchUsers = () => {
     const token = sessionStorage.getItem('token');
     if (userRoleFilter === 'RESIDENT') {
@@ -378,6 +442,22 @@ export default function AdminPage() {
                 <span className="ml-1 rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-600">
                     {requests.filter(r => r.status === 'PENDING').length}
                 </span>
+            )}
+          </button>
+          <button
+            onClick={() => setActiveTab('propertyAddRequests')}
+            className={`flex items-center gap-2 border-b-2 py-4 px-1 text-sm font-medium transition-colors ${
+              activeTab === 'propertyAddRequests'
+                ? 'border-brand-blue text-brand-blue'
+                : 'border-transparent text-slate-500 hover:border-slate-300 hover:text-slate-700'
+            }`}
+          >
+            <Building2 className="h-4 w-4" />
+            Demandes ajout de bien
+            {propertyAddRequests.filter(r => r.status === 'PENDING').length > 0 && (
+              <span className="ml-1 rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-600">
+                {propertyAddRequests.filter(r => r.status === 'PENDING').length}
+              </span>
             )}
           </button>
           <button
@@ -586,6 +666,84 @@ export default function AdminPage() {
                     </table>
                 </div>
             </div>
+        )}
+
+        {activeTab === 'propertyAddRequests' && (
+          <div className="space-y-6 animate-in fade-in duration-300">
+            <div className="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden">
+              <table className="w-full text-left text-sm">
+                <thead className="bg-slate-50 text-slate-700">
+                  <tr>
+                    <th className="px-6 py-4 font-semibold">Demandeur</th>
+                    <th className="px-6 py-4 font-semibold">Bien demandé</th>
+                    <th className="px-6 py-4 font-semibold">Détails</th>
+                    <th className="px-6 py-4 font-semibold">Statut</th>
+                    <th className="px-6 py-4 font-semibold text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {propertyAddRequests.length === 0 ? (
+                    <tr>
+                      <td colSpan={5} className="px-6 py-8 text-center text-slate-500">Aucune demande.</td>
+                    </tr>
+                  ) : (
+                    propertyAddRequests.map((req) => (
+                      <tr key={req.id} className="hover:bg-slate-50">
+                        <td className="px-6 py-4">
+                          <div className="font-medium text-slate-900">{req.email || '-'}</div>
+                          <div className="text-xs text-slate-500">
+                            {req.createdAt ? `Créée le ${new Date(req.createdAt).toLocaleDateString()}` : ''}
+                          </div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="text-slate-900 font-medium">{req.residenceId || '-'}</div>
+                          <div className="text-xs text-slate-500">
+                            {[
+                              req.block ? `Bloc ${req.block}` : null,
+                              req.floor ? `Étage ${req.floor}` : null,
+                              req.door ? `N° appartement ${req.door}` : null,
+                            ].filter(Boolean).join(' - ')}
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 text-slate-600">
+                          <div className="text-xs">{req.notes || '-'}</div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <span className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ${
+                            req.status === 'APPROVED' ? 'bg-green-50 text-green-700' :
+                            req.status === 'REJECTED' ? 'bg-red-50 text-red-700' :
+                            'bg-yellow-50 text-yellow-700'
+                          }`}>
+                            {req.status === 'APPROVED' ? 'Validé' : req.status === 'REJECTED' ? 'Rejeté' : 'En attente'}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 text-right">
+                          {req.status === 'PENDING' && (
+                            <div className="flex justify-end gap-2">
+                              <button
+                                onClick={() => handleApprovePropertyAddRequest(req.id)}
+                                className="p-1 rounded bg-green-50 text-green-600 hover:bg-green-100"
+                                title="Valider"
+                              >
+                                <Check className="h-4 w-4" />
+                              </button>
+                              <button
+                                onClick={() => handleRejectPropertyAddRequest(req.id)}
+                                className="p-1 rounded bg-red-50 text-red-600 hover:bg-red-100"
+                                title="Rejeter"
+                              >
+                                <X className="h-4 w-4" />
+                              </button>
+                            </div>
+                          )}
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
         )}
 
         {activeTab === 'history' && (
