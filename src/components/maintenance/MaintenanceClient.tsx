@@ -281,7 +281,6 @@ export default function MaintenanceClient({ tickets: initialTickets }: Maintenan
     setShowFilters(false);
   };
 
-  // Load intervenants for Admin assignment
   React.useEffect(() => {
     const token = sessionStorage.getItem('token');
     
@@ -321,16 +320,12 @@ export default function MaintenanceClient({ tickets: initialTickets }: Maintenan
           }
         }).then((res) => res.json().catch(() => []));
 
-      const isSecurity = (u: StaffUser) => {
-        const prof = (u.profession || '').toLowerCase();
-        return prof.includes('sécur') || prof.includes('secur');
-      };
-
-      Promise.all([fetchUsersByRole('RESPONSABLE_ZONE'), fetchUsersByRole('MANAGER')])
-        .then(([zones, managers]) => {
+      Promise.all([fetchUsersByRole('RESPONSABLE_ZONE'), fetchUsersByRole('MANAGER'), fetchUsersByRole('RECOUVREMENT')])
+        .then(([zones, managers, recouvrements]) => {
           const zoneManagers = extractPayloadArray<unknown>(zones).filter(isStaffUser);
-          const securityManagers = extractPayloadArray<unknown>(managers).filter(isStaffUser).filter(isSecurity);
-          const merged = [...zoneManagers, ...securityManagers];
+          const managersList = extractPayloadArray<unknown>(managers).filter(isStaffUser);
+          const recouvList = extractPayloadArray<unknown>(recouvrements).filter(isStaffUser);
+          const merged = [...zoneManagers, ...managersList, ...recouvList];
           const byId = new Map<string, StaffUser>();
           merged.forEach((u) => byId.set(String(u.id), u));
           const list = Array.from(byId.values());
@@ -353,13 +348,17 @@ export default function MaintenanceClient({ tickets: initialTickets }: Maintenan
     }
   }, [role]);
 
-  // Fetch tickets on mount instead of passing props (Migration step)
-  // Or keep props if we migrate Server Component fetching later.
-  // For now, let's keep props but update actions to use new API.
-
   const handleStatusChange = async (ticketId: string, newStatus: string) => {
     try {
         const token = sessionStorage.getItem('token');
+        const ticket = tickets.find((t) => t.id === ticketId);
+        const hasAssignee = Boolean((ticket?.assignee || '').trim());
+        const hasResponsible = Boolean((ticket?.responsible || '').trim());
+        const hasSubcontractor = Boolean((ticket?.subcontractorId || '').toString().trim());
+        if (newStatus !== 'Signalé' && ticket && !hasAssignee && !hasResponsible && !hasSubcontractor) {
+          alert("Impossible de changer le statut tant qu'aucun intervenant ou responsable n'est affecté");
+          return;
+        }
         const res = await fetch(`${API_URL}/maintenance/${ticketId}`, {
             method: 'PUT',
             headers: { 
@@ -374,7 +373,8 @@ export default function MaintenanceClient({ tickets: initialTickets }: Maintenan
                 t.id === ticketId ? { ...t, status: newStatus } : t
             ));
         } else {
-            alert('Impossible de changer le statut');
+            const data = await res.json().catch(() => ({}));
+            alert(data?.error || 'Impossible de changer le statut');
         }
     } catch (e) {
         console.error(e);
@@ -766,7 +766,7 @@ export default function MaintenanceClient({ tickets: initialTickets }: Maintenan
                               <optgroup label="Responsables">
                                 {intervenants.map((i) => (
                                   <option key={i.id} value={`staff:${i.name}`}>
-                                    {i.name} ({i.role === 'RESPONSABLE_ZONE' ? (i.zone ? `Responsable ${i.zone}` : 'Responsable de zone') : (i.profession || 'Responsable')})
+                                    {i.name} ({i.role === 'RESPONSABLE_ZONE' ? (i.zone ? `Responsable ${i.zone}` : 'Responsable de zone') : (i.role === 'RECOUVREMENT' ? 'Recouvrement' : (i.profession || 'Responsable'))})
                                   </option>
                                 ))}
                               </optgroup>
@@ -791,8 +791,14 @@ export default function MaintenanceClient({ tickets: initialTickets }: Maintenan
                         
                         <select
                             value={ticket.status}
+                            disabled={
+                              ticket.status === 'Signalé' &&
+                              !(ticket.assignee || '').trim() &&
+                              !(ticket.responsible || '').trim() &&
+                              !(ticket.subcontractorId || '').toString().trim()
+                            }
                             onChange={(e) => handleStatusChange(ticket.id, e.target.value)}
-                            className={`text-sm font-medium bg-transparent border-none focus:ring-0 cursor-pointer p-0 pr-6 ${
+                            className={`text-sm font-medium bg-transparent border-none focus:ring-0 cursor-pointer p-0 pr-6 disabled:cursor-not-allowed disabled:text-slate-400 ${
                                 ticket.status === 'Terminé' ? 'text-emerald-700' :
                                 ticket.status === 'En cours' ? 'text-blue-700' :
                                 'text-slate-700'

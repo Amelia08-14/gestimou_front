@@ -251,6 +251,10 @@ export default function AdminPage() {
 
   const fetchUsers = () => {
     const token = sessionStorage.getItem('token');
+    if (userRoleFilter === 'RESIDENT') {
+      setUsers([]);
+      return;
+    }
     const query = userRoleFilter ? `?role=${encodeURIComponent(userRoleFilter)}` : '';
     fetch(`${API_URL}/users${query}`, {
       cache: 'no-store',
@@ -259,7 +263,7 @@ export default function AdminPage() {
       .then(res => res.json())
       .then(data => {
         if (Array.isArray(data)) {
-            setUsers(data);
+            setUsers(data.filter((u: any) => u?.role !== 'RESIDENT'));
         } else {
             setUsers([]);
         }
@@ -427,7 +431,6 @@ export default function AdminPage() {
                   <option value="INTERVENANT">Intervenant</option>
                   <option value="RECOUVREMENT">Recouvrement</option>
                   <option value="HSE">HSE</option>
-                  <option value="RESIDENT">Résident</option>
                 </select>
               </div>
               <button 
