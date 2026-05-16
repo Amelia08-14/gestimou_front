@@ -7,7 +7,8 @@ import {
   Phone,
   MapPin,
   MoreVertical,
-  FileText
+  FileText,
+  Trash2
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { API_URL } from '@/utils/api';
@@ -149,6 +150,41 @@ export default function OwnersClient({ owners }: OwnersClientProps) {
     } catch (e) {
       console.error(e);
       alert('Erreur technique');
+    } finally {
+      setOpenMenuOwnerId(null);
+    }
+  };
+
+  const handleDeleteOwner = async (owner: OwnerWithDetails) => {
+    const confirmed = confirm(
+      `⚠️ Supprimer le propriétaire "${owner.firstName} ${owner.lastName}" ?\n\n` +
+      `• Tous ses biens seront libérés (statut → Libre)\n` +
+      `• Son compte utilisateur sera supprimé\n\n` +
+      `Cette action est irréversible.`
+    );
+    if (!confirmed) return;
+
+    try {
+      const token = requireToken();
+      const res = await fetch(`${API_URL}/owners/${owner.id}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        alert(data?.error || 'Erreur lors de la suppression');
+        return;
+      }
+      setOwnersList((prev) => prev.filter((o) => o.id !== owner.id));
+      if (selectedOwner?.id === owner.id) {
+        setSelectedOwner(null);
+        setShowProperties(false);
+      }
+      const freed = data?.freedCount ?? 0;
+      alert(`Propriétaire supprimé.${freed > 0 ? `\n${freed} bien(s) remis à "Libre".` : ''}`);
+    } catch (e) {
+      console.error(e);
+      alert('Erreur technique lors de la suppression.');
     } finally {
       setOpenMenuOwnerId(null);
     }
@@ -590,6 +626,14 @@ export default function OwnersClient({ owners }: OwnersClientProps) {
                       >
                         Voir biens
                       </button>
+                      <div className="border-t border-slate-100" />
+                      <button
+                        onClick={() => handleDeleteOwner(owner)}
+                        className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm font-medium text-red-600 hover:bg-red-50"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                        Supprimer
+                      </button>
                     </div>
                   ) : null}
                 </div>
@@ -823,22 +867,31 @@ export default function OwnersClient({ owners }: OwnersClientProps) {
                 </div>
               </div>
 
-              <div className="flex justify-end gap-3 border-t border-slate-100 pt-4">
+              <div className="flex items-center justify-between gap-3 border-t border-slate-100 pt-4">
                 <button
-                  onClick={() => {
-                    setSelectedOwner(null);
-                    setShowProperties(false);
-                  }}
-                  className="rounded-lg px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100"
+                  onClick={() => handleDeleteOwner(selectedOwner)}
+                  className="flex items-center gap-2 rounded-lg border border-red-200 px-4 py-2 text-sm font-medium text-red-600 hover:bg-red-50"
                 >
-                  Fermer
+                  <Trash2 className="h-4 w-4" />
+                  Supprimer
                 </button>
-                <button
-                  onClick={() => handleEdit(selectedOwner)}
-                  className="rounded-lg bg-brand-blue px-6 py-2 text-sm font-bold text-white shadow-md hover:bg-brand-blue/90"
-                >
-                  Modifier
-                </button>
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => {
+                      setSelectedOwner(null);
+                      setShowProperties(false);
+                    }}
+                    className="rounded-lg px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100"
+                  >
+                    Fermer
+                  </button>
+                  <button
+                    onClick={() => handleEdit(selectedOwner)}
+                    className="rounded-lg bg-brand-blue px-6 py-2 text-sm font-bold text-white shadow-md hover:bg-brand-blue/90"
+                  >
+                    Modifier
+                  </button>
+                </div>
               </div>
             </div>
           </div>
