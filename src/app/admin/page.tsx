@@ -46,6 +46,7 @@ export default function AdminPage() {
 
   const roleLabel = (role: string) => {
     if (role === 'MANAGER') return 'Responsable Sécurité';
+    if (role === 'GESTIONNAIRE_TAG') return 'Gestionnaire TAG';
     return role;
   };
 
@@ -511,6 +512,7 @@ export default function AdminPage() {
                   <option value="INTERVENANT">Intervenant</option>
                   <option value="RECOUVREMENT">Recouvrement</option>
                   <option value="HSE">HSE</option>
+                  <option value="GESTIONNAIRE_TAG">Gestionnaire TAG</option>
                 </select>
               </div>
               <button 
@@ -925,6 +927,7 @@ export default function AdminPage() {
                     <option value="HSE">HSE</option>
                     <option value="INTERVENANT">Intervenant</option>
                     <option value="MANAGER">Responsable Sécurité</option>
+                    <option value="GESTIONNAIRE_TAG">Gestionnaire TAG</option>
                   </select>
                 </div>
                 {formData.role === 'INTERVENANT' && (
