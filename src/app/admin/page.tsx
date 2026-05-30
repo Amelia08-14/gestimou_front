@@ -398,7 +398,8 @@ export default function AdminPage() {
         setFormData({ name: '', email: '', role: 'ADMIN', profession: '', zone: '', password: '' });
         setSelectedUser(null);
       } else {
-        alert('Erreur lors de la sauvegarde');
+        const errData = await res.json().catch(() => ({}));
+        alert(errData?.error || errData?.message || `Erreur ${res.status} lors de la sauvegarde`);
       }
     } catch (error) {
       console.error(error);
