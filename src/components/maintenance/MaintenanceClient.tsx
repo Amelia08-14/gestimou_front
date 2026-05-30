@@ -424,11 +424,21 @@ export default function MaintenanceClient({ tickets: initialTickets }: Maintenan
 
         if (res.ok) {
             const updated = await res.json().catch(() => null);
-            setTickets(tickets.map(t => 
-                t.id === ticketId ? { ...t, ...(updated || {}) } : t
-            ));
+            setTickets(prev => prev.map(t => {
+                if (t.id !== ticketId) return t;
+                const merged = { ...t, ...(updated || {}) };
+                // Populate nested subcontractor object from local list (not returned by backend)
+                if (merged.subcontractorId) {
+                    const sub = subcontractors.find(s => String(s.id) === String(merged.subcontractorId));
+                    if (sub) merged.subcontractor = sub;
+                } else {
+                    merged.subcontractor = null;
+                }
+                return merged;
+            }));
         } else {
-            alert("Impossible d'assigner l'intervenant");
+            const err = await res.json().catch(() => null);
+            alert(err?.error || "Impossible d'assigner l'intervenant");
         }
     } catch (e) {
         console.error(e);
