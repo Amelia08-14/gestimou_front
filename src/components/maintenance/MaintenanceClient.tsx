@@ -73,7 +73,7 @@ const PROBLEM_TYPES: ProblemCategory[] = [
     category: "Peinture (Partie Commune)",
     items: [
         "Retouches peinture couloir",
-        "Peinture écaillée",
+        "Peinture Escalier",
         "Traces d'humidité",
         "Autre problème de peinture"
     ]
