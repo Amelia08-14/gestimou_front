@@ -44,10 +44,10 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   // Prevent flash of content while checking auth
   if (isLoading) {
       return (
-        <div className="flex h-screen items-center justify-center bg-gray-50">
+        <div className="flex h-screen items-center justify-center bg-brand-cream">
           <div className="flex flex-col items-center gap-4">
-            <div className="h-12 w-12 animate-spin rounded-full border-4 border-brand-blue border-t-transparent"></div>
-            <p className="text-slate-500 font-medium">Chargement...</p>
+            <div className="h-12 w-12 animate-spin rounded-full border-4 border-brand-navy border-t-transparent"></div>
+            <p className="text-brand-navy/60 font-medium">Chargement…</p>
           </div>
         </div>
       );
@@ -64,7 +64,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <div className="flex h-screen w-full bg-gray-50">
+    <div className="flex h-screen w-full bg-brand-cream">
       <Sidebar />
       <div className="flex flex-1 flex-col h-screen overflow-hidden">
         <Header />

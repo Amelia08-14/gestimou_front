@@ -13,8 +13,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "GESTIMOU - Votre partenaire de gestion immobilière",
-  description: "Plateforme d'administration pour la gestion immobilière",
+  title: "Global Immo Service — Administration",
+  description: "Plateforme d'administration Global Immo Service",
 };
 
 import AppLayout from "@/components/AppLayout";
@@ -26,9 +26,9 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="fr" suppressHydrationWarning>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased flex h-screen bg-gray-50`}
+        className={`${geistSans.variable} ${geistMono.variable} antialiased flex h-screen bg-brand-cream`}
         suppressHydrationWarning
       >
         <Providers>

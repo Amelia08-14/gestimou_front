@@ -1,26 +1,37 @@
 @import "tailwindcss";
 
 :root {
-  --background: #f8fafc;
-  --foreground: #0f172a;
-  
-  /* Brand Colors */
-  --color-brand-blue: #0f172a; /* Slate 900 */
-  --color-brand-gold: #d4af37; /* Metallic Gold */
-  --color-brand-gold-light: #f3e5ab;
-  --color-brand-gold-dark: #b4941f;
+  --background: #f6f3ec;
+  --foreground: #0c1620;
+
+  /* Global Immo Service — Brand Palette */
+  --color-brand-navy:  #0c1620;
+  --color-brand-amber: #db9200;
+  --color-brand-cream: #f6f3ec;
+  --color-brand-gold:  #a08851;
+
+  /* Legacy aliases kept for compatibility */
+  --color-brand-blue:       #0c1620;
+  --color-brand-gold-light: #f0e4c2;
+  --color-brand-gold-dark:  #a08851;
+  --color-brand-gold-hover: #b8982d;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
+  --color-background:  var(--background);
+  --color-foreground:  var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
-  
-  /* Custom Colors */
-  --color-brand-blue: #0f172a;
-  --color-brand-gold: #d4af37;
-  --color-brand-gold-hover: #b4941f;
+
+  /* Tailwind utility classes */
+  --color-brand-navy:       #0c1620;
+  --color-brand-amber:      #db9200;
+  --color-brand-cream:      #f6f3ec;
+  --color-brand-gold:       #a08851;
+  --color-brand-blue:       #0c1620;
+  --color-brand-gold-hover: #b8982d;
+  --color-brand-gold-light: #f0e4c2;
+  --color-brand-gold-dark:  #a08851;
 }
 
 body {
