@@ -1,13 +1,14 @@
 'use client';
 
-import React, { useState } from 'react';
-import { 
-  Shield, 
-  Users, 
-  History, 
-  Database, 
+import React, { Suspense, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
+import {
+  Shield,
+  Users,
+  History,
+  Database,
   Building2,
-  Save, 
+  Save,
   RotateCcw,
   CheckCircle,
   AlertTriangle,
@@ -20,12 +21,26 @@ import {
 } from 'lucide-react';
 import { API_URL } from '@/utils/api';
 
+const VALID_TABS = ['users', 'registrations', 'propertyAddRequests', 'history', 'backup'];
+
 export default function AdminPage() {
+  return (
+    <Suspense fallback={null}>
+      <AdminPageContent />
+    </Suspense>
+  );
+}
+
+function AdminPageContent() {
+  const searchParams = useSearchParams();
+  const requestedTab = searchParams.get('tab');
   const [users, setUsers] = useState<any[]>([]);
   const [userRoleFilter, setUserRoleFilter] = useState<string>('');
   const [requests, setRequests] = useState<any[]>([]);
   const [propertyAddRequests, setPropertyAddRequests] = useState<any[]>([]);
-  const [activeTab, setActiveTab] = useState('users');
+  const [activeTab, setActiveTab] = useState(
+    requestedTab && VALID_TABS.includes(requestedTab) ? requestedTab : 'users'
+  );
   const [showAddUserModal, setShowAddUserModal] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isBackingUp, setIsBackingUp] = useState(false);
