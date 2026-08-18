@@ -46,50 +46,25 @@ export default function LoginPage() {
   };
 
   return (
-    <div
-      className="flex min-h-screen w-full items-center justify-center p-4"
-      style={{ backgroundColor: '#0c1620' }}
-    >
-      {/* Background subtle pattern */}
-      <div
-        className="absolute inset-0 opacity-[0.03]"
-        style={{
-          backgroundImage: `radial-gradient(circle at 25% 25%, #db9200 0%, transparent 50%),
-                            radial-gradient(circle at 75% 75%, #db9200 0%, transparent 50%)`,
-        }}
-      />
-
-      <div className="relative w-full max-w-md">
-        {/* ── Logo block ──────────────────────────────────── */}
-        <div className="mb-8 flex flex-col items-center gap-4">
-          <Image
-            src="/logo-light.png"
-            alt="Global Immo Service"
-            width={80}
-            height={80}
-            className="object-contain drop-shadow-lg"
-          />
-          <div className="text-center">
-            <p className="text-lg font-bold tracking-[0.25em] text-white uppercase">
-              Global Immo Service
-            </p>
-            <p className="mt-1 text-xs tracking-widest text-white/40 uppercase">
-              Espace Administration
-            </p>
+    <div className="flex min-h-screen w-full bg-brand-cream">
+      {/* ── Left: form ──────────────────────────────────────── */}
+      <div className="flex w-full flex-col justify-center px-8 py-12 sm:px-16 lg:w-1/2 lg:px-24">
+        <div className="mx-auto w-full max-w-sm">
+          <div className="mb-10 flex items-center gap-3">
+            <Image src="/logo-dark.png" alt="Global Immo Service" width={40} height={40} className="object-contain" />
+            <div className="leading-tight">
+              <p className="text-sm font-bold tracking-widest text-brand-navy uppercase">Global Immo</p>
+              <p className="text-[11px] font-semibold tracking-widest text-slate-500 uppercase">Service</p>
+            </div>
           </div>
-        </div>
 
-        {/* ── White card ──────────────────────────────────── */}
-        <div className="rounded-2xl bg-white px-8 py-8 shadow-2xl">
-          <h2 className="mb-6 text-xl font-bold text-brand-navy">
-            Connexion
-          </h2>
+          <h1 className="text-2xl font-bold text-brand-navy">Global Immo Service</h1>
+          <p className="mt-1.5 text-sm text-slate-500">Entrez vos identifiants pour accéder à la console.</p>
 
-          <form className="space-y-4" onSubmit={handleSubmit}>
-            {/* Email */}
+          <form className="mt-8 space-y-4" onSubmit={handleSubmit}>
             <div>
-              <label htmlFor="email" className="mb-1.5 block text-xs font-semibold text-slate-500 uppercase tracking-wider">
-                E-mail
+              <label htmlFor="email" className="mb-1.5 block text-xs font-bold text-slate-500 uppercase tracking-wider">
+                Adresse e-mail
               </label>
               <div className="relative">
                 <Mail className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
@@ -99,15 +74,14 @@ export default function LoginPage() {
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="block w-full rounded-xl border border-slate-200 bg-slate-50 py-3 pl-10 pr-4 text-sm text-slate-900 placeholder-slate-400 outline-none transition focus:border-brand-amber focus:bg-white focus:ring-2 focus:ring-brand-amber/20"
-                  placeholder="votre@email.com"
+                  className="block w-full rounded-xl border border-slate-200 bg-white py-3 pl-10 pr-4 text-sm text-slate-900 placeholder-slate-400 outline-none transition focus:border-brand-amber focus:ring-2 focus:ring-brand-amber/20"
+                  placeholder="nom@aymenpromotion.dz"
                 />
               </div>
             </div>
 
-            {/* Password */}
             <div>
-              <label htmlFor="password" className="mb-1.5 block text-xs font-semibold text-slate-500 uppercase tracking-wider">
+              <label htmlFor="password" className="mb-1.5 block text-xs font-bold text-slate-500 uppercase tracking-wider">
                 Mot de passe
               </label>
               <div className="relative">
@@ -118,7 +92,7 @@ export default function LoginPage() {
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="block w-full rounded-xl border border-slate-200 bg-slate-50 py-3 pl-10 pr-11 text-sm text-slate-900 placeholder-slate-400 outline-none transition focus:border-brand-amber focus:bg-white focus:ring-2 focus:ring-brand-amber/20"
+                  className="block w-full rounded-xl border border-slate-200 bg-white py-3 pl-10 pr-11 text-sm text-slate-900 placeholder-slate-400 outline-none transition focus:border-brand-amber focus:ring-2 focus:ring-brand-amber/20"
                   placeholder="••••••••"
                 />
                 <button
@@ -131,21 +105,16 @@ export default function LoginPage() {
               </div>
             </div>
 
-            {/* Error */}
             {error && (
-              <div className="rounded-xl bg-red-50 border border-red-100 px-4 py-3 text-sm text-red-600">
+              <div className="rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm text-red-600">
                 {error}
               </div>
             )}
 
-            {/* Submit */}
             <button
               type="submit"
               disabled={loading}
-              className="mt-2 flex w-full items-center justify-center rounded-xl py-3 text-sm font-bold text-white transition-all shadow-md disabled:opacity-60"
-              style={{ backgroundColor: '#db9200' }}
-              onMouseEnter={(e) => !loading && ((e.target as HTMLButtonElement).style.backgroundColor = '#b87c00')}
-              onMouseLeave={(e) => !loading && ((e.target as HTMLButtonElement).style.backgroundColor = '#db9200')}
+              className="mt-2 flex w-full items-center justify-center rounded-xl bg-brand-amber py-3 text-sm font-bold text-white shadow-md transition-all hover:brightness-95 disabled:opacity-60"
             >
               {loading ? (
                 <span className="flex items-center gap-2">
@@ -157,11 +126,32 @@ export default function LoginPage() {
               )}
             </button>
           </form>
-        </div>
 
-        <p className="mt-6 text-center text-xs text-white/30">
-          © {new Date().getFullYear()} Global Immo Service
-        </p>
+          <p className="mt-6 text-center text-xs text-slate-400">
+            Accès réservé au personnel Aymen Promotion.
+          </p>
+        </div>
+      </div>
+
+      {/* ── Right: brand panel ──────────────────────────────── */}
+      <div className="relative hidden lg:block lg:w-1/2">
+        <Image src="/login-bg.jpg" alt="" fill priority className="object-cover" />
+        <div className="absolute inset-0 bg-brand-navy/70" />
+        <div className="relative flex h-full flex-col items-center justify-center px-12 text-center">
+          <Image
+            src="/logo-light.png"
+            alt="Global Immo Service"
+            width={96}
+            height={96}
+            className="object-contain drop-shadow-lg"
+          />
+          <p className="mt-4 text-lg font-bold tracking-[0.25em] text-white uppercase">Global Immo</p>
+          <p className="text-sm font-semibold tracking-[0.3em] text-white/70 uppercase">Service</p>
+          <h2 className="mt-10 text-3xl font-bold text-white">Console d&apos;administration</h2>
+          <p className="mt-3 max-w-sm text-sm text-white/60">
+            Interface de gestion exclusive réservée au personnel Aymen Promotion. Accès restreint.
+          </p>
+        </div>
       </div>
     </div>
   );

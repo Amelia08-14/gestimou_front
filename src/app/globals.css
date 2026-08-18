@@ -40,6 +40,12 @@ body {
   font-family: var(--font-sans), system-ui, sans-serif;
 }
 
+@media (max-width: 767px) {
+  body { min-width: 320px; }
+  main > div { padding-left: 26px !important; padding-right: 26px !important; }
+  table { min-width: 720px; }
+}
+
 /* Hide Next.js Development Indicator */
 [data-nextjs-toast],
 [data-nextjs-toast-wrapper],

@@ -3,6 +3,7 @@
 import { usePathname, useRouter } from 'next/navigation';
 import { Sidebar } from '@/components/Sidebar';
 import { Header } from '@/components/Header';
+import { MobileNavigation } from '@/components/MobileNavigation';
 import { useRole } from '@/contexts/RoleContext';
 import { useEffect } from 'react';
 
@@ -33,6 +34,9 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       if (pathname === '/maintenance') return ['ADMIN', 'RESPONSABLE_ZONE', 'MANAGER', 'HSE', 'INTERVENANT'].includes(role);
       if (pathname === '/owners') return ['ADMIN', 'RESPONSABLE_ZONE', 'MANAGER'].includes(role);
       if (pathname === '/properties') return ['ADMIN', 'RESPONSABLE_ZONE', 'MANAGER'].includes(role);
+      if (pathname === '/trombinoscope') return ['ADMIN', 'RESPONSABLE_ZONE', 'MANAGER'].includes(role);
+      if (pathname === '/messages') return ['ADMIN', 'RESPONSABLE_ZONE', 'MANAGER'].includes(role);
+      if (pathname === '/avis') return ['ADMIN', 'RESPONSABLE_ZONE', 'MANAGER'].includes(role);
       return true;
     };
 
@@ -64,14 +68,15 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <div className="flex h-screen w-full bg-brand-cream">
-      <Sidebar />
+    <div className="flex min-h-screen w-full bg-brand-cream md:h-screen">
+      <div className="hidden md:block"><Sidebar /></div>
       <div className="flex flex-1 flex-col h-screen overflow-hidden">
-        <Header />
-        <main className="flex-1 overflow-y-auto p-8">
+        <div className="hidden md:block"><Header /></div>
+        <main className="flex-1 overflow-y-auto pb-24 md:p-8 md:pb-8">
           {children}
         </main>
       </div>
+      <MobileNavigation />
     </div>
   );
 }

@@ -15,6 +15,7 @@ import {
   UserPlus,
   Images,
   MessageSquare,
+  Megaphone,
   Bell,
   User,
   ChevronDown,
@@ -34,15 +35,15 @@ const gestionItems = [
   { name: 'Appel de fonds', href: '/appel-de-fonds', icon: FileText, roles: ['ADMIN', 'RECOUVREMENT'] },
   { name: 'Employés', href: '/admin?tab=users', icon: Users, roles: ['ADMIN'] },
   { name: 'Inscriptions', href: '/admin?tab=registrations', icon: UserPlus, roles: ['ADMIN'] },
-  { name: 'Trombinoscope', href: '/owners', icon: Images, roles: ['ADMIN', 'RESPONSABLE_ZONE', 'MANAGER'] },
+  { name: 'Trombinoscope', href: '/trombinoscope', icon: Images, roles: ['ADMIN', 'RESPONSABLE_ZONE', 'MANAGER'] },
   { name: 'Documents', href: '/documents', icon: FolderOpen, roles: ['ADMIN'] },
 ];
 
-// "Avis" and "Statistiques" are in the reference design but have no backend
-// yet (no Announcement model, no dedicated analytics endpoint) — left out of
-// the live nav until built rather than linking to an empty/dead page.
+// "Statistiques" has no dedicated analytics page yet — left out of the live
+// nav (pointing it at "/" would just duplicate "Tableau de bord") until built.
 const bottomNav = [
   { name: 'Messages', href: '/messages', icon: MessageSquare, roles: ['ADMIN', 'RESPONSABLE_ZONE', 'MANAGER'] },
+  { name: 'Avis', href: '/avis', icon: Megaphone, roles: ['ADMIN', 'RESPONSABLE_ZONE', 'MANAGER'] },
   { name: 'Notifications', href: '/notifications', icon: Bell, roles: ['ADMIN', 'RESPONSABLE_ZONE', 'MANAGER', 'HSE', 'INTERVENANT', 'RECOUVREMENT'] },
   { name: 'Profil', href: '/profile', icon: User, roles: ['ADMIN', 'RESPONSABLE_ZONE', 'MANAGER', 'HSE', 'INTERVENANT', 'RECOUVREMENT'] },
 ];
