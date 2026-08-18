@@ -234,7 +234,11 @@ export default function AdminPage() {
         
         if (res.ok) {
             const data = await res.json();
-            alert(`Compte créé avec succès !\nMot de passe temporaire : ${data.tempPassword}`);
+            if (data.propertyLinked) {
+                alert(`Compte créé avec succès !\nMot de passe temporaire : ${data.tempPassword}\nLe bien a été affecté automatiquement au propriétaire.`);
+            } else {
+                alert(`Compte créé avec succès !\nMot de passe temporaire : ${data.tempPassword}\n\n⚠️ Le bien n'a pas pu être affecté automatiquement :\n${data.propertyLinkWarning || 'Bien introuvable.'}\n\nPensez à l'affecter manuellement depuis la gestion des biens.`);
+            }
             fetchRequests();
             fetchUsers(); // Refresh users list too
         } else {
