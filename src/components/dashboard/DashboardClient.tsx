@@ -1,17 +1,48 @@
 'use client';
 
-import { useState, useEffect } from 'react'; // Ensure React hooks are imported
-import { 
-  Building2, 
-  Users, 
-  Wallet, 
-  AlertTriangle, 
-  ArrowUpRight, 
-  ArrowDownRight,
-  TrendingUp
+import { useEffect, useRef, useState } from 'react';
+import {
+  Building2,
+  Users,
+  Wallet,
+  AlertTriangle,
+  ArrowUpRight,
+  TrendingUp,
+  SlidersHorizontal,
+  Check,
 } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from 'recharts';
 import { API_URL } from '@/utils/api';
+
+const WIDGET_LABELS: Record<string, string> = {
+  totalResidences: 'Total résidences',
+  occupancyRate: "Taux d'occupation",
+  monthlyRevenue: 'Revenus mensuels',
+  ticketsCount: 'Tickets en cours',
+  revenueChart: 'Évolution des revenus',
+  activityChart: 'Activité hebdomadaire',
+  recentActivity: 'Dernières activités',
+};
+const ALL_WIDGET_KEYS = Object.keys(WIDGET_LABELS);
+
+interface RevenuePoint {
+  name: string;
+  [residenceKey: string]: string | number;
+}
+
+interface ActivityItem {
+  action: string;
+  user: string;
+  time: string;
+  amount: string;
+  type: 'success' | 'warning' | 'info' | string;
+}
+
+interface WeeklyActivityPoint {
+  name: string;
+  payments: number;
+  tickets: number;
+}
 
 // Props interface
 interface DashboardClientProps {
@@ -21,9 +52,9 @@ interface DashboardClientProps {
     ticketsCount: number;
     monthlyRevenue: string;
   };
-  revenueData: any[];
-  activities: any[];
-  weeklyActivity: any[];
+  revenueData: RevenuePoint[];
+  activities: ActivityItem[];
+  weeklyActivity: WeeklyActivityPoint[];
 }
 
 export default function DashboardClient({ 
@@ -35,11 +66,50 @@ export default function DashboardClient({
 
   // State
   const [stats, setStats] = useState(initialStats);
-  const [revenueData, setRevenueData] = useState<any[]>(initialRevenueData);
-  const [activities, setActivities] = useState<any[]>(initialActivities);
-  const [weeklyActivity, setWeeklyActivity] = useState<any[]>(initialWeeklyActivity);
+  const [revenueData, setRevenueData] = useState<RevenuePoint[]>(initialRevenueData);
+  const [activities, setActivities] = useState<ActivityItem[]>(initialActivities);
+  const [weeklyActivity, setWeeklyActivity] = useState<WeeklyActivityPoint[]>(initialWeeklyActivity);
   const [loading, setLoading] = useState(false);
   const [reportPeriod, setReportPeriod] = useState<'month' | 'year'>('month');
+
+  // ── Dashboard personalization (per-browser, persisted in localStorage) ──
+  const [visibleWidgets, setVisibleWidgets] = useState<Set<string>>(new Set(ALL_WIDGET_KEYS));
+  const [showCustomize, setShowCustomize] = useState(false);
+  const customizeRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    try {
+      const saved = window.localStorage.getItem('dashboard_widgets');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length) setVisibleWidgets(new Set(parsed));
+      }
+    } catch {
+      // ignore malformed/missing preference
+    }
+  }, []);
+
+  useEffect(() => {
+    const onClickOutside = (e: MouseEvent) => {
+      if (customizeRef.current && !customizeRef.current.contains(e.target as Node)) setShowCustomize(false);
+    };
+    document.addEventListener('mousedown', onClickOutside);
+    return () => document.removeEventListener('mousedown', onClickOutside);
+  }, []);
+
+  const toggleWidget = (key: string) => {
+    setVisibleWidgets((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      try {
+        window.localStorage.setItem('dashboard_widgets', JSON.stringify(Array.from(next)));
+      } catch {
+        // localStorage unavailable — preference just won't persist
+      }
+      return next;
+    });
+  };
 
   useEffect(() => {
     const fetchData = async () => {
@@ -113,17 +183,17 @@ export default function DashboardClient({
       ['Revenus', 'Période', reportPeriod === 'month' ? 'Ce mois-ci' : 'Cette année'],
       [],
       ['Revenus', 'Série', 'Valeur', 'Label'],
-      ...revenueData.flatMap((row: any) => (
+      ...revenueData.flatMap((row) => (
         Object.keys(row || {})
           .filter((key) => key !== 'name')
           .map((key) => (['Revenus', key, row[key], row.name]))
       )),
       [],
       ['Activité Hebdomadaire', 'Jour', 'Paiements', 'Tickets'],
-      ...weeklyActivity.map((row: any) => (['Activité Hebdomadaire', row.name, row.payments, row.tickets])),
+      ...weeklyActivity.map((row) => (['Activité Hebdomadaire', row.name, row.payments, row.tickets])),
       [],
       ['Dernières activités', 'Action', 'Utilisateur', 'Temps', 'Montant'],
-      ...activities.map((row: any) => (['Dernières activités', row.action, row.user, row.time, row.amount]))
+      ...activities.map((row) => (['Dernières activités', row.action, row.user, row.time, row.amount]))
     ];
 
     downloadCsv(`dashboard_report_${today}.csv`, rows);
@@ -131,6 +201,7 @@ export default function DashboardClient({
 
   const statsDisplay = [
     {
+      key: 'totalResidences',
       name: 'Total Résidences',
       value: stats.totalResidences.toString(),
       change: '+0',
@@ -139,6 +210,7 @@ export default function DashboardClient({
       color: 'blue-500',
     },
     {
+      key: 'occupancyRate',
       name: 'Taux d\'Occupation',
       value: stats.occupancyRate,
       change: '+2%',
@@ -147,6 +219,7 @@ export default function DashboardClient({
       color: 'emerald-500',
     },
     {
+      key: 'monthlyRevenue',
       name: 'Revenus Mensuels',
       value: stats.monthlyRevenue,
       change: '+12%',
@@ -155,34 +228,65 @@ export default function DashboardClient({
       color: 'brand-gold',
     },
     {
+      key: 'ticketsCount',
       name: 'Tickets En Cours',
       value: stats.ticketsCount.toString(),
       change: '-2',
-      changeType: 'positive', 
+      changeType: 'positive',
       icon: AlertTriangle,
       color: 'orange-500',
     },
-  ];
+  ].filter((item) => visibleWidgets.has(item.key));
 
   return (
     <div className="space-y-8">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Tableau de Bord</h1>
-          <p className="text-sm text-slate-500">Bienvenue sur GESTIMOU, voici un aperçu de votre activité.</p>
+          <h1 className="text-2xl font-bold text-brand-navy">Tableau de bord</h1>
+          <p className="text-sm text-slate-500">Bienvenue sur Global Immo Service, voici un aperçu de votre activité.</p>
         </div>
-        <div className="flex gap-3">
+        <div className="flex items-center gap-3">
           <select
             value={reportPeriod}
             onChange={(e) => setReportPeriod(e.target.value === 'year' ? 'year' : 'month')}
-            className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 focus:border-brand-blue focus:outline-none"
+            className="rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm font-medium text-slate-700 outline-none focus:border-brand-amber"
           >
             <option value="month">Ce mois-ci</option>
             <option value="year">Cette année</option>
           </select>
+          <div className="relative" ref={customizeRef}>
+            <button
+              onClick={() => setShowCustomize((v) => !v)}
+              className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm font-bold text-slate-600 transition-colors hover:bg-slate-50"
+            >
+              <SlidersHorizontal className="h-4 w-4" />
+              Personnaliser
+            </button>
+            {showCustomize && (
+              <div className="absolute right-0 top-full z-20 mt-2 w-64 rounded-xl border border-slate-200 bg-white p-2 shadow-xl">
+                <p className="px-2 py-1.5 text-xs font-bold uppercase tracking-wide text-slate-400">Widgets affichés</p>
+                {ALL_WIDGET_KEYS.map((key) => (
+                  <button
+                    key={key}
+                    onClick={() => toggleWidget(key)}
+                    className="flex w-full items-center justify-between rounded-lg px-2 py-2 text-left text-sm text-slate-700 hover:bg-slate-50"
+                  >
+                    {WIDGET_LABELS[key]}
+                    <span
+                      className={`flex h-4 w-4 items-center justify-center rounded border ${
+                        visibleWidgets.has(key) ? 'border-brand-amber bg-brand-amber text-white' : 'border-slate-300'
+                      }`}
+                    >
+                      {visibleWidgets.has(key) && <Check className="h-3 w-3" />}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
           <button
             onClick={handleDownloadReport}
-            className="rounded-lg bg-brand-blue px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-800 transition-colors"
+            className="rounded-xl bg-brand-amber px-4 py-2.5 text-sm font-bold text-white shadow-sm transition-all hover:brightness-95"
           >
             Télécharger le rapport
           </button>
@@ -190,6 +294,7 @@ export default function DashboardClient({
       </div>
 
       {/* Stats Grid */}
+      {statsDisplay.length > 0 && (
       <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
         {statsDisplay.map((item) => (
           <div key={item.name} className="overflow-hidden rounded-xl bg-white p-6 shadow-sm ring-1 ring-slate-200 transition-all hover:shadow-md">
@@ -214,10 +319,13 @@ export default function DashboardClient({
           </div>
         ))}
       </div>
+      )}
 
       {/* Charts Section */}
+      {(visibleWidgets.has('revenueChart') || visibleWidgets.has('activityChart')) && (
       <div className="grid gap-6 lg:grid-cols-2">
         {/* Revenue Chart - Updated to show per residence */}
+        {visibleWidgets.has('revenueChart') && (
         <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
           <div className="mb-6 flex items-center justify-between">
             <div>
@@ -258,8 +366,10 @@ export default function DashboardClient({
             </ResponsiveContainer>
           </div>
         </div>
+        )}
 
         {/* Activity Chart */}
+        {visibleWidgets.has('activityChart') && (
         <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
           <div className="mb-6 flex items-center justify-between">
             <div>
@@ -273,7 +383,7 @@ export default function DashboardClient({
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
                 <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: '#64748b', fontSize: 12}} dy={10} />
                 <YAxis axisLine={false} tickLine={false} tick={{fill: '#64748b', fontSize: 12}} />
-                <Tooltip 
+                <Tooltip
                   contentStyle={{ backgroundColor: '#fff', borderRadius: '8px', border: '1px solid #e2e8f0', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
                   cursor={{ fill: '#f1f5f9' }}
                 />
@@ -283,9 +393,12 @@ export default function DashboardClient({
             </ResponsiveContainer>
           </div>
         </div>
+        )}
       </div>
+      )}
 
       {/* Recent Activity Table - Updated to be scrollable and show all types */}
+      {visibleWidgets.has('recentActivity') && (
       <div className="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden">
         <div className="border-b border-slate-100 px-6 py-4">
           <h3 className="font-bold text-slate-900">Dernières Activités</h3>
@@ -318,6 +431,7 @@ export default function DashboardClient({
           )))}
         </div>
       </div>
+      )}
     </div>
   );
 }

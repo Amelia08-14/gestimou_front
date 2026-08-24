@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
 import { useRole } from '@/contexts/RoleContext';
 import { Lock, Mail, Eye, EyeOff } from 'lucide-react';
 import Image from 'next/image';
@@ -12,7 +11,6 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const router = useRouter();
   const { login } = useRole();
 
   const handleSubmit = async (e: React.FormEvent) => {

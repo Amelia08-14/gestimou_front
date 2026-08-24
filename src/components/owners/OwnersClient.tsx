@@ -513,7 +513,7 @@ export default function OwnersClient({ owners }: OwnersClientProps) {
     <div className="space-y-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-brand-blue">Propriétaires</h1>
+          <h1 className="text-2xl font-bold text-brand-amber">Propriétaires</h1>
           <p className="text-sm text-slate-500">Gérez les fiches propriétaires, leur résidence et leur localisation.</p>
         </div>
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
@@ -560,7 +560,7 @@ export default function OwnersClient({ owners }: OwnersClientProps) {
               resetForm();
               setShowAddModal(true);
             }}
-            className="flex items-center gap-2 rounded-lg bg-brand-gold px-4 py-2 text-sm font-bold text-brand-blue shadow-sm transition-colors hover:bg-brand-gold-hover"
+            className="flex items-center gap-2 rounded-lg bg-brand-gold px-4 py-2 text-sm font-bold text-brand-amber shadow-sm transition-colors hover:bg-brand-gold-hover"
           >
             <Plus className="h-4 w-4" />
             Nouveau Propriétaire
@@ -574,11 +574,11 @@ export default function OwnersClient({ owners }: OwnersClientProps) {
             <div className="p-6">
               <div className="flex items-start justify-between">
                 <div className="flex items-center gap-4">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-full bg-brand-blue text-lg font-bold text-brand-gold shadow-inner">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-full bg-brand-amber text-lg font-bold text-white shadow-inner">
                     {owner.avatar || (owner.firstName[0] + owner.lastName[0])}
                   </div>
                   <div>
-                    <h3 className="font-semibold text-brand-blue transition-colors group-hover:text-brand-gold-dark">
+                    <h3 className="font-semibold text-brand-amber transition-colors group-hover:text-brand-gold-dark">
                       {owner.firstName} {owner.lastName}
                     </h3>
                     <div className="mt-1 flex flex-wrap items-center gap-2">
@@ -586,7 +586,7 @@ export default function OwnersClient({ owners }: OwnersClientProps) {
                         {owner.propertiesCount} Biens
                       </span>
                       {owner.residence?.name && (
-                        <span className="inline-flex items-center rounded-full bg-brand-blue/10 px-2.5 py-0.5 text-xs font-medium text-brand-blue">
+                        <span className="inline-flex items-center rounded-full bg-brand-amber/10 px-2.5 py-0.5 text-xs font-medium text-brand-amber">
                           {owner.residence.name}
                         </span>
                       )}
@@ -596,7 +596,7 @@ export default function OwnersClient({ owners }: OwnersClientProps) {
                 <div className="relative" data-owner-menu={owner.id}>
                   <button
                     onClick={() => setOpenMenuOwnerId((prev) => (prev === owner.id ? null : owner.id))}
-                    className="text-slate-400 hover:text-brand-blue"
+                    className="text-slate-400 hover:text-brand-amber"
                   >
                     <MoreVertical className="h-5 w-5" />
                   </button>
@@ -642,7 +642,7 @@ export default function OwnersClient({ owners }: OwnersClientProps) {
               <div className="mt-6 space-y-3">
                 <div className="flex items-center gap-3 text-sm text-slate-600">
                   <Mail className="h-4 w-4 text-brand-gold" />
-                  <a href={`mailto:${owner.email}`} className="truncate hover:text-brand-blue hover:underline">
+                  <a href={`mailto:${owner.email}`} className="truncate hover:text-brand-amber hover:underline">
                     {owner.email}
                   </a>
                 </div>
@@ -663,14 +663,14 @@ export default function OwnersClient({ owners }: OwnersClientProps) {
               <div className="mt-6 flex gap-2 border-t border-slate-100 pt-4">
                 <button
                   onClick={() => openOwnerDetails(owner)}
-                  className="flex flex-1 items-center justify-center gap-2 rounded-lg border border-slate-200 py-2 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50 hover:text-brand-blue"
+                  className="flex flex-1 items-center justify-center gap-2 rounded-lg border border-slate-200 py-2 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50 hover:text-brand-amber"
                 >
                   <FileText className="h-4 w-4" />
                   Détails
                 </button>
                 <button
                   onClick={() => openOwnerDetails(owner, true)}
-                  className="flex-1 rounded-lg bg-brand-blue py-2 text-sm font-medium text-white transition-colors hover:bg-brand-blue/90"
+                  className="flex-1 rounded-lg bg-brand-amber py-2 text-sm font-medium text-white transition-colors hover:bg-brand-amber/90"
                 >
                   Voir Biens
                 </button>
@@ -685,11 +685,11 @@ export default function OwnersClient({ owners }: OwnersClientProps) {
           <div className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-2xl bg-white shadow-2xl animate-in fade-in zoom-in duration-200">
             <div className="flex items-center justify-between border-b border-slate-100 p-6">
               <div className="flex items-center gap-4">
-                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-brand-blue text-lg font-bold text-brand-gold shadow-inner">
+                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-brand-amber text-lg font-bold text-white shadow-inner">
                   {selectedOwner.avatar || (selectedOwner.firstName[0] + selectedOwner.lastName[0])}
                 </div>
                 <div>
-                  <h2 className="text-xl font-bold text-brand-blue">
+                  <h2 className="text-xl font-bold text-brand-amber">
                     {selectedOwner.firstName} {selectedOwner.lastName}
                   </h2>
                   <span className={`mt-1 inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
@@ -802,7 +802,7 @@ export default function OwnersClient({ owners }: OwnersClientProps) {
                 <div className="rounded-xl border border-slate-100 bg-slate-50 p-4">
                   <div className="mb-2 flex items-center justify-between">
                     <span className="text-sm font-medium text-slate-600">Nombre de biens</span>
-                    <span className="text-lg font-bold text-brand-blue">{selectedOwner.propertiesCount}</span>
+                    <span className="text-lg font-bold text-brand-amber">{selectedOwner.propertiesCount}</span>
                   </div>
                   {!showProperties ? (
                     <button
@@ -834,7 +834,7 @@ export default function OwnersClient({ owners }: OwnersClientProps) {
                           <button
                             onClick={handleAssignProperty}
                             disabled={!selectedPropertyId}
-                            className="shrink-0 rounded-lg bg-brand-blue px-4 py-2 text-sm font-bold text-white disabled:opacity-50"
+                            className="shrink-0 rounded-lg bg-brand-amber px-4 py-2 text-sm font-bold text-white disabled:opacity-50"
                           >
                             Attribuer
                           </button>
@@ -887,7 +887,7 @@ export default function OwnersClient({ owners }: OwnersClientProps) {
                   </button>
                   <button
                     onClick={() => handleEdit(selectedOwner)}
-                    className="rounded-lg bg-brand-blue px-6 py-2 text-sm font-bold text-white shadow-md hover:bg-brand-blue/90"
+                    className="rounded-lg bg-brand-amber px-6 py-2 text-sm font-bold text-white shadow-md hover:bg-brand-amber/90"
                   >
                     Modifier
                   </button>
@@ -902,7 +902,7 @@ export default function OwnersClient({ owners }: OwnersClientProps) {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm overflow-y-auto">
           <div className="my-8 w-full max-w-lg rounded-2xl bg-white shadow-2xl animate-in fade-in zoom-in duration-200">
             <div className="flex items-center justify-between border-b border-slate-100 p-6">
-              <h2 className="text-xl font-bold text-brand-blue">
+              <h2 className="text-xl font-bold text-brand-amber">
                 {isEditing ? 'Modifier le propriétaire' : 'Nouveau Propriétaire'}
               </h2>
               <button
@@ -1077,7 +1077,7 @@ export default function OwnersClient({ owners }: OwnersClientProps) {
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="rounded-lg bg-brand-blue px-6 py-2 text-sm font-bold text-white shadow-md hover:bg-brand-blue/90 disabled:opacity-50"
+                  className="rounded-lg bg-brand-amber px-6 py-2 text-sm font-bold text-white shadow-md hover:bg-brand-amber/90 disabled:opacity-50"
                 >
                   {isSubmitting ? 'Enregistrement...' : isEditing ? 'Enregistrer' : 'Créer le propriétaire'}
                 </button>

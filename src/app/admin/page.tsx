@@ -37,6 +37,8 @@ function AdminPageContent() {
   const [users, setUsers] = useState<any[]>([]);
   const [userRoleFilter, setUserRoleFilter] = useState<string>('');
   const [requests, setRequests] = useState<any[]>([]);
+  const [registrationStatusFilter, setRegistrationStatusFilter] = useState<string>('PENDING');
+  const [registrationSearch, setRegistrationSearch] = useState('');
   const [propertyAddRequests, setPropertyAddRequests] = useState<any[]>([]);
   const [activeTab, setActiveTab] = useState(
     requestedTab && VALID_TABS.includes(requestedTab) ? requestedTab : 'users'
@@ -613,8 +615,57 @@ function AdminPageContent() {
           </div>
         )}
 
-        {activeTab === 'registrations' && (
-            <div className="space-y-6 animate-in fade-in duration-300">
+        {activeTab === 'registrations' && (() => {
+            const filteredRequests = requests
+              .filter((r) => registrationStatusFilter === 'ALL' || r.status === registrationStatusFilter)
+              .filter((r) => {
+                if (!registrationSearch.trim()) return true;
+                const q = registrationSearch.trim().toLowerCase();
+                return (
+                  `${r.firstName} ${r.lastName}`.toLowerCase().includes(q) ||
+                  String(r.email || '').toLowerCase().includes(q) ||
+                  String(r.residenceId || '').toLowerCase().includes(q)
+                );
+              });
+            const counts = {
+              ALL: requests.length,
+              PENDING: requests.filter((r) => r.status === 'PENDING').length,
+              APPROVED: requests.filter((r) => r.status === 'APPROVED').length,
+              REJECTED: requests.filter((r) => r.status === 'REJECTED').length,
+            };
+            const statusTabs: { key: string; label: string }[] = [
+              { key: 'PENDING', label: `En attente (${counts.PENDING})` },
+              { key: 'APPROVED', label: `Validées (${counts.APPROVED})` },
+              { key: 'REJECTED', label: `Rejetées (${counts.REJECTED})` },
+              { key: 'ALL', label: `Toutes (${counts.ALL})` },
+            ];
+
+            return (
+            <div className="space-y-4 animate-in fade-in duration-300">
+                <div className="flex flex-wrap items-center gap-2">
+                  {statusTabs.map((t) => (
+                    <button
+                      key={t.key}
+                      onClick={() => setRegistrationStatusFilter(t.key)}
+                      className={`rounded-lg border px-3 py-2 text-xs font-bold transition-colors ${
+                        registrationStatusFilter === t.key
+                          ? 'border-brand-navy bg-brand-navy text-white'
+                          : 'border-slate-200 bg-white text-slate-500 hover:bg-slate-50'
+                      }`}
+                    >
+                      {t.label}
+                    </button>
+                  ))}
+                  <div className="relative ml-auto min-w-[220px]">
+                    <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                    <input
+                      value={registrationSearch}
+                      onChange={(e) => setRegistrationSearch(e.target.value)}
+                      placeholder="Nom, email, résidence..."
+                      className="w-full rounded-lg border border-slate-200 bg-white py-2 pl-9 pr-3 text-sm outline-none focus:border-brand-amber"
+                    />
+                  </div>
+                </div>
                 <div className="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden">
                     <table className="w-full text-left text-sm">
                         <thead className="bg-slate-50 text-slate-700">
@@ -627,12 +678,12 @@ function AdminPageContent() {
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100">
-                            {requests.length === 0 ? (
+                            {filteredRequests.length === 0 ? (
                                 <tr>
                                     <td colSpan={5} className="px-6 py-8 text-center text-slate-500">Aucune demande d'inscription.</td>
                                 </tr>
                             ) : (
-                                requests.map((req) => (
+                                filteredRequests.map((req) => (
                                     <tr key={req.id} className="hover:bg-slate-50">
                                         <td className="px-6 py-4">
                                             <div className="font-medium text-slate-900">{req.firstName} {req.lastName}</div>
@@ -688,7 +739,8 @@ function AdminPageContent() {
                     </table>
                 </div>
             </div>
-        )}
+            );
+        })()}
 
         {activeTab === 'propertyAddRequests' && (
           <div className="space-y-6 animate-in fade-in duration-300">

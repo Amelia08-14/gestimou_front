@@ -646,7 +646,7 @@ export default function MaintenanceClient({ tickets: initialTickets }: Maintenan
           </button>
           <button
             onClick={handleExport}
-            className="flex items-center gap-2 rounded-lg bg-brand-blue px-4 py-2 text-sm font-medium text-white hover:bg-blue-800"
+            className="flex items-center gap-2 rounded-lg bg-brand-amber px-4 py-2 text-sm font-medium text-white hover:brightness-95"
           >
             <Download className="h-4 w-4" />
             Exporter
@@ -654,7 +654,7 @@ export default function MaintenanceClient({ tickets: initialTickets }: Maintenan
           {role === 'ADMIN' && (
             <button 
                 onClick={() => setIsAddModalOpen(true)}
-                className="flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+                className="flex items-center gap-2 rounded-lg bg-brand-amber px-4 py-2 text-sm font-medium text-white hover:brightness-95"
             >
                 <Plus className="h-4 w-4" />
                 Nouveau ticket
@@ -1016,7 +1016,7 @@ export default function MaintenanceClient({ tickets: initialTickets }: Maintenan
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="rounded-lg bg-brand-blue px-4 py-2 text-sm font-medium text-white hover:bg-blue-900 disabled:opacity-50"
+                  className="rounded-lg bg-brand-amber px-4 py-2 text-sm font-medium text-white hover:brightness-95 disabled:opacity-50"
                 >
                   {isSubmitting ? 'Création...' : 'Créer le ticket'}
                 </button>
@@ -1070,7 +1070,7 @@ export default function MaintenanceClient({ tickets: initialTickets }: Maintenan
                 <div className="flex items-center justify-between gap-2">
                   <button
                     onClick={handleUploadAttachmentForExisting}
-                    className="rounded-lg bg-brand-blue px-4 py-2 text-sm font-medium text-white hover:bg-blue-900"
+                    className="rounded-lg bg-brand-amber px-4 py-2 text-sm font-medium text-white hover:brightness-95"
                   >
                     Enregistrer la pièce jointe
                   </button>
@@ -1218,7 +1218,7 @@ export default function MaintenanceClient({ tickets: initialTickets }: Maintenan
                 <button onClick={handleResetFilters} className="rounded-lg px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100">
                   Réinitialiser
                 </button>
-                <button onClick={handleApplyFilters} className="rounded-lg bg-brand-blue px-6 py-2 text-sm font-bold text-white hover:bg-blue-800">
+                <button onClick={handleApplyFilters} className="rounded-lg bg-brand-amber px-6 py-2 text-sm font-bold text-white hover:brightness-95">
                   Appliquer
                 </button>
               </div>

@@ -585,13 +585,13 @@ export default function PropertiesClient({ residences: initialResidences, proper
           {view === 'properties' && (
             <button 
               onClick={handleBackToResidences}
-              className="rounded-full p-2 text-slate-500 hover:bg-slate-100 hover:text-brand-blue transition-colors"
+              className="rounded-full p-2 text-slate-500 hover:bg-slate-100 hover:text-brand-amber transition-colors"
             >
               <ArrowLeft className="h-6 w-6" />
             </button>
           )}
           <div>
-            <h1 className="text-2xl font-bold text-brand-blue">
+            <h1 className="text-2xl font-bold text-brand-amber">
               {view === 'residences' ? 'Nos Résidences' : selectedResidence?.name}
             </h1>
             <p className="text-sm text-slate-500">
@@ -605,7 +605,7 @@ export default function PropertiesClient({ residences: initialResidences, proper
         {view === 'residences' && (
           <button 
             onClick={handleOpenCreateResidence}
-            className="flex items-center gap-2 rounded-lg bg-brand-blue px-4 py-2 text-sm font-bold text-white hover:bg-brand-blue/90 transition-colors shadow-sm"
+            className="flex items-center gap-2 rounded-lg bg-brand-amber px-4 py-2 text-sm font-bold text-white hover:bg-brand-amber/90 transition-colors shadow-sm"
           >
             <Plus className="h-4 w-4" />
             Nouvelle résidence
@@ -615,7 +615,7 @@ export default function PropertiesClient({ residences: initialResidences, proper
         {view === 'properties' && (
           <button 
             onClick={handleOpenAddProperty}
-            className="flex items-center gap-2 rounded-lg bg-brand-gold px-4 py-2 text-sm font-bold text-brand-blue hover:bg-brand-gold-hover transition-colors shadow-sm"
+            className="flex items-center gap-2 rounded-lg bg-brand-gold px-4 py-2 text-sm font-bold text-brand-amber hover:bg-brand-gold-hover transition-colors shadow-sm"
           >
             <Plus className="h-4 w-4" />
             Ajouter un bien
@@ -638,7 +638,7 @@ export default function PropertiesClient({ residences: initialResidences, proper
                     disabled={!isAvailable}
                     className={`rounded-full px-4 py-2 text-sm font-semibold transition-colors ${
                       isActive
-                        ? 'bg-brand-blue text-white'
+                        ? 'bg-brand-amber text-white'
                         : isAvailable
                             ? 'bg-slate-100 text-slate-700 hover:bg-slate-200'
                             : 'bg-slate-50 text-slate-300'
@@ -677,12 +677,12 @@ export default function PropertiesClient({ residences: initialResidences, proper
                     className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
                   />
                   <div className="absolute right-4 top-4 z-20 flex items-center gap-2">
-                    <span className="rounded-full bg-white/90 px-3 py-1 text-xs font-semibold text-brand-blue shadow-sm">
+                    <span className="rounded-full bg-white/90 px-3 py-1 text-xs font-semibold text-brand-amber shadow-sm">
                       {residence.zone || inferZoneFromResidenceName(residence.name) || 'Non définie'}
                     </span>
                     <button
                       onClick={(event) => handleEditResidence(event, residence)}
-                      className="rounded-full bg-white/90 px-3 py-1 text-xs font-semibold text-brand-blue shadow-sm hover:bg-white"
+                      className="rounded-full bg-white/90 px-3 py-1 text-xs font-semibold text-brand-amber shadow-sm hover:bg-white"
                     >
                       Modifier
                     </button>
@@ -718,7 +718,7 @@ export default function PropertiesClient({ residences: initialResidences, proper
                   <div className="grid grid-cols-2 gap-4 border-t border-slate-100 pt-4">
                     <div className="flex flex-col">
                       <span className="text-xs text-slate-500 uppercase tracking-wider font-semibold">Logements</span>
-                      <span className="text-lg font-bold text-brand-blue flex items-center gap-2">
+                      <span className="text-lg font-bold text-brand-amber flex items-center gap-2">
                         <Building className="h-4 w-4 text-brand-gold" />
                         {soldUnits} / {totalUnits}
                       </span>
@@ -726,7 +726,7 @@ export default function PropertiesClient({ residences: initialResidences, proper
                     </div>
                     <div className="flex flex-col">
                       <span className="text-xs text-slate-500 uppercase tracking-wider font-semibold">Occupation</span>
-                      <span className="text-lg font-bold text-brand-blue flex items-center gap-2">
+                      <span className="text-lg font-bold text-brand-amber flex items-center gap-2">
                         <Users className="h-4 w-4 text-brand-gold" />
                         {residence.occupancyRate || occupancyRate}
                       </span>
@@ -769,7 +769,7 @@ export default function PropertiesClient({ residences: initialResidences, proper
                   <div className="absolute right-3 top-3">
                   <span className={`rounded-full px-2.5 py-1 text-xs font-semibold shadow-sm backdrop-blur-md ${
                     property.status === 'Libre' ? 'bg-emerald-500/90 text-white' :
-                    'bg-brand-gold/90 text-brand-blue'
+                    'bg-brand-gold/90 text-brand-amber'
                   }`}>
                     {property.status}
                   </span>
@@ -779,7 +779,7 @@ export default function PropertiesClient({ residences: initialResidences, proper
                 <div className="p-5">
                   <div className="flex items-start justify-between">
                     <div>
-                      <h3 className="font-semibold text-brand-blue group-hover:text-brand-gold-dark transition-colors">{getPropertyDisplayTitle(property)}</h3>
+                      <h3 className="font-semibold text-brand-amber group-hover:text-brand-gold-dark transition-colors">{getPropertyDisplayTitle(property)}</h3>
                       <p className="mt-1 text-sm font-semibold text-slate-700">
                         {property.owner
                           ? `${property.owner.firstName} ${property.owner.lastName}`
@@ -820,7 +820,7 @@ export default function PropertiesClient({ residences: initialResidences, proper
                   <div className="mt-4 border-t border-slate-100 pt-4">
                     <button 
                       onClick={() => setSelectedProperty(property)}
-                      className="w-full rounded-lg border border-slate-200 bg-white py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 hover:text-brand-blue transition-colors"
+                      className="w-full rounded-lg border border-slate-200 bg-white py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 hover:text-brand-amber transition-colors"
                     >
                       Voir détails
                     </button>
@@ -838,7 +838,7 @@ export default function PropertiesClient({ residences: initialResidences, proper
               <div className="mt-6">
                 <button
                   onClick={() => setShowAddModal(true)}
-                  className="inline-flex items-center rounded-md bg-brand-blue px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-brand-blue/90"
+                  className="inline-flex items-center rounded-md bg-brand-amber px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-brand-amber/90"
                 >
                   <Plus className="-ml-0.5 mr-1.5 h-5 w-5" aria-hidden="true" />
                   Ajouter un bien
@@ -853,7 +853,7 @@ export default function PropertiesClient({ residences: initialResidences, proper
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 overflow-y-auto">
           <div className="w-full max-w-2xl rounded-2xl bg-white shadow-2xl animate-in fade-in zoom-in duration-200 my-8">
             <div className="flex items-center justify-between border-b border-slate-100 p-6">
-              <h2 className="text-xl font-bold text-brand-blue">{getPropertyDisplayTitle(selectedProperty)}</h2>
+              <h2 className="text-xl font-bold text-brand-amber">{getPropertyDisplayTitle(selectedProperty)}</h2>
               <button 
                 onClick={() => setSelectedProperty(null)}
                 className="text-slate-400 hover:text-slate-600"
@@ -872,7 +872,7 @@ export default function PropertiesClient({ residences: initialResidences, proper
                 <div className="absolute right-3 top-3">
                   <span className={`rounded-full px-3 py-1.5 text-sm font-semibold shadow-sm backdrop-blur-md ${
                     selectedProperty.status === 'Libre' ? 'bg-emerald-500/90 text-white' :
-                    'bg-brand-gold/90 text-brand-blue'
+                    'bg-brand-gold/90 text-brand-amber'
                   }`}>
                     {selectedProperty.status}
                   </span>
@@ -906,13 +906,13 @@ export default function PropertiesClient({ residences: initialResidences, proper
                 <div className="space-y-4">
                   <div>
                     <h3 className="text-sm font-bold text-slate-500 uppercase tracking-wider mb-1">Prix (Charges)</h3>
-                    <p className="text-2xl font-bold text-brand-blue">{selectedProperty.price} DA</p>
+                    <p className="text-2xl font-bold text-brand-amber">{selectedProperty.price} DA</p>
                   </div>
                   <div>
                     <h3 className="text-sm font-bold text-slate-500 uppercase tracking-wider mb-1">Propriétaire Actuel</h3>
                     {selectedProperty.owner || selectedProperty.status === 'Libre' ? (
                       <div className="flex items-center gap-2 p-3 bg-slate-50 rounded-lg">
-                        <div className="h-8 w-8 rounded-full bg-brand-blue/10 flex items-center justify-center text-brand-blue font-bold text-xs">
+                        <div className="h-8 w-8 rounded-full bg-brand-amber/10 flex items-center justify-center text-brand-amber font-bold text-xs">
                             {selectedProperty.owner?.avatar || 'AP'}
                         </div>
                         <div>
@@ -980,7 +980,7 @@ export default function PropertiesClient({ residences: initialResidences, proper
                 >
                   Fermer
                 </button>
-                <button className="rounded-lg bg-brand-blue px-6 py-2 text-sm font-bold text-white hover:bg-brand-blue/90 shadow-md">
+                <button className="rounded-lg bg-brand-amber px-6 py-2 text-sm font-bold text-white hover:bg-brand-amber/90 shadow-md">
                   Modifier le bien
                 </button>
               </div>
@@ -993,7 +993,7 @@ export default function PropertiesClient({ residences: initialResidences, proper
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 overflow-y-auto">
           <div className="w-full max-w-2xl rounded-2xl bg-white shadow-2xl animate-in fade-in zoom-in duration-200 my-8">
              <div className="flex items-center justify-between border-b border-slate-100 p-6">
-              <h2 className="text-xl font-bold text-brand-blue">Ajouter un bien</h2>
+              <h2 className="text-xl font-bold text-brand-amber">Ajouter un bien</h2>
               <button
                 onClick={() => {
                   setShowAddModal(false);
@@ -1146,7 +1146,7 @@ export default function PropertiesClient({ residences: initialResidences, proper
                 <button
                   type="submit"
                   disabled={isSavingProperty}
-                  className="rounded-lg bg-brand-blue px-6 py-2 text-sm font-bold text-white shadow-md hover:bg-brand-blue/90 disabled:opacity-50"
+                  className="rounded-lg bg-brand-amber px-6 py-2 text-sm font-bold text-white shadow-md hover:bg-brand-amber/90 disabled:opacity-50"
                 >
                   {isSavingProperty ? 'Enregistrement...' : 'Créer le bien'}
                 </button>
@@ -1160,7 +1160,7 @@ export default function PropertiesClient({ residences: initialResidences, proper
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 overflow-y-auto">
           <div className="w-full max-w-4xl rounded-2xl bg-white shadow-2xl animate-in fade-in zoom-in duration-200 my-8">
             <div className="flex items-center justify-between border-b border-slate-100 p-6">
-              <h2 className="text-xl font-bold text-brand-blue">
+              <h2 className="text-xl font-bold text-brand-amber">
                 {isEditingResidence ? 'Modifier la résidence' : 'Nouvelle résidence'}
               </h2>
               <button
@@ -1373,7 +1373,7 @@ export default function PropertiesClient({ residences: initialResidences, proper
                       name={field.name}
                       checked={Boolean(residenceFormData[field.name])}
                       onChange={handleResidenceInputChange}
-                      className="h-4 w-4 rounded border-slate-300 text-brand-blue focus:ring-brand-blue"
+                      className="h-4 w-4 rounded border-slate-300 text-brand-amber focus:ring-brand-blue"
                     />
                     <span>{field.label}</span>
                   </label>
@@ -1402,7 +1402,7 @@ export default function PropertiesClient({ residences: initialResidences, proper
                 <button
                   type="submit"
                   disabled={isSavingResidence}
-                  className="rounded-lg bg-brand-blue px-6 py-2 text-sm font-bold text-white hover:bg-brand-blue/90 disabled:opacity-50"
+                  className="rounded-lg bg-brand-amber px-6 py-2 text-sm font-bold text-white hover:bg-brand-amber/90 disabled:opacity-50"
                 >
                   {isSavingResidence ? 'Enregistrement...' : isEditingResidence ? 'Enregistrer' : 'Créer la résidence'}
                 </button>

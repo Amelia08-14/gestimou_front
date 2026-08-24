@@ -30,12 +30,11 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       if (pathname === '/financial') return role === 'ADMIN' || role === 'RECOUVREMENT';
       if (pathname === '/appel-de-fonds') return role === 'ADMIN' || role === 'RECOUVREMENT';
       if (pathname === '/admin') return role === 'ADMIN';
-      if (pathname === '/documents') return role === 'ADMIN';
+      if (pathname === '/documents') return ['ADMIN', 'RESPONSABLE_ZONE', 'MANAGER', 'HSE', 'RECOUVREMENT'].includes(role);
       if (pathname === '/maintenance') return ['ADMIN', 'RESPONSABLE_ZONE', 'MANAGER', 'HSE', 'INTERVENANT'].includes(role);
       if (pathname === '/owners') return ['ADMIN', 'RESPONSABLE_ZONE', 'MANAGER'].includes(role);
       if (pathname === '/properties') return ['ADMIN', 'RESPONSABLE_ZONE', 'MANAGER'].includes(role);
       if (pathname === '/trombinoscope') return ['ADMIN', 'RESPONSABLE_ZONE', 'MANAGER'].includes(role);
-      if (pathname === '/messages') return ['ADMIN', 'RESPONSABLE_ZONE', 'MANAGER'].includes(role);
       if (pathname === '/avis') return ['ADMIN', 'RESPONSABLE_ZONE', 'MANAGER'].includes(role);
       return true;
     };

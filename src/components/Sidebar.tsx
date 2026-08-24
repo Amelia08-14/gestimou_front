@@ -14,7 +14,6 @@ import {
   Users,
   UserPlus,
   Images,
-  MessageSquare,
   Megaphone,
   Bell,
   User,
@@ -24,8 +23,10 @@ import {
 import { clsx } from 'clsx';
 import { useRole } from '@/contexts/RoleContext';
 
+// RECOUVREMENT's landing page is Finances (AppLayout redirects them away from "/") —
+// keep this list in sync with AppLayout.isAllowed()'s "/" check.
 const topNav = [
-  { name: 'Tableau de bord', href: '/', icon: LayoutDashboard, roles: ['ADMIN', 'RESPONSABLE_ZONE', 'MANAGER', 'HSE', 'INTERVENANT', 'RECOUVREMENT'] },
+  { name: 'Tableau de bord', href: '/', icon: LayoutDashboard, roles: ['ADMIN', 'RESPONSABLE_ZONE', 'MANAGER', 'HSE', 'INTERVENANT'] },
 ];
 
 const gestionItems = [
@@ -36,13 +37,12 @@ const gestionItems = [
   { name: 'Employés', href: '/admin?tab=users', icon: Users, roles: ['ADMIN'] },
   { name: 'Inscriptions', href: '/admin?tab=registrations', icon: UserPlus, roles: ['ADMIN'] },
   { name: 'Trombinoscope', href: '/trombinoscope', icon: Images, roles: ['ADMIN', 'RESPONSABLE_ZONE', 'MANAGER'] },
-  { name: 'Documents', href: '/documents', icon: FolderOpen, roles: ['ADMIN'] },
+  { name: 'Documents', href: '/documents', icon: FolderOpen, roles: ['ADMIN', 'RESPONSABLE_ZONE', 'MANAGER', 'HSE', 'RECOUVREMENT'] },
 ];
 
 // "Statistiques" has no dedicated analytics page yet — left out of the live
 // nav (pointing it at "/" would just duplicate "Tableau de bord") until built.
 const bottomNav = [
-  { name: 'Messages', href: '/messages', icon: MessageSquare, roles: ['ADMIN', 'RESPONSABLE_ZONE', 'MANAGER'] },
   { name: 'Avis', href: '/avis', icon: Megaphone, roles: ['ADMIN', 'RESPONSABLE_ZONE', 'MANAGER'] },
   { name: 'Notifications', href: '/notifications', icon: Bell, roles: ['ADMIN', 'RESPONSABLE_ZONE', 'MANAGER', 'HSE', 'INTERVENANT', 'RECOUVREMENT'] },
   { name: 'Profil', href: '/profile', icon: User, roles: ['ADMIN', 'RESPONSABLE_ZONE', 'MANAGER', 'HSE', 'INTERVENANT', 'RECOUVREMENT'] },

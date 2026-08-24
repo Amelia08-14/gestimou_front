@@ -1030,7 +1030,7 @@ export default function FinancialClient() {
           </button>
           <button
             onClick={handleExportCurrentView}
-            className="flex items-center gap-2 rounded-lg bg-brand-blue px-4 py-2 text-sm font-medium text-white hover:bg-blue-800"
+            className="flex items-center gap-2 rounded-lg bg-brand-amber px-4 py-2 text-sm font-medium text-white hover:brightness-95"
           >
             <Download className="h-4 w-4" />
             Exporter
@@ -1043,7 +1043,7 @@ export default function FinancialClient() {
           <>
             <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
               <p className="text-sm font-medium text-slate-500">Nbr consistances</p>
-              <div className="mt-2 text-3xl font-bold text-brand-blue">{consistenciesCount}</div>
+              <div className="mt-2 text-3xl font-bold text-brand-amber">{consistenciesCount}</div>
               <p className="mt-3 text-sm text-slate-500">Lots enregistrés dans la plateforme</p>
             </div>
             <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
@@ -1109,26 +1109,26 @@ export default function FinancialClient() {
           <>
             <button
               onClick={() => setActiveTab('history')}
-              className={`border-b-2 px-4 py-2 text-sm font-medium transition-colors ${activeTab === 'history' ? 'border-brand-blue text-brand-blue' : 'border-transparent text-slate-500 hover:text-slate-700'}`}
+              className={`border-b-2 px-4 py-2 text-sm font-medium transition-colors ${activeTab === 'history' ? 'border-brand-blue text-brand-amber' : 'border-transparent text-slate-500 hover:text-slate-700'}`}
             >
               Historique des transactions
             </button>
             <button
               onClick={() => setActiveTab('tracking')}
-              className={`border-b-2 px-4 py-2 text-sm font-medium transition-colors ${activeTab === 'tracking' ? 'border-brand-blue text-brand-blue' : 'border-transparent text-slate-500 hover:text-slate-700'}`}
+              className={`border-b-2 px-4 py-2 text-sm font-medium transition-colors ${activeTab === 'tracking' ? 'border-brand-blue text-brand-amber' : 'border-transparent text-slate-500 hover:text-slate-700'}`}
             >
               Suivi des paiements
             </button>
             <button
               onClick={() => setActiveTab('expenses')}
-              className={`border-b-2 px-4 py-2 text-sm font-medium transition-colors ${activeTab === 'expenses' ? 'border-brand-blue text-brand-blue' : 'border-transparent text-slate-500 hover:text-slate-700'}`}
+              className={`border-b-2 px-4 py-2 text-sm font-medium transition-colors ${activeTab === 'expenses' ? 'border-brand-blue text-brand-amber' : 'border-transparent text-slate-500 hover:text-slate-700'}`}
             >
               Dépenses
             </button>
           </>
         )}
         {isRecouvrement && (
-          <div className="border-b-2 border-brand-blue px-4 py-2 text-sm font-medium text-brand-blue">
+          <div className="border-b-2 border-brand-blue px-4 py-2 text-sm font-medium text-brand-amber">
             Suivi des paiements
           </div>
         )}
@@ -1178,7 +1178,7 @@ export default function FinancialClient() {
                   <button
                     onClick={() => handleBulkSetStatus('Payé')}
                     disabled={isBulkUpdating}
-                    className="rounded-lg bg-brand-blue px-4 py-2 text-sm font-medium text-white hover:bg-brand-blue/90 disabled:opacity-50"
+                    className="rounded-lg bg-brand-amber px-4 py-2 text-sm font-medium text-white hover:bg-brand-amber/90 disabled:opacity-50"
                   >
                     Marquer payé ({selectedChargeIds.size})
                   </button>
@@ -1314,7 +1314,7 @@ export default function FinancialClient() {
                           <button
                             onClick={() => handleStatusChange(charge.id, charge.status)}
                             disabled={isBulkUpdating}
-                            className="text-xs font-medium text-brand-blue hover:underline"
+                            className="text-xs font-medium text-brand-amber hover:underline"
                           >
                             {charge.status === 'Payé' ? 'Marquer impayé' : 'Marquer payé'}
                           </button>
@@ -1407,7 +1407,7 @@ export default function FinancialClient() {
                           <button
                             onClick={() => handleStatusChange(charge.id, charge.status)}
                             disabled={isBulkUpdating}
-                            className="text-xs font-medium text-brand-blue hover:underline"
+                            className="text-xs font-medium text-brand-amber hover:underline"
                           >
                             {charge.status === 'Payé' ? 'Marquer impayé' : 'Marquer payé'}
                           </button>
@@ -1464,7 +1464,7 @@ export default function FinancialClient() {
                       setExpenseForm((prev) => ({ ...prev, category: key }));
                     }}
                     className={`rounded-full px-4 py-2 text-sm font-semibold transition-colors ${
-                      expenseTab === key ? 'bg-brand-blue text-white' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                      expenseTab === key ? 'bg-brand-amber text-white' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
                     }`}
                   >
                     {expenseLabel(key)}
@@ -1510,7 +1510,7 @@ export default function FinancialClient() {
                     <button
                       onClick={() => handleBulkSetExpenseStatus('Payé')}
                       disabled={isExpensesBulkUpdating}
-                      className="rounded-lg bg-brand-blue px-4 py-2 text-sm font-medium text-white hover:bg-brand-blue/90 disabled:opacity-50"
+                      className="rounded-lg bg-brand-amber px-4 py-2 text-sm font-medium text-white hover:bg-brand-amber/90 disabled:opacity-50"
                     >
                       Marquer payé ({selectedExpenseIds.size})
                     </button>
@@ -1532,7 +1532,7 @@ export default function FinancialClient() {
                 )}
                 <button
                   onClick={handleOpenAddExpense}
-                  className="rounded-lg bg-brand-gold px-4 py-2 text-sm font-bold text-brand-blue hover:bg-brand-gold-hover"
+                  className="rounded-lg bg-brand-gold px-4 py-2 text-sm font-bold text-brand-amber hover:bg-brand-gold-hover"
                 >
                   Nouvelle dépense
                 </button>
@@ -1601,7 +1601,7 @@ export default function FinancialClient() {
                           {(t.document?.id || t.documentId) ? (
                             <a
                               href={`${API_URL}/documents/${t.document?.id || t.documentId}/download`}
-                              className="text-xs font-medium text-brand-blue hover:underline"
+                              className="text-xs font-medium text-brand-amber hover:underline"
                             >
                               Télécharger
                             </a>
@@ -1877,7 +1877,7 @@ export default function FinancialClient() {
                     {(selectedTransaction.document?.id || selectedTransaction.documentId) ? (
                       <a
                         href={`${API_URL}/documents/${selectedTransaction.document?.id || selectedTransaction.documentId}/download`}
-                        className="text-sm font-medium text-brand-blue hover:underline"
+                        className="text-sm font-medium text-brand-amber hover:underline"
                       >
                         Télécharger
                       </a>
@@ -1897,7 +1897,7 @@ export default function FinancialClient() {
                 </button>
                 <button
                   onClick={() => setSelectedTransaction(null)}
-                  className="rounded-lg bg-brand-blue px-4 py-2 text-sm font-bold text-white hover:bg-brand-blue/90"
+                  className="rounded-lg bg-brand-amber px-4 py-2 text-sm font-bold text-white hover:bg-brand-amber/90"
                 >
                   Fermer
                 </button>
@@ -2021,7 +2021,7 @@ export default function FinancialClient() {
                 <button
                   type="submit"
                   disabled={isSavingExpense}
-                  className="rounded-lg bg-brand-blue px-6 py-2 text-sm font-bold text-white hover:bg-brand-blue/90 disabled:opacity-50"
+                  className="rounded-lg bg-brand-amber px-6 py-2 text-sm font-bold text-white hover:bg-brand-amber/90 disabled:opacity-50"
                 >
                   {isSavingExpense ? 'Enregistrement...' : 'Créer'}
                 </button>
@@ -2146,7 +2146,7 @@ export default function FinancialClient() {
                 </button>
                 <button
                   onClick={handleApplyFilters}
-                  className="rounded-lg bg-brand-blue px-6 py-2 text-sm font-bold text-white hover:bg-brand-blue/90"
+                  className="rounded-lg bg-brand-amber px-6 py-2 text-sm font-bold text-white hover:bg-brand-amber/90"
                 >
                   Appliquer
                 </button>
