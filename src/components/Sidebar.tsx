@@ -1,9 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { Suspense, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { usePathname, useRouter } from 'next/navigation';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import {
   LayoutDashboard,
   Building2,
@@ -49,10 +49,32 @@ const bottomNav = [
 ];
 
 export function Sidebar() {
+  return (
+    <Suspense fallback={<div className="h-full w-64 flex-shrink-0 bg-brand-navy" />}>
+      <SidebarContent />
+    </Suspense>
+  );
+}
+
+function SidebarContent() {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const { user, logout } = useRole();
   const router = useRouter();
-  const gestionActiveByDefault = gestionItems.some((item) => pathname === item.href.split('?')[0]);
+
+  // A nav item is active only if both its path AND its own "tab" query
+  // param (when it has one) match the current URL — comparing path alone
+  // made "Employés" and "Inscriptions" light up together, since both live
+  // at /admin and only differ by ?tab=.
+  const isItemActive = (href: string) => {
+    const [itemPath, itemQuery] = href.split('?');
+    if (pathname !== itemPath) return false;
+    if (!itemQuery) return true;
+    const itemTab = new URLSearchParams(itemQuery).get('tab');
+    return itemTab === searchParams.get('tab');
+  };
+
+  const gestionActiveByDefault = gestionItems.some((item) => isItemActive(item.href));
   const [gestionOpen, setGestionOpen] = useState(gestionActiveByDefault);
 
   const visible = (item: { roles: string[] }) => Boolean(user?.role && item.roles.includes(user.role));
@@ -102,7 +124,7 @@ export function Sidebar() {
       {/* ── Navigation ───────────────────────────────────── */}
       <nav className="flex-1 space-y-0.5 px-3 py-5 overflow-y-auto">
         {topNav.filter(visible).map((item) => {
-          const isActive = pathname === item.href;
+          const isActive = isItemActive(item.href);
           return (
             <Link key={item.name} href={item.href} className={linkClasses(isActive)}>
               <item.icon className={iconClasses(isActive)} aria-hidden="true" />
@@ -127,7 +149,7 @@ export function Sidebar() {
             {gestionOpen && (
               <div className="mt-0.5 ml-3 space-y-0.5 border-l border-white/10 pl-3">
                 {visibleGestion.map((item) => {
-                  const isActive = pathname === item.href.split('?')[0];
+                  const isActive = isItemActive(item.href);
                   return (
                     <Link
                       key={item.name}
@@ -147,7 +169,7 @@ export function Sidebar() {
         )}
 
         {bottomNav.filter(visible).map((item) => {
-          const isActive = pathname === item.href.split('?')[0];
+          const isActive = isItemActive(item.href);
           return (
             <Link key={item.name} href={item.href} className={linkClasses(isActive)}>
               <item.icon className={iconClasses(isActive)} aria-hidden="true" />
