@@ -1,6 +1,6 @@
 'use client';
 
-import React, { Suspense, useState } from 'react';
+import React, { Suspense, useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import {
   Shield,
@@ -43,6 +43,16 @@ function AdminPageContent() {
   const [activeTab, setActiveTab] = useState(
     requestedTab && VALID_TABS.includes(requestedTab) ? requestedTab : 'users'
   );
+  // Next.js App Router doesn't remount this component when only the ?tab=
+  // query param changes (still /admin), so the useState initializer above
+  // only ever runs once. Without this effect, clicking between sidebar
+  // items that share this route (Employés/Inscriptions/...) never updates
+  // the visible tab after the first load.
+  useEffect(() => {
+    if (requestedTab && VALID_TABS.includes(requestedTab)) {
+      setActiveTab(requestedTab);
+    }
+  }, [requestedTab]);
   const [showAddUserModal, setShowAddUserModal] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isBackingUp, setIsBackingUp] = useState(false);

@@ -19,6 +19,7 @@ import {
   User,
   ChevronDown,
   FolderOpen,
+  Contact,
 } from 'lucide-react';
 import { clsx } from 'clsx';
 import { useRole } from '@/contexts/RoleContext';
@@ -37,6 +38,7 @@ const gestionItems = [
   { name: 'Employés', href: '/admin?tab=users', icon: Users, roles: ['ADMIN'] },
   { name: 'Inscriptions', href: '/admin?tab=registrations', icon: UserPlus, roles: ['ADMIN'] },
   { name: 'Trombinoscope', href: '/trombinoscope', icon: Images, roles: ['ADMIN', 'RESPONSABLE_ZONE', 'MANAGER'] },
+  { name: 'Propriétaires', href: '/owners', icon: Contact, roles: ['ADMIN', 'RESPONSABLE_ZONE', 'MANAGER'] },
   { name: 'Documents', href: '/documents', icon: FolderOpen, roles: ['ADMIN', 'RESPONSABLE_ZONE', 'MANAGER', 'HSE', 'RECOUVREMENT'] },
 ];
 
