@@ -328,11 +328,15 @@ export default function MaintenanceClient({ tickets: initialTickets }: Maintenan
           const merged = [...zoneManagers, ...managersList, ...recouvList];
           const byId = new Map<string, StaffUser>();
           merged.forEach((u) => byId.set(String(u.id), u));
-          const list = Array.from(byId.values());
-          setResponsables(list);
-          setIntervenants(list);
+          setResponsables(Array.from(byId.values()));
         })
         .catch((err) => console.error('Failed to load responsables', err));
+
+      fetchUsersByRole('INTERVENANT')
+        .then((data) => {
+          setIntervenants(extractPayloadArray<unknown>(data).filter(isStaffUser));
+        })
+        .catch((err) => console.error('Failed to load intervenants', err));
 
       fetch(`${API_URL}/subcontractors`, {
         headers: {
