@@ -1,9 +1,9 @@
 import { NextResponse } from 'next/server';
+import { API_URL } from '@/utils/api';
 
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
 
     // Proxy the request to the Backend Express API
     const response = await fetch(`${API_URL}/auth/login`, {
