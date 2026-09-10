@@ -15,6 +15,11 @@ import {
 import { useRole } from '@/contexts/RoleContext';
 import { API_URL } from '@/utils/api';
 
+// A RESPONSABLE_ZONE's `zone` is the literal code 'ALL' for "all zones" —
+// never show that raw value, always a readable French label.
+const zoneLabel = (zone?: string | null) =>
+  zone === 'ALL' ? 'toutes les zones' : zone || '';
+
 interface MaintenanceTicket {
   id: string;
   title: string;
@@ -731,7 +736,7 @@ export default function MaintenanceClient({ tickets: initialTickets }: Maintenan
                           <option value="">Non affecté</option>
                           {responsables.map((r) => (
                             <option key={r.id} value={r.name}>
-                              {r.name} ({r.role === 'RESPONSABLE_ZONE' ? (r.zone ? `Responsable ${r.zone}` : 'Responsable de zone') : (r.profession || 'Responsable')})
+                              {r.name} ({r.role === 'RESPONSABLE_ZONE' ? (r.zone ? `Responsable ${zoneLabel(r.zone)}` : 'Responsable de zone') : (r.profession || 'Responsable')})
                             </option>
                           ))}
                         </select>
@@ -780,7 +785,7 @@ export default function MaintenanceClient({ tickets: initialTickets }: Maintenan
                               <optgroup label="Responsables">
                                 {intervenants.map((i) => (
                                   <option key={i.id} value={`staff:${i.name}`}>
-                                    {i.name} ({i.role === 'RESPONSABLE_ZONE' ? (i.zone ? `Responsable ${i.zone}` : 'Responsable de zone') : (i.role === 'RECOUVREMENT' ? 'Recouvrement' : (i.profession || 'Responsable'))})
+                                    {i.name} ({i.role === 'RESPONSABLE_ZONE' ? (i.zone ? `Responsable ${zoneLabel(i.zone)}` : 'Responsable de zone') : (i.role === 'RECOUVREMENT' ? 'Recouvrement' : (i.profession || 'Responsable'))})
                                   </option>
                                 ))}
                               </optgroup>
@@ -988,7 +993,7 @@ export default function MaintenanceClient({ tickets: initialTickets }: Maintenan
                       .sort((a, b) => String(a.name || '').localeCompare(String(b.name || ''), 'fr'))
                       .map((r) => (
                         <option key={r.id} value={r.name}>
-                          {r.name} ({r.role === 'RESPONSABLE_ZONE' ? (r.zone ? `Responsable ${r.zone}` : 'Responsable de zone') : (r.profession || 'Responsable')})
+                          {r.name} ({r.role === 'RESPONSABLE_ZONE' ? (r.zone ? `Responsable ${zoneLabel(r.zone)}` : 'Responsable de zone') : (r.profession || 'Responsable')})
                         </option>
                       ))}
                   </select>

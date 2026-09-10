@@ -36,7 +36,7 @@ const gestionItems = [
   { name: 'Finances', href: '/financial', icon: Wallet, roles: ['ADMIN', 'RECOUVREMENT'] },
   { name: 'Appel de fonds', href: '/appel-de-fonds', icon: FileText, roles: ['ADMIN', 'RECOUVREMENT'] },
   { name: 'Employés', href: '/admin?tab=users', icon: Users, roles: ['ADMIN'] },
-  { name: 'Inscriptions', href: '/admin?tab=registrations', icon: UserPlus, roles: ['ADMIN'] },
+  { name: 'Inscriptions', href: '/registrations', icon: UserPlus, roles: ['ADMIN'] },
   { name: 'Trombinoscope', href: '/trombinoscope', icon: Images, roles: ['ADMIN', 'RESPONSABLE_ZONE', 'MANAGER'] },
   { name: 'Propriétaires', href: '/owners', icon: Contact, roles: ['ADMIN', 'RESPONSABLE_ZONE', 'MANAGER'] },
   { name: 'Documents', href: '/documents', icon: FolderOpen, roles: ['ADMIN', 'RESPONSABLE_ZONE', 'MANAGER', 'HSE', 'RECOUVREMENT'] },
