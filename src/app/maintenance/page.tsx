@@ -1,18 +1,10 @@
 import MaintenanceClient from '@/components/maintenance/MaintenanceClient';
-import { API_URL } from '@/utils/api';
 
-async function getTickets() {
-  try {
-    const res = await fetch(`${API_URL}/maintenance`, { cache: 'no-store' });
-    if (!res.ok) return [];
-    return res.json();
-  } catch (error) {
-    console.error('Failed to fetch tickets:', error);
-    return [];
-  }
-}
-
-export default async function MaintenancePage() {
-  const tickets = await getTickets();
-  return <MaintenanceClient tickets={tickets} />;
+// No server-side data fetch here on purpose: this app has no way to attach
+// the browser's auth token to a server-side request, so it always came back
+// empty/unauthenticated anyway — and doing it added a slow, blocking
+// server-to-server call on every navigation. MaintenanceClient fetches its
+// own tickets client-side (with the real token) right after mount.
+export default function MaintenancePage() {
+  return <MaintenanceClient tickets={[]} />;
 }
