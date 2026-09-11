@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRole } from '@/contexts/RoleContext';
 import { Lock, Mail, Eye, EyeOff } from 'lucide-react';
 import Image from 'next/image';
+import { API_URL } from '@/utils/api';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -19,7 +20,11 @@ export default function LoginPage() {
     setError('');
 
     try {
-      const res = await fetch('/api/auth/login', {
+      // Call the backend directly from the browser — same as every other
+      // page in this app. The old `/api/auth/login` Next.js route proxied
+      // this server-to-server, which failed (the VPS couldn't reliably
+      // reach its own public domain from inside itself).
+      const res = await fetch(`${API_URL}/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),
