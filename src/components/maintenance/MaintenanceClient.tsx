@@ -20,6 +20,8 @@ import { API_URL } from '@/utils/api';
 const zoneLabel = (zone?: string | null) =>
   zone === 'ALL' ? 'toutes les zones' : zone || '';
 
+const isAllZones = (zone?: string | null) => String(zone || '').trim().toUpperCase() === 'ALL';
+
 interface MaintenanceTicket {
   id: string;
   title: string;
@@ -400,9 +402,8 @@ export default function MaintenanceClient({ tickets: initialTickets }: Maintenan
     const ticket = tickets.find((t) => t.id === ticketId);
     const inZone =
       currentRole === 'RESPONSABLE_ZONE' &&
-      !!ticket?.residence?.zone &&
       !!user?.zone &&
-      ticket.residence.zone === user.zone;
+      (isAllZones(user.zone) || (!!ticket?.residence?.zone && ticket.residence.zone === user.zone));
     const canAssign = currentRole === 'ADMIN' || ((ticket?.responsible ? ticket.responsible === currentName : (inZone || isSecurityManager)));
     if (!canAssign) return;
 
@@ -752,9 +753,8 @@ export default function MaintenanceClient({ tickets: initialTickets }: Maintenan
                         const isSecurityManager = currentRole === 'MANAGER' && (currentProfession.includes('sécur') || currentProfession.includes('secur'));
                         const inZone =
                           currentRole === 'RESPONSABLE_ZONE' &&
-                          !!ticket.residence?.zone &&
                           !!user?.zone &&
-                          ticket.residence.zone === user.zone;
+                          (isAllZones(user.zone) || (!!ticket.residence?.zone && ticket.residence.zone === user.zone));
                         const canAssign = currentRole === 'ADMIN' || (ticket.responsible ? ticket.responsible === currentName : (inZone || isSecurityManager));
 
                         const currentValue = ticket.subcontractor?.id

@@ -13,8 +13,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Global Immo Service — Administration",
-  description: "Plateforme d'administration Global Immo Service",
+  title: "Gérance Immo Service — Administration",
+  description: "Plateforme d'administration Gérance Immo Service",
 };
 
 import AppLayout from "@/components/AppLayout";

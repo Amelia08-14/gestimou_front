@@ -107,7 +107,7 @@ function SidebarContent() {
         <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center">
           <Image
             src="/logo-light.png"
-            alt="Global Immo Service"
+            alt="Gérance Immo Service"
             width={40}
             height={40}
             className="object-contain"
@@ -115,7 +115,7 @@ function SidebarContent() {
         </div>
         <div className="flex flex-col leading-tight">
           <span className="text-sm font-bold tracking-widest text-brand-amber uppercase">
-            Global Immo
+            Gérance Immo
           </span>
           <span className="text-[10px] font-semibold tracking-widest text-white/60 uppercase">
             Service

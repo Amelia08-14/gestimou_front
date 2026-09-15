@@ -54,14 +54,14 @@ export default function LoginPage() {
       <div className="flex w-full flex-col justify-center px-8 py-12 sm:px-16 lg:w-1/2 lg:px-24">
         <div className="mx-auto w-full max-w-sm">
           <div className="mb-10 flex items-center gap-3">
-            <Image src="/logo-dark.png" alt="Global Immo Service" width={40} height={40} className="object-contain" />
+            <Image src="/logo-dark.png" alt="Gérance Immo Service" width={40} height={40} className="object-contain" />
             <div className="leading-tight">
-              <p className="text-sm font-bold tracking-widest text-brand-navy uppercase">Global Immo</p>
+              <p className="text-sm font-bold tracking-widest text-brand-navy uppercase">Gérance Immo</p>
               <p className="text-[11px] font-semibold tracking-widest text-slate-500 uppercase">Service</p>
             </div>
           </div>
 
-          <h1 className="text-2xl font-bold text-brand-navy">Global Immo Service</h1>
+          <h1 className="text-2xl font-bold text-brand-navy">Gérance Immo Service</h1>
           <p className="mt-1.5 text-sm text-slate-500">Entrez vos identifiants pour accéder à la console.</p>
 
           <form className="mt-8 space-y-4" onSubmit={handleSubmit}>
@@ -143,12 +143,12 @@ export default function LoginPage() {
         <div className="relative flex h-full flex-col items-center justify-center px-12 text-center">
           <Image
             src="/logo-light.png"
-            alt="Global Immo Service"
+            alt="Gérance Immo Service"
             width={96}
             height={96}
             className="object-contain drop-shadow-lg"
           />
-          <p className="mt-4 text-lg font-bold tracking-[0.25em] text-white uppercase">Global Immo</p>
+          <p className="mt-4 text-lg font-bold tracking-[0.25em] text-white uppercase">Gérance Immo</p>
           <p className="text-sm font-semibold tracking-[0.3em] text-white/70 uppercase">Service</p>
           <h2 className="mt-10 text-3xl font-bold text-white">Console d&apos;administration</h2>
           <p className="mt-3 max-w-sm text-sm text-white/60">

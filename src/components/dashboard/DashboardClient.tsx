@@ -243,7 +243,7 @@ export default function DashboardClient({
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-brand-navy">Tableau de bord</h1>
-          <p className="text-sm text-slate-500">Bienvenue sur Global Immo Service, voici un aperçu de votre activité.</p>
+          <p className="text-sm text-slate-500">Bienvenue sur Gérance Immo Service, voici un aperçu de votre activité.</p>
         </div>
         <div className="flex items-center gap-3">
           <select
