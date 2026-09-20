@@ -26,6 +26,7 @@ interface DocumentItem {
   size: string;
   category: string;
   residenceId?: string | null;
+  visibleToResidents?: boolean;
   url?: string | null;
   createdAt: string;
   Residence?: ResidenceSummary | null;
@@ -83,7 +84,8 @@ export default function DocumentsClient() {
   const [uploadForm, setUploadForm] = useState({
     category: 'Sécurité',
     residenceId: '',
-    name: ''
+    name: '',
+    visibleToResidents: false
   });
 
   const categories = ['All', 'Sécurité', 'SAV', 'Administratif', 'Contrats'];
@@ -240,6 +242,7 @@ export default function DocumentsClient() {
       formData.append('name', name);
       formData.append('category', uploadForm.category);
       if (uploadForm.residenceId) formData.append('residenceId', uploadForm.residenceId);
+      formData.append('visibleToResidents', String(uploadForm.visibleToResidents));
 
       const response = await fetch(`${API_URL}/documents`, {
         method: 'POST',
@@ -254,7 +257,7 @@ export default function DocumentsClient() {
 
       setDocuments((prev) => [json as DocumentItem, ...prev]);
       setShowUploadModal(false);
-      setUploadForm({ category: 'Sécurité', residenceId: '', name: '' });
+      setUploadForm({ category: 'Sécurité', residenceId: '', name: '', visibleToResidents: false });
       setPendingFile(null);
     } finally {
       setIsUploading(false);
@@ -348,6 +351,11 @@ export default function DocumentsClient() {
               <h3 className="font-medium text-slate-900 line-clamp-2" title={doc.name}>{doc.name}</h3>
               <div className="flex items-center gap-2 text-xs text-slate-500">
                 <span className="font-medium bg-slate-100 px-2 py-0.5 rounded text-slate-600">{doc.category}</span>
+                {doc.visibleToResidents && (
+                  <span className="font-medium bg-emerald-50 px-2 py-0.5 rounded text-emerald-700" title="Visible dans l'application mobile des résidents">
+                    Résidents
+                  </span>
+                )}
                 <span>•</span>
                 <span>{doc.size}</span>
                 <span>•</span>
@@ -469,6 +477,20 @@ export default function DocumentsClient() {
                   ))}
                 </select>
               </div>
+              <label className="flex items-start gap-3 rounded-lg border border-slate-200 bg-slate-50 p-3 text-sm text-slate-700">
+                <input
+                  type="checkbox"
+                  checked={uploadForm.visibleToResidents}
+                  onChange={(e) => setUploadForm((prev) => ({ ...prev, visibleToResidents: e.target.checked }))}
+                  className="mt-0.5 h-4 w-4 rounded border-slate-300"
+                />
+                <span>
+                  <span className="font-medium">Visible par les résidents</span>
+                  <span className="block text-xs text-slate-500">
+                    Publié dans l&apos;espace Documents de l&apos;application mobile. Sans résidence, il est visible par tous les résidents.
+                  </span>
+                </span>
+              </label>
               <div className="space-y-2">
                 <label className="text-sm font-medium text-slate-700">Nom</label>
                 <input

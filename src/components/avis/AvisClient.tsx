@@ -21,6 +21,9 @@ interface Announcement {
   blocks: string | null;
   publishAt: string | null;
   expiresAt: string | null;
+  startsAt: string | null;
+  endsAt: string | null;
+  alertPhase: 'UPCOMING' | 'ONGOING' | 'ENDED' | null;
   createdAt: string;
   readCount: number;
   audienceCount: number;
@@ -53,6 +56,22 @@ const STATUS_STYLE: Record<Announcement['status'], string> = {
 const fmtDate = (iso: string | null) =>
   iso ? new Date(iso).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' }) : '—';
 
+const fmtDateTime = (iso: string | null) =>
+  iso
+    ? new Date(iso).toLocaleString('fr-FR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })
+    : '';
+
+const PHASE_LABEL: Record<NonNullable<Announcement['alertPhase']>, string> = {
+  UPCOMING: 'À venir',
+  ONGOING: 'En cours',
+  ENDED: 'Terminée',
+};
+const PHASE_STYLE: Record<NonNullable<Announcement['alertPhase']>, string> = {
+  UPCOMING: 'bg-blue-50 text-blue-600',
+  ONGOING: 'bg-amber-50 text-amber-600',
+  ENDED: 'bg-slate-100 text-slate-500',
+};
+
 const emptyForm = {
   title: '',
   body: '',
@@ -62,6 +81,8 @@ const emptyForm = {
   blocks: '',
   publishAt: '',
   expiresAt: '',
+  startsAt: '',
+  endsAt: '',
 };
 
 export default function AvisClient() {
@@ -74,6 +95,7 @@ export default function AvisClient() {
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState(emptyForm);
   const [saving, setSaving] = useState(false);
+  const [formError, setFormError] = useState('');
 
   const load = async () => {
     setLoading(true);
@@ -108,19 +130,26 @@ export default function AvisClient() {
 
   const openNew = () => {
     setForm(emptyForm);
+    setFormError('');
     setShowForm(true);
   };
 
   const save = async (publish: boolean) => {
     if (!form.title.trim() || !form.body.trim()) return;
+    setFormError('');
     setSaving(true);
     try {
+      // The alert window is about the time of day, so send real instants
+      // (browser timezone) rather than timezone-less strings.
+      const toIso = (local: string) => (local ? new Date(local).toISOString() : null);
       const payload = {
         ...form,
         residenceId: form.residenceId || null,
         status: publish ? 'PUBLISHED' : form.status,
         publishAt: form.publishAt || null,
         expiresAt: form.expiresAt || null,
+        startsAt: toIso(form.startsAt),
+        endsAt: toIso(form.endsAt),
       };
       const res = await fetch(`${API_URL}/announcements`, {
         method: 'POST',
@@ -130,9 +159,13 @@ export default function AvisClient() {
       if (res.ok) {
         setShowForm(false);
         load();
+      } else {
+        const data = await res.json().catch(() => ({}));
+        setFormError(data?.error || "Impossible d'enregistrer l'avis.");
       }
     } catch (e) {
       console.error(e);
+      setFormError('Erreur technique.');
     } finally {
       setSaving(false);
     }
@@ -216,6 +249,19 @@ export default function AvisClient() {
                     </span>
                     <p className="font-bold text-brand-navy">{a.title}</p>
                     <p className="truncate text-xs text-slate-500">{a.body}</p>
+                    {a.startsAt && (
+                      <p className="mt-1 flex flex-wrap items-center gap-1.5 text-[11px] text-slate-500">
+                        <span>
+                          {fmtDateTime(a.startsAt)}
+                          {a.endsAt ? ` → ${fmtDateTime(a.endsAt)}` : ''}
+                        </span>
+                        {a.alertPhase && (
+                          <span className={clsx('rounded-full px-2 py-0.5 font-bold', PHASE_STYLE[a.alertPhase])}>
+                            {PHASE_LABEL[a.alertPhase]}
+                          </span>
+                        )}
+                      </p>
+                    )}
                   </td>
                   <td className="px-5 py-4 align-top text-xs text-slate-600">
                     <p className="font-medium text-slate-700">{a.residenceName || 'Toutes résidences'}</p>
@@ -327,6 +373,36 @@ export default function AvisClient() {
                   />
                 </div>
               </div>
+
+              <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+                <p className="text-xs font-semibold text-slate-600">Période de l&apos;alerte (optionnel)</p>
+                <p className="mb-2 text-[11px] text-slate-400">
+                  À quelle heure elle commence et se termine (ex. coupure d&apos;eau). Les résidents voient « À venir », « En cours » puis « Terminée ».
+                </p>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="mb-1 block text-xs font-semibold text-slate-500">Début</label>
+                    <input
+                      type="datetime-local"
+                      value={form.startsAt}
+                      onChange={(e) => setForm({ ...form, startsAt: e.target.value })}
+                      className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none focus:border-brand-amber"
+                    />
+                  </div>
+                  <div>
+                    <label className="mb-1 block text-xs font-semibold text-slate-500">Fin</label>
+                    <input
+                      type="datetime-local"
+                      value={form.endsAt}
+                      min={form.startsAt || undefined}
+                      onChange={(e) => setForm({ ...form, endsAt: e.target.value })}
+                      className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none focus:border-brand-amber"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {formError && <p className="text-sm font-medium text-red-600">{formError}</p>}
             </div>
 
             <div className="mt-5 flex justify-end gap-2">

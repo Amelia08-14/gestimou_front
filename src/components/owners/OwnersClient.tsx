@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { API_URL } from '@/utils/api';
+import OwnerAccessSection from './OwnerAccessSection';
 
 const apartmentNumberFromLotNumber = (lotNumber?: string | null) => {
   const raw = String(lotNumber || '').trim();
@@ -771,6 +772,8 @@ export default function OwnersClient({ owners }: OwnersClientProps) {
                   </div>
                 </div>
               </div>
+
+              <OwnerAccessSection ownerId={selectedOwner.id} />
 
               <div className="space-y-4">
                 <h3 className="text-sm font-bold uppercase tracking-wider text-slate-500">Finances</h3>

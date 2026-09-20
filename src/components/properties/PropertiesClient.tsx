@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { API_URL } from '@/utils/api';
+import { AMENITY_CATALOG } from '@/utils/amenities';
 
 interface Residence {
   id: string;
@@ -40,6 +41,7 @@ interface Residence {
   logo?: string | null;
   hasPlayground?: boolean;
   description?: string | null;
+  amenities?: string[];
 }
 
 interface Owner {
@@ -98,6 +100,7 @@ interface ResidenceFormData {
   hasOutdoorLighting: boolean;
   hasPlayground: boolean;
   description: string;
+  amenities: string[];
 }
 
 const createResidenceForm = (residence?: Residence): ResidenceFormData => ({
@@ -123,7 +126,8 @@ const createResidenceForm = (residence?: Residence): ResidenceFormData => ({
   hasVideoSurveillance: Boolean(residence?.hasVideoSurveillance),
   hasOutdoorLighting: Boolean(residence?.hasOutdoorLighting),
   hasPlayground: Boolean(residence?.hasPlayground),
-  description: residence?.description || ''
+  description: residence?.description || '',
+  amenities: residence?.amenities || []
 });
 
 const zoneDefinitions: Record<string, string[]> = {
@@ -491,7 +495,8 @@ export default function PropertiesClient({ residences: initialResidences, proper
       managerName: residenceFormData.managerName || null,
       zone: residenceFormData.zone || null,
       blocks: residenceFormData.blocks || null,
-      description: residenceFormData.description || null
+      description: residenceFormData.description || null,
+      amenities: residenceFormData.amenities
     };
 
     try {
@@ -1389,6 +1394,31 @@ export default function PropertiesClient({ residences: initialResidences, proper
                   rows={4}
                   className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-blue/20"
                 />
+                <p className="text-xs text-slate-400">Affichée aux résidents dans l&apos;application mobile (courte description).</p>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-slate-700">Commodités (affichées aux résidents)</label>
+                <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                  {AMENITY_CATALOG.map((amenity) => (
+                    <label key={amenity.key} className="flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-700">
+                      <input
+                        type="checkbox"
+                        checked={residenceFormData.amenities.includes(amenity.key)}
+                        onChange={(e) =>
+                          setResidenceFormData((prev) => ({
+                            ...prev,
+                            amenities: e.target.checked
+                              ? [...prev.amenities, amenity.key]
+                              : prev.amenities.filter((key) => key !== amenity.key)
+                          }))
+                        }
+                        className="h-4 w-4 rounded border-slate-300 text-brand-amber focus:ring-brand-blue"
+                      />
+                      <span>{amenity.label}</span>
+                    </label>
+                  ))}
+                </div>
               </div>
 
               <div className="flex justify-end gap-3 border-t border-slate-100 pt-4">

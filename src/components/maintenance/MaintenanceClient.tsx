@@ -14,6 +14,7 @@ import {
 // import { MaintenanceTicket } from '@prisma/client';
 import { useRole } from '@/contexts/RoleContext';
 import { API_URL } from '@/utils/api';
+import TicketDetailsPanel, { type TicketAttachment } from './TicketDetailsPanel';
 
 // A RESPONSABLE_ZONE's `zone` is the literal code 'ALL' for "all zones" —
 // never show that raw value, always a readable French label.
@@ -41,6 +42,7 @@ interface MaintenanceTicket {
   attachmentName?: string | null;
   attachmentType?: string | null;
   attachmentSize?: number | null;
+  attachments?: TicketAttachment[];
   residence?: { id: string; name: string; zone?: string | null } | null;
   subcontractor?: { id: string; name: string; specialty?: string | null } | null;
 }
@@ -151,7 +153,6 @@ export default function MaintenanceClient({ tickets: initialTickets }: Maintenan
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [actionTicket, setActionTicket] = useState<MaintenanceTicket | null>(null);
   const [isActionModalOpen, setIsActionModalOpen] = useState(false);
-  const [actionAttachmentFile, setActionAttachmentFile] = useState<File | null>(null);
   const [showFilters, setShowFilters] = useState(false);
   const [filters, setFilters] = useState({
     priority: '',
@@ -482,7 +483,6 @@ export default function MaintenanceClient({ tickets: initialTickets }: Maintenan
 
   const openActions = (ticket: MaintenanceTicket) => {
     setActionTicket(ticket);
-    setActionAttachmentFile(null);
     setIsActionModalOpen(true);
   };
 
@@ -506,42 +506,6 @@ export default function MaintenanceClient({ tickets: initialTickets }: Maintenan
       setTickets((prev) => prev.filter((t) => t.id !== actionTicket.id));
       setIsActionModalOpen(false);
       setActionTicket(null);
-    } catch (e) {
-      alert('Erreur technique');
-    }
-  };
-
-  const handleUploadAttachmentForExisting = async () => {
-    if (!actionTicket) return;
-    if (!actionAttachmentFile) {
-      alert('Veuillez sélectionner un fichier.');
-      return;
-    }
-    if (actionAttachmentFile.size > 2 * 1024 * 1024) {
-      alert('Fichier trop grand (max 2 Mo).');
-      return;
-    }
-
-    try {
-      const token = sessionStorage.getItem('token');
-      const fd = new FormData();
-      fd.append('file', actionAttachmentFile);
-      const res = await fetch(`${API_URL}/maintenance/${actionTicket.id}/attachment`, {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${token}`
-        },
-        body: fd
-      });
-      const json = await res.json().catch(() => ({}));
-      if (!res.ok) {
-        alert(json?.error || 'Upload impossible');
-        return;
-      }
-      setTickets((prev) => prev.map((t) => (t.id === actionTicket.id ? (json as MaintenanceTicket) : t)));
-      setActionTicket(json as MaintenanceTicket);
-      setActionAttachmentFile(null);
-      alert('Pièce jointe enregistrée.');
     } catch (e) {
       alert('Erreur technique');
     }
@@ -838,7 +802,11 @@ export default function MaintenanceClient({ tickets: initialTickets }: Maintenan
                               target="_blank"
                               rel="noreferrer"
                               className="rounded p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600"
-                              title={ticket.attachmentName || 'Pièce jointe'}
+                              title={
+                                (ticket.attachments?.length || 0) > 1
+                                  ? `${ticket.attachments?.length} pièces jointes (voir Actions)`
+                                  : ticket.attachmentName || 'Pièce jointe'
+                              }
                             >
                               <Download className="h-5 w-5" />
                             </a>
@@ -1037,7 +1005,7 @@ export default function MaintenanceClient({ tickets: initialTickets }: Maintenan
 
       {isActionModalOpen && actionTicket && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
-          <div className="w-full max-w-xl rounded-xl bg-white shadow-2xl">
+          <div className="max-h-[90vh] w-full max-w-xl overflow-y-auto rounded-xl bg-white shadow-2xl">
             <div className="flex items-center justify-between border-b border-slate-100 p-6">
               <div className="flex flex-col">
                 <h2 className="text-xl font-bold text-slate-900">Actions ticket</h2>
@@ -1067,34 +1035,14 @@ export default function MaintenanceClient({ tickets: initialTickets }: Maintenan
                 </div>
               </div>
 
-              <div className="rounded-lg border border-slate-200 p-4 space-y-3">
-                <div className="text-sm font-semibold text-slate-900">Pièce jointe (max 2 Mo)</div>
-                <div className="flex items-center justify-between gap-3">
-                  <input
-                    type="file"
-                    onChange={(e) => setActionAttachmentFile(e.target.files?.[0] || null)}
-                    className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
-                  />
-                </div>
-                <div className="flex items-center justify-between gap-2">
-                  <button
-                    onClick={handleUploadAttachmentForExisting}
-                    className="rounded-lg bg-brand-amber px-4 py-2 text-sm font-medium text-white hover:brightness-95"
-                  >
-                    Enregistrer la pièce jointe
-                  </button>
-                  {actionTicket.attachmentUrl && (
-                    <a
-                      href={`${uploadsBaseUrl}${actionTicket.attachmentUrl}`}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
-                    >
-                      Télécharger
-                    </a>
-                  )}
-                </div>
-              </div>
+              <TicketDetailsPanel
+                ticket={actionTicket}
+                role={role}
+                onTicketChange={(updated) => {
+                  setActionTicket(updated);
+                  setTickets((prev) => prev.map((t) => (t.id === updated.id ? { ...t, ...updated } : t)));
+                }}
+              />
 
               <div className="flex justify-end gap-2 border-t border-slate-100 pt-4">
                 <button

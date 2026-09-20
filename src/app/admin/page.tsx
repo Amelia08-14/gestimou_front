@@ -328,6 +328,34 @@ function AdminPageContent() {
     }
   };
 
+  // Cuts off (or restores) a staff account: the user is logged out on their next request.
+  const handleToggleActive = async (user: any) => {
+    const nextActive = user?.isActive === false;
+    const question = nextActive
+      ? `Réactiver le compte de ${user?.email || 'cet utilisateur'} ?`
+      : `Désactiver le compte de ${user?.email || 'cet utilisateur'} ?
+
+La personne sera immédiatement déconnectée et ne pourra plus se connecter.`;
+    if (!confirm(question)) return;
+    try {
+      const token = sessionStorage.getItem('token');
+      const res = await fetch(`${API_URL}/users/${user.id}/status`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+        body: JSON.stringify({ isActive: nextActive })
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        alert(data?.error || 'Erreur lors de la mise à jour du compte');
+        return;
+      }
+      setUsers((prev: any[]) => prev.map((u) => (u.id === user.id ? { ...u, isActive: nextActive } : u)));
+    } catch (e) {
+      console.error(e);
+      alert('Erreur technique');
+    }
+  };
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
@@ -518,8 +546,10 @@ function AdminPageContent() {
                         </span>
                       </td>
                       <td className="px-6 py-4">
-                        <span className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium bg-green-50 text-green-700`}>
-                          Actif
+                        <span className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ${
+                          user.isActive === false ? 'bg-red-50 text-red-700' : 'bg-green-50 text-green-700'
+                        }`}>
+                          {user.isActive === false ? 'Désactivé' : 'Actif'}
                         </span>
                       </td>
                       <td className="px-6 py-4 text-slate-500">
@@ -532,6 +562,12 @@ function AdminPageContent() {
                               className="text-rose-700 hover:underline text-xs font-medium"
                           >
                               Réinitialiser MDP
+                          </button>
+                          <button 
+                              onClick={() => handleToggleActive(user)}
+                              className={`hover:underline text-xs font-medium ${user.isActive === false ? 'text-emerald-700' : 'text-red-700'}`}
+                          >
+                              {user.isActive === false ? 'Réactiver' : 'Désactiver'}
                           </button>
                           <button 
                               onClick={() => handleEdit(user)}
