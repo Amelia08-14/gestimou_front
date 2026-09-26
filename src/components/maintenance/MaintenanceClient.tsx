@@ -14,6 +14,8 @@ import {
 // import { MaintenanceTicket } from '@prisma/client';
 import { useRole } from '@/contexts/RoleContext';
 import { API_URL } from '@/utils/api';
+import { dayKey, formatDate, formatDateTime, formatTime } from '@/utils/datetime';
+import { useAutoRefresh } from '@/utils/useAutoRefresh';
 import TicketDetailsPanel, { type TicketAttachment } from './TicketDetailsPanel';
 
 // A RESPONSABLE_ZONE's `zone` is the literal code 'ALL' for "all zones" —
@@ -207,11 +209,10 @@ export default function MaintenanceClient({ tickets: initialTickets }: Maintenan
       if (!hay.includes(needle)) return false;
     }
 
-    const from = filters.dateFrom ? new Date(`${filters.dateFrom}T00:00:00`) : null;
-    const to = filters.dateTo ? new Date(`${filters.dateTo}T23:59:59`) : null;
-    const date = new Date(ticket.createdAt);
-    if (from && date < from) return false;
-    if (to && date > to) return false;
+    // Compared by calendar day in the company's time zone (ISO days sort as text).
+    const day = dayKey(ticket.createdAt);
+    if (filters.dateFrom && day < filters.dateFrom) return false;
+    if (filters.dateTo && day > filters.dateTo) return false;
 
     return true;
   };
@@ -256,8 +257,8 @@ export default function MaintenanceClient({ tickets: initialTickets }: Maintenan
         t.requester,
         t.assignee || '',
         t.status,
-        new Date(t.createdAt).toLocaleDateString('fr-FR'),
-        new Date(t.createdAt).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
+        formatDate(t.createdAt),
+        formatTime(t.createdAt)
       ]))
     ];
     downloadCsv(`maintenance_${new Date().toISOString().slice(0, 10)}.csv`, rows);
@@ -359,6 +360,23 @@ export default function MaintenanceClient({ tickets: initialTickets }: Maintenan
         .catch((err) => console.error('Failed to load subcontractors', err));
     }
   }, [role]);
+
+  // Silent refresh: new tickets and status changes made elsewhere (mobile app,
+  // other staff) show up without reloading the page.
+  const refreshTickets = React.useCallback(async () => {
+    try {
+      const res = await fetch(`${API_URL}/maintenance`, {
+        cache: 'no-store',
+        headers: { Authorization: `Bearer ${sessionStorage.getItem('token')}` }
+      });
+      if (!res.ok) return;
+      const data = await res.json();
+      if (Array.isArray(data)) setTickets(data);
+    } catch {
+      // Network hiccup: keep what is on screen, the next tick retries.
+    }
+  }, []);
+  useAutoRefresh(refreshTickets, 30000);
 
   const handleStatusChange = async (ticketId: string, newStatus: string) => {
     try {
@@ -760,9 +778,9 @@ export default function MaintenanceClient({ tickets: initialTickets }: Maintenan
                     </td>
                     <td className="px-6 py-4 text-slate-500">
                         <div className="flex flex-col">
-                          <span>{new Date(ticket.createdAt).toLocaleDateString('fr-FR')}</span>
+                          <span>{formatDate(ticket.createdAt)}</span>
                           <span className="text-xs text-slate-400">
-                            {new Date(ticket.createdAt).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
+                            {formatTime(ticket.createdAt)}
                           </span>
                         </div>
                     </td>
@@ -1031,7 +1049,7 @@ export default function MaintenanceClient({ tickets: initialTickets }: Maintenan
                   </div>
                 )}
                 <div className="mt-2 text-xs text-slate-500">
-                  {new Date(actionTicket.createdAt).toLocaleString('fr-FR')}
+                  {formatDateTime(actionTicket.createdAt)}
                 </div>
               </div>
 

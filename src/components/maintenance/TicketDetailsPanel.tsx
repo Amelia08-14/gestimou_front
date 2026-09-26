@@ -2,6 +2,8 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { API_URL } from '@/utils/api';
+import { formatDateTime } from '@/utils/datetime';
+import { useAutoRefresh } from '@/utils/useAutoRefresh';
 
 const MAX_FILES = 4;
 const MAX_TOTAL_BYTES = 10 * 1024 * 1024;
@@ -74,14 +76,7 @@ const formatBytes = (bytes: number) => {
   return `${(bytes / (1024 * 1024)).toFixed(1)} Mo`;
 };
 
-const fmtDateTime = (iso: string) =>
-  new Date(iso).toLocaleString('fr-FR', {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  });
+const fmtDateTime = (iso: string) => formatDateTime(iso);
 
 const describe = (item: HistoryItem) => {
   switch (item.action) {
@@ -156,6 +151,12 @@ export default function TicketDetailsPanel<T extends TicketLike>({ ticket, role,
     loadHistory();
     loadInfos();
   }, [ticket.id, loadHistory, loadInfos]);
+
+  // Keeps the timeline and the information messages current while the modal is open.
+  useAutoRefresh(() => {
+    loadHistory();
+    loadInfos();
+  }, 15000);
 
   const pickFiles = (picked: FileList | null) => {
     const list = Array.from(picked || []);
