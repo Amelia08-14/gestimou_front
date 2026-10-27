@@ -514,7 +514,7 @@ export default function OwnersClient({ owners }: OwnersClientProps) {
     <div className="space-y-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-brand-amber">Propriétaires</h1>
+          <h1 className="text-xl font-semibold leading-tight text-gi-body md:text-2xl">Propriétaires</h1>
           <p className="text-sm text-slate-500">Gérez les fiches propriétaires, leur résidence et leur localisation.</p>
         </div>
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
@@ -522,7 +522,7 @@ export default function OwnersClient({ owners }: OwnersClientProps) {
             <select
               value={selectedZone}
               onChange={(e) => setSelectedZone(e.target.value)}
-              className="w-40 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm focus:border-brand-gold focus:outline-none focus:ring-2 focus:ring-brand-gold/50"
+              className="w-40 rounded-lg border border-slate-200 bg-gi-raised px-3 py-2 text-sm focus:border-brand-amber focus:outline-none focus:ring-2 focus:ring-brand-amber/50"
             >
               <option value="">Toutes zones</option>
               {zones.map((z) => (
@@ -535,7 +535,7 @@ export default function OwnersClient({ owners }: OwnersClientProps) {
             <select
               value={selectedResidenceId}
               onChange={(e) => setSelectedResidenceId(e.target.value)}
-              className="w-56 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm focus:border-brand-gold focus:outline-none focus:ring-2 focus:ring-brand-gold/50"
+              className="w-56 rounded-lg border border-slate-200 bg-gi-raised px-3 py-2 text-sm focus:border-brand-amber focus:outline-none focus:ring-2 focus:ring-brand-amber/50"
             >
               <option value="">Toutes résidences</option>
               {residenceOptions.map((r) => (
@@ -552,7 +552,7 @@ export default function OwnersClient({ owners }: OwnersClientProps) {
                 placeholder="Rechercher..."
                 value={searchTerm}
                 onChange={(event) => setSearchTerm(event.target.value)}
-                className="w-64 rounded-lg border border-slate-200 py-2 pl-10 pr-4 text-sm focus:border-brand-gold focus:outline-none focus:ring-2 focus:ring-brand-gold/50"
+                className="w-64 rounded-lg border border-slate-200 py-2 pl-10 pr-4 text-sm focus:border-brand-amber focus:outline-none focus:ring-2 focus:ring-brand-amber/50"
               />
             </div>
           </div>
@@ -561,7 +561,7 @@ export default function OwnersClient({ owners }: OwnersClientProps) {
               resetForm();
               setShowAddModal(true);
             }}
-            className="flex items-center gap-2 rounded-lg bg-brand-gold px-4 py-2 text-sm font-bold text-brand-amber shadow-sm transition-colors hover:bg-brand-gold-hover"
+            className="flex items-center gap-2 whitespace-nowrap rounded-full bg-brand-amber px-4 py-2 text-sm font-semibold text-black shadow-sm transition-colors hover:brightness-95"
           >
             <Plus className="h-4 w-4" />
             Nouveau Propriétaire
@@ -571,15 +571,15 @@ export default function OwnersClient({ owners }: OwnersClientProps) {
 
       <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
         {filteredOwners.map((owner) => (
-          <div key={owner.id} className="group relative overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm transition-all hover:border-brand-gold/30 hover:shadow-md">
+          <div key={owner.id} className="group relative overflow-hidden rounded-xl border border-slate-200 bg-gi-card shadow-sm transition-all hover:border-brand-gold/30 hover:shadow-md">
             <div className="p-6">
               <div className="flex items-start justify-between">
                 <div className="flex items-center gap-4">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-full bg-brand-amber text-lg font-bold text-white shadow-inner">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-full bg-brand-amber text-lg font-semibold text-black shadow-inner">
                     {owner.avatar || (owner.firstName[0] + owner.lastName[0])}
                   </div>
                   <div>
-                    <h3 className="font-semibold text-brand-amber transition-colors group-hover:text-brand-gold-dark">
+                    <h3 className="font-semibold text-gi-body transition-colors group-hover:text-brand-gold-dark">
                       {owner.firstName} {owner.lastName}
                     </h3>
                     <div className="mt-1 flex flex-wrap items-center gap-2">
@@ -602,7 +602,7 @@ export default function OwnersClient({ owners }: OwnersClientProps) {
                     <MoreVertical className="h-5 w-5" />
                   </button>
                   {openMenuOwnerId === owner.id ? (
-                    <div className="absolute right-0 z-20 mt-2 w-56 overflow-hidden rounded-lg border border-slate-200 bg-white shadow-lg">
+                    <div className="absolute right-0 z-20 mt-2 w-56 overflow-hidden rounded-lg border border-slate-200 bg-gi-raised shadow-lg">
                       <button
                         onClick={() => handleResetOwnerPassword(owner)}
                         className="block w-full px-4 py-2 text-left text-sm text-rose-700 hover:bg-slate-50"
@@ -671,7 +671,7 @@ export default function OwnersClient({ owners }: OwnersClientProps) {
                 </button>
                 <button
                   onClick={() => openOwnerDetails(owner, true)}
-                  className="flex-1 rounded-lg bg-brand-amber py-2 text-sm font-medium text-white transition-colors hover:bg-brand-amber/90"
+                  className="flex-1 rounded-lg bg-brand-amber py-2 text-sm font-medium text-black transition-colors hover:bg-brand-amber/90"
                 >
                   Voir Biens
                 </button>
@@ -682,15 +682,15 @@ export default function OwnersClient({ owners }: OwnersClientProps) {
       </div>
 
       {selectedOwner && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
-          <div className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-2xl bg-white shadow-2xl animate-in fade-in zoom-in duration-200">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-brand-navy/40 p-4 backdrop-blur-sm">
+          <div className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-2xl bg-gi-raised shadow-2xl animate-in fade-in zoom-in duration-200">
             <div className="flex items-center justify-between border-b border-slate-100 p-6">
               <div className="flex items-center gap-4">
-                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-brand-amber text-lg font-bold text-white shadow-inner">
+                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-brand-amber text-lg font-semibold text-black shadow-inner">
                   {selectedOwner.avatar || (selectedOwner.firstName[0] + selectedOwner.lastName[0])}
                 </div>
                 <div>
-                  <h2 className="text-xl font-bold text-brand-amber">
+                  <h2 className="text-xl font-semibold text-gi-body">
                     {selectedOwner.firstName} {selectedOwner.lastName}
                   </h2>
                   <span className={`mt-1 inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
@@ -816,7 +816,7 @@ export default function OwnersClient({ owners }: OwnersClientProps) {
                     </button>
                   ) : (
                     <div className="mt-4 space-y-3 animate-in fade-in slide-in-from-top-2">
-                      <div className="rounded-lg border border-slate-200 bg-white p-3">
+                      <div className="rounded-lg border border-slate-200 bg-gi-card p-3">
                         <p className="text-xs font-medium text-slate-500">Attribuer un bien</p>
                         <div className="mt-2 flex gap-2">
                           <select
@@ -837,7 +837,7 @@ export default function OwnersClient({ owners }: OwnersClientProps) {
                           <button
                             onClick={handleAssignProperty}
                             disabled={!selectedPropertyId}
-                            className="shrink-0 rounded-lg bg-brand-amber px-4 py-2 text-sm font-bold text-white disabled:opacity-50"
+                            className="shrink-0 rounded-full bg-brand-amber px-4 py-2 text-sm font-semibold text-black disabled:opacity-50"
                           >
                             Attribuer
                           </button>
@@ -846,7 +846,7 @@ export default function OwnersClient({ owners }: OwnersClientProps) {
                       {properties.length > 0 ? (
                         <ul className="space-y-2">
                           {properties.map((property) => (
-                            <li key={property.id} className="rounded border border-slate-200 bg-white p-2 text-sm text-slate-700">
+                            <li key={property.id} className="rounded border border-slate-200 bg-gi-card p-2 text-sm text-slate-700">
                               <span className="block font-semibold">{property.title}</span>
                               <span className="text-xs text-slate-500">
                                 {property.type} - N° appartement {apartmentNumberFromLotNumber(property.lotNumber) || '-'} - {property.floor ? `Étage ${property.floor}` : 'Étage -'}
@@ -890,7 +890,7 @@ export default function OwnersClient({ owners }: OwnersClientProps) {
                   </button>
                   <button
                     onClick={() => handleEdit(selectedOwner)}
-                    className="rounded-lg bg-brand-amber px-6 py-2 text-sm font-bold text-white shadow-md hover:bg-brand-amber/90"
+                    className="whitespace-nowrap rounded-full bg-brand-amber px-6 py-2 text-sm font-semibold text-black shadow-md hover:bg-brand-amber/90"
                   >
                     Modifier
                   </button>
@@ -902,10 +902,10 @@ export default function OwnersClient({ owners }: OwnersClientProps) {
       )}
 
       {showAddModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm overflow-y-auto">
-          <div className="my-8 w-full max-w-lg rounded-2xl bg-white shadow-2xl animate-in fade-in zoom-in duration-200">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-brand-navy/40 p-4 backdrop-blur-sm overflow-y-auto">
+          <div className="my-8 w-full max-w-lg rounded-2xl bg-gi-raised shadow-2xl animate-in fade-in zoom-in duration-200">
             <div className="flex items-center justify-between border-b border-slate-100 p-6">
-              <h2 className="text-xl font-bold text-brand-amber">
+              <h2 className="text-xl font-semibold text-gi-body">
                 {isEditing ? 'Modifier le propriétaire' : 'Nouveau Propriétaire'}
               </h2>
               <button
@@ -929,7 +929,7 @@ export default function OwnersClient({ owners }: OwnersClientProps) {
                     name="firstName"
                     value={formData.firstName}
                     onChange={handleInputChange}
-                    className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-blue/20"
+                    className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-amber/20"
                   />
                 </div>
                 <div className="space-y-2">
@@ -940,7 +940,7 @@ export default function OwnersClient({ owners }: OwnersClientProps) {
                     name="lastName"
                     value={formData.lastName}
                     onChange={handleInputChange}
-                    className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-blue/20"
+                    className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-amber/20"
                   />
                 </div>
               </div>
@@ -953,7 +953,7 @@ export default function OwnersClient({ owners }: OwnersClientProps) {
                   name="email"
                   value={formData.email}
                   onChange={handleInputChange}
-                  className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-blue/20"
+                  className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-amber/20"
                 />
               </div>
 
@@ -964,7 +964,7 @@ export default function OwnersClient({ owners }: OwnersClientProps) {
                   name="phone"
                   value={formData.phone}
                   onChange={handleInputChange}
-                  className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-blue/20"
+                  className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-amber/20"
                 />
               </div>
 
@@ -974,7 +974,7 @@ export default function OwnersClient({ owners }: OwnersClientProps) {
                   name="residenceId"
                   value={formData.residenceId}
                   onChange={handleInputChange}
-                  className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-blue/20"
+                  className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-amber/20"
                 >
                   <option value="">Sélectionner une résidence</option>
                   {residences.map((residence) => (
@@ -993,7 +993,7 @@ export default function OwnersClient({ owners }: OwnersClientProps) {
                     name="block"
                     value={formData.block}
                     onChange={handleInputChange}
-                    className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-blue/20"
+                    className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-amber/20"
                   />
                 </div>
                 <div className="space-y-2">
@@ -1003,7 +1003,7 @@ export default function OwnersClient({ owners }: OwnersClientProps) {
                     name="floor"
                     value={formData.floor}
                     onChange={handleInputChange}
-                    className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-blue/20"
+                    className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-amber/20"
                   />
                 </div>
                 <div className="space-y-2">
@@ -1013,7 +1013,7 @@ export default function OwnersClient({ owners }: OwnersClientProps) {
                     name="doorNumber"
                     value={formData.doorNumber}
                     onChange={handleInputChange}
-                    className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-blue/20"
+                    className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-amber/20"
                   />
                 </div>
                 <div className="space-y-2">
@@ -1023,7 +1023,7 @@ export default function OwnersClient({ owners }: OwnersClientProps) {
                     name="parkingNumber"
                     value={formData.parkingNumber}
                     onChange={handleInputChange}
-                    className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-blue/20"
+                    className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-amber/20"
                   />
                 </div>
               </div>
@@ -1035,7 +1035,7 @@ export default function OwnersClient({ owners }: OwnersClientProps) {
                   name="address"
                   value={formData.address}
                   onChange={handleInputChange}
-                  className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-blue/20"
+                  className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-amber/20"
                 />
               </div>
 
@@ -1050,7 +1050,7 @@ export default function OwnersClient({ owners }: OwnersClientProps) {
                       value={formData.emergencyContactName}
                       onChange={handleInputChange}
                       placeholder="Ex: Conjoint, Parent..."
-                      className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-blue/20"
+                      className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-amber/20"
                     />
                   </div>
                   <div className="space-y-2">
@@ -1060,7 +1060,7 @@ export default function OwnersClient({ owners }: OwnersClientProps) {
                       name="emergencyContactPhone"
                       value={formData.emergencyContactPhone}
                       onChange={handleInputChange}
-                      className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-blue/20"
+                      className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-amber/20"
                     />
                   </div>
                 </div>
@@ -1080,7 +1080,7 @@ export default function OwnersClient({ owners }: OwnersClientProps) {
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="rounded-lg bg-brand-amber px-6 py-2 text-sm font-bold text-white shadow-md hover:bg-brand-amber/90 disabled:opacity-50"
+                  className="whitespace-nowrap rounded-full bg-brand-amber px-6 py-2 text-sm font-semibold text-black shadow-md hover:bg-brand-amber/90 disabled:opacity-50"
                 >
                   {isSubmitting ? 'Enregistrement...' : isEditing ? 'Enregistrer' : 'Créer le propriétaire'}
                 </button>

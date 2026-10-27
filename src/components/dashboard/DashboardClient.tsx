@@ -1,18 +1,11 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import {
-  Building2,
-  Users,
-  Wallet,
-  AlertTriangle,
-  ArrowUpRight,
-  TrendingUp,
-  SlidersHorizontal,
-  Check,
-} from 'lucide-react';
+import { Activity, AlertTriangle, Building2, Check, Download, SlidersHorizontal, Users, Wallet } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from 'recharts';
 import { API_URL } from '@/utils/api';
+import { useRole } from '@/contexts/RoleContext';
+import { Card, PageHeader, SectionTitle, StatTile, primaryButton, squareButton } from '@/components/ui';
 
 const WIDGET_LABELS: Record<string, string> = {
   totalResidences: 'Total résidences',
@@ -63,6 +56,8 @@ export default function DashboardClient({
     activities: initialActivities, 
     weeklyActivity: initialWeeklyActivity 
 }: DashboardClientProps) {
+
+  const { user } = useRole();
 
   // State
   const [stats, setStats] = useState(initialStats);
@@ -200,237 +195,185 @@ export default function DashboardClient({
   };
 
   const statsDisplay = [
-    {
-      key: 'totalResidences',
-      name: 'Total Résidences',
-      value: stats.totalResidences.toString(),
-      change: '+0',
-      changeType: 'neutral',
-      icon: Building2,
-      color: 'blue-500',
-    },
-    {
-      key: 'occupancyRate',
-      name: 'Taux d\'Occupation',
-      value: stats.occupancyRate,
-      change: '+2%',
-      changeType: 'positive',
-      icon: Users,
-      color: 'emerald-500',
-    },
-    {
-      key: 'monthlyRevenue',
-      name: 'Revenus Mensuels',
-      value: stats.monthlyRevenue,
-      change: '+12%',
-      changeType: 'positive',
-      icon: Wallet,
-      color: 'brand-gold',
-    },
-    {
-      key: 'ticketsCount',
-      name: 'Tickets En Cours',
-      value: stats.ticketsCount.toString(),
-      change: '-2',
-      changeType: 'positive',
-      icon: AlertTriangle,
-      color: 'orange-500',
-    },
+    { key: 'totalResidences', name: 'Résidences', value: stats.totalResidences.toString(), icon: Building2, accent: '#5794ea' },
+    { key: 'occupancyRate', name: "Taux d'occupation", value: stats.occupancyRate, icon: Users, accent: '#2ecc71' },
+    { key: 'monthlyRevenue', name: 'Revenus du mois', value: stats.monthlyRevenue, icon: Wallet, accent: '#db9200' },
+    { key: 'ticketsCount', name: 'Tickets en cours', value: stats.ticketsCount.toString(), icon: AlertTriangle, accent: '#e74c3c' },
   ].filter((item) => visibleWidgets.has(item.key));
 
+  const firstName = (user?.name || '').trim().split(/\s+/)[0] || '';
+  const seriesColors = ['#db9200', '#5794ea', '#2ecc71', '#7b6fde', '#e74c3c', '#a08851', '#8b81cb'];
+  const axisTick = { fill: '#999999', fontSize: 12, fontFamily: 'var(--font-montserrat)' };
+  const tooltipStyle = {
+    backgroundColor: '#fbfaf7',
+    borderRadius: 12,
+    border: '1px solid #e7e4de',
+    boxShadow: '0 12px 32px -12px rgb(12 22 32 / 0.18)',
+    fontSize: 13,
+  };
+
   return (
-    <div className="space-y-8">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-brand-navy">Tableau de bord</h1>
-          <p className="text-sm text-slate-500">Bienvenue sur Gérance Immo Service, voici un aperçu de votre activité.</p>
-        </div>
-        <div className="flex items-center gap-3">
-          <select
-            value={reportPeriod}
-            onChange={(e) => setReportPeriod(e.target.value === 'year' ? 'year' : 'month')}
-            className="rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm font-medium text-slate-700 outline-none focus:border-brand-amber"
-          >
-            <option value="month">Ce mois-ci</option>
-            <option value="year">Cette année</option>
-          </select>
-          <div className="relative" ref={customizeRef}>
-            <button
-              onClick={() => setShowCustomize((v) => !v)}
-              className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm font-bold text-slate-600 transition-colors hover:bg-slate-50"
+    <div className="space-y-6">
+      <PageHeader
+        large
+        title={firstName ? `Bonjour ${firstName}` : 'Bonjour'}
+        subtitle="Voici un aperçu de votre activité."
+        actions={
+          <>
+            <select
+              value={reportPeriod}
+              onChange={(e) => setReportPeriod(e.target.value === 'year' ? 'year' : 'month')}
+              className="h-10 rounded-full border border-gi-card-border bg-gi-card px-4 text-[13px] font-medium text-gi-body outline-none focus:border-brand-amber"
             >
-              <SlidersHorizontal className="h-4 w-4" />
-              Personnaliser
-            </button>
-            {showCustomize && (
-              <div className="absolute right-0 top-full z-20 mt-2 w-64 rounded-xl border border-slate-200 bg-white p-2 shadow-xl">
-                <p className="px-2 py-1.5 text-xs font-bold uppercase tracking-wide text-slate-400">Widgets affichés</p>
-                {ALL_WIDGET_KEYS.map((key) => (
-                  <button
-                    key={key}
-                    onClick={() => toggleWidget(key)}
-                    className="flex w-full items-center justify-between rounded-lg px-2 py-2 text-left text-sm text-slate-700 hover:bg-slate-50"
-                  >
-                    {WIDGET_LABELS[key]}
-                    <span
-                      className={`flex h-4 w-4 items-center justify-center rounded border ${
-                        visibleWidgets.has(key) ? 'border-brand-amber bg-brand-amber text-white' : 'border-slate-300'
-                      }`}
-                    >
-                      {visibleWidgets.has(key) && <Check className="h-3 w-3" />}
-                    </span>
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-          <button
-            onClick={handleDownloadReport}
-            className="rounded-xl bg-brand-amber px-4 py-2.5 text-sm font-bold text-white shadow-sm transition-all hover:brightness-95"
-          >
-            Télécharger le rapport
-          </button>
-        </div>
-      </div>
-
-      {/* Stats Grid */}
-      {statsDisplay.length > 0 && (
-      <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-        {statsDisplay.map((item) => (
-          <div key={item.name} className="overflow-hidden rounded-xl bg-white p-6 shadow-sm ring-1 ring-slate-200 transition-all hover:shadow-md">
-            <div className="flex items-center justify-between gap-4">
-              <div className="min-w-0">
-                <p className="text-sm font-medium text-slate-500 truncate">{item.name}</p>
-                <p className="mt-2 text-3xl font-bold text-slate-900 truncate" title={item.value}>{item.value}</p>
-              </div>
-              <div className={`rounded-lg p-3 shrink-0 bg-${item.color}/10 text-${item.color}`}>
-                <item.icon className="h-6 w-6" />
-              </div>
-            </div>
-            <div className="mt-4 flex items-center gap-2">
-              <span className={`flex items-center text-sm font-medium ${
-                item.changeType === 'positive' ? 'text-emerald-600' : 'text-slate-600'
-              }`}>
-                {item.changeType === 'positive' && <ArrowUpRight className="mr-1 h-4 w-4" />}
-                {item.change}
-              </span>
-              <span className="text-sm text-slate-400">vs mois dernier</span>
-            </div>
-          </div>
-        ))}
-      </div>
-      )}
-
-      {/* Charts Section */}
-      {(visibleWidgets.has('revenueChart') || visibleWidgets.has('activityChart')) && (
-      <div className="grid gap-6 lg:grid-cols-2">
-        {/* Revenue Chart - Updated to show per residence */}
-        {visibleWidgets.has('revenueChart') && (
-        <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-          <div className="mb-6 flex items-center justify-between">
-            <div>
-              <h3 className="font-bold text-slate-900">Évolution des Revenus par Résidence</h3>
-              <p className="text-sm text-slate-500">En Millions de Dinars (DZD)</p>
-            </div>
-            <div className="rounded-lg bg-emerald-50 p-2">
-              <TrendingUp className="h-5 w-5 text-emerald-600" />
-            </div>
-          </div>
-          <div className="h-72 w-full min-h-[300px]">
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={revenueData}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
-                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: '#64748b', fontSize: 12}} dy={10} />
-                <YAxis axisLine={false} tickLine={false} tick={{fill: '#64748b', fontSize: 12}} />
-                <Tooltip 
-                  contentStyle={{ backgroundColor: '#fff', borderRadius: '8px', border: '1px solid #e2e8f0', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
-                  cursor={{ stroke: '#cbd5e1', strokeWidth: 1 }}
-                />
-                {/* Dynamically render lines based on data keys, excluding 'name' */}
-                {revenueData.length > 0 && Object.keys(revenueData[0])
-                  .filter(key => key !== 'name')
-                  .map((key, index) => (
-                    <Line 
+              <option value="month">Ce mois-ci</option>
+              <option value="year">Cette année</option>
+            </select>
+            <div className="relative" ref={customizeRef}>
+              <button onClick={() => setShowCustomize((v) => !v)} title="Personnaliser" className={squareButton}>
+                <SlidersHorizontal className="h-4 w-4" />
+              </button>
+              {showCustomize && (
+                <div className="gi-appear absolute right-0 top-full z-20 mt-2 w-64 rounded-2xl border border-gi-card-border bg-gi-raised p-2 shadow-xl">
+                  <p className="px-2 py-1.5 text-[11px] font-semibold uppercase tracking-[0.1em] text-gi-faint">Widgets affichés</p>
+                  {ALL_WIDGET_KEYS.map((key) => (
+                    <button
                       key={key}
-                      type="monotone" 
-                      dataKey={key} 
-                      name={key} 
-                      stroke={`hsl(${index * 60}, 70%, 50%)`} 
-                      strokeWidth={2} 
-                      dot={{ r: 3 }} 
-                      activeDot={{ r: 5 }} 
-                    />
-                  ))
-                }
-              </LineChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-        )}
-
-        {/* Activity Chart */}
-        {visibleWidgets.has('activityChart') && (
-        <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-          <div className="mb-6 flex items-center justify-between">
-            <div>
-              <h3 className="font-bold text-slate-900">Activité Hebdomadaire</h3>
-              <p className="text-sm text-slate-500">Tickets vs Paiements</p>
+                      onClick={() => toggleWidget(key)}
+                      className="flex w-full items-center justify-between rounded-lg px-2 py-2 text-left text-[13px] text-gi-body hover:bg-black/[0.04]"
+                    >
+                      {WIDGET_LABELS[key]}
+                      <span
+                        className={`flex h-4 w-4 items-center justify-center rounded border ${
+                          visibleWidgets.has(key) ? 'border-brand-amber bg-brand-amber text-black' : 'border-slate-300'
+                        }`}
+                      >
+                        {visibleWidgets.has(key) && <Check className="h-3 w-3" />}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
-          </div>
-          <div className="h-72 w-full min-h-[300px]">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={weeklyActivity}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
-                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: '#64748b', fontSize: 12}} dy={10} />
-                <YAxis axisLine={false} tickLine={false} tick={{fill: '#64748b', fontSize: 12}} />
-                <Tooltip
-                  contentStyle={{ backgroundColor: '#fff', borderRadius: '8px', border: '1px solid #e2e8f0', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
-                  cursor={{ fill: '#f1f5f9' }}
-                />
-                <Bar dataKey="payments" name="Paiements" fill="#0f172a" radius={[4, 4, 0, 0]} barSize={20} />
-                <Bar dataKey="tickets" name="Incidents" fill="#ef4444" radius={[4, 4, 0, 0]} barSize={20} />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
+            <button onClick={handleDownloadReport} className={primaryButton}>
+              <Download className="h-4 w-4" />
+              Rapport
+            </button>
+          </>
+        }
+      />
+
+      {/* KPI tiles — AdminStatTile */}
+      {statsDisplay.length > 0 && (
+        <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+          {statsDisplay.map((item) => (
+            <StatTile
+              key={item.key}
+              accent={item.accent}
+              icon={<item.icon className="h-[18px] w-[18px]" />}
+              label={item.name}
+              value={loading && item.value === '0' ? '—' : item.value}
+            />
+          ))}
         </div>
-        )}
-      </div>
       )}
 
-      {/* Recent Activity Table - Updated to be scrollable and show all types */}
+      {(visibleWidgets.has('revenueChart') || visibleWidgets.has('activityChart')) && (
+        <div className="grid gap-6 lg:grid-cols-5">
+          {visibleWidgets.has('revenueChart') && (
+            <section className={visibleWidgets.has('activityChart') ? 'space-y-3 lg:col-span-3' : 'space-y-3 lg:col-span-5'}>
+              <SectionTitle title="Revenus par résidence" action={<span className="text-xs text-gi-faint">Millions DZD</span>} />
+              <Card className="h-[320px] !p-4 !pl-0">
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={revenueData}>
+                    <CartesianGrid vertical={false} stroke="#e2e0d9" />
+                    <XAxis dataKey="name" axisLine={false} tickLine={false} tick={axisTick} dy={10} />
+                    <YAxis axisLine={false} tickLine={false} tick={axisTick} />
+                    <Tooltip contentStyle={tooltipStyle} cursor={{ stroke: '#cccccc', strokeWidth: 1 }} />
+                    {revenueData.length > 0 &&
+                      Object.keys(revenueData[0])
+                        .filter((key) => key !== 'name')
+                        .map((key, index) => (
+                          <Line
+                            key={key}
+                            type="monotone"
+                            dataKey={key}
+                            name={key}
+                            stroke={seriesColors[index % seriesColors.length]}
+                            strokeWidth={2.5}
+                            dot={false}
+                            activeDot={{ r: 5, strokeWidth: 0 }}
+                          />
+                        ))}
+                  </LineChart>
+                </ResponsiveContainer>
+              </Card>
+            </section>
+          )}
+
+          {visibleWidgets.has('activityChart') && (
+            <section className={visibleWidgets.has('revenueChart') ? 'space-y-3 lg:col-span-2' : 'space-y-3 lg:col-span-5'}>
+              <SectionTitle
+                title="Volume — 7 jours"
+                action={
+                  <span className="flex items-center gap-3 text-xs text-gi-muted">
+                    <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-brand-amber" />Paiements</span>
+                    <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-brand-navy" />Tickets</span>
+                  </span>
+                }
+              />
+              <Card className="h-[320px] !p-4 !pl-0">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={weeklyActivity} barGap={4}>
+                    <CartesianGrid vertical={false} stroke="#e2e0d9" />
+                    <XAxis dataKey="name" axisLine={false} tickLine={false} tick={axisTick} dy={10} />
+                    <YAxis axisLine={false} tickLine={false} tick={axisTick} allowDecimals={false} />
+                    <Tooltip contentStyle={tooltipStyle} cursor={{ fill: 'rgb(0 0 0 / 0.04)' }} />
+                    <Bar dataKey="payments" name="Paiements" fill="#db9200" radius={[6, 6, 6, 6]} barSize={14} />
+                    <Bar dataKey="tickets" name="Tickets" fill="#0c1620" radius={[6, 6, 6, 6]} barSize={14} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </Card>
+            </section>
+          )}
+        </div>
+      )}
+
       {visibleWidgets.has('recentActivity') && (
-      <div className="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden">
-        <div className="border-b border-slate-100 px-6 py-4">
-          <h3 className="font-bold text-slate-900">Dernières Activités</h3>
-        </div>
-        <div className="divide-y divide-slate-100 max-h-96 overflow-y-auto">
+        <section className="space-y-3">
+          <SectionTitle title="Dernières activités" count={activities.length} />
           {activities.length === 0 ? (
-             <div className="px-6 py-4 text-center text-slate-500">Aucune activité récente.</div>
+            <Card className="py-10 text-center text-[13px] text-gi-faint">Aucune activité récente.</Card>
           ) : (
-            activities.map((item, i) => (
-            <div key={i} className="flex items-center justify-between px-6 py-4 hover:bg-slate-50 transition-colors">
-              <div className="flex items-center gap-4">
-                <div className={`h-2 w-2 rounded-full ${
-                  item.type === 'success' ? 'bg-emerald-500' :
-                  item.type === 'warning' ? 'bg-red-500' :
-                  item.type === 'info' ? 'bg-blue-500' : 'bg-slate-400'
-                }`} />
-                <div>
-                  <p className="text-sm font-medium text-slate-900">{item.action}</p>
-                  <p className="text-xs text-slate-500">{item.user} • {item.time}</p>
-                </div>
-              </div>
-              <span className={`text-sm font-medium ${
-                item.type === 'success' ? 'text-emerald-600' :
-                item.type === 'warning' ? 'text-red-600' :
-                'text-slate-600'
-              }`}>
-                {item.amount}
-              </span>
+            <div className="max-h-[480px] space-y-2 overflow-y-auto">
+              {activities.map((item, i) => {
+                const accent =
+                  item.type === 'success' ? '#2ecc71' : item.type === 'warning' ? '#e74c3c' : item.type === 'info' ? '#5794ea' : '#999999';
+                const Icon = item.type === 'success' ? Wallet : item.type === 'warning' ? AlertTriangle : Activity;
+                return (
+                  <div key={i} className="flex items-center gap-3 rounded-2xl border border-gi-card-border bg-gi-card px-4 py-3">
+                    <span
+                      className="flex h-[35px] w-[35px] flex-shrink-0 items-center justify-center rounded-lg border"
+                      style={{ backgroundColor: `${accent}0d`, borderColor: `${accent}1a`, color: accent }}
+                    >
+                      <Icon className="h-4 w-4" />
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm text-gi-body">{item.action}</p>
+                      <p className="mt-0.5 truncate text-[11px] text-gi-faint">
+                        {item.user} · {item.time}
+                      </p>
+                    </div>
+                    {item.amount && (
+                      <span className="flex-shrink-0 text-sm font-semibold" style={{ color: item.type === 'info' || !item.type ? '#4c4c4c' : accent }}>
+                        {item.amount}
+                      </span>
+                    )}
+                  </div>
+                );
+              })}
             </div>
-          )))}
-        </div>
-      </div>
+          )}
+        </section>
       )}
     </div>
   );

@@ -1017,20 +1017,20 @@ export default function FinancialClient() {
     <div className="space-y-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Gestion Financière</h1>
+          <h1 className="text-xl font-semibold leading-tight text-gi-body md:text-2xl">Gestion Financière</h1>
           <p className="text-sm text-slate-500">Suivi des charges de gestion, des paiements et des indicateurs copropriété.</p>
         </div>
         <div className="flex gap-2">
           <button
             onClick={handleOpenFilters}
-            className="flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+            className="flex items-center gap-2 rounded-lg border border-slate-200 bg-gi-card px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
           >
             <Filter className="h-4 w-4" />
             Filtres
           </button>
           <button
             onClick={handleExportCurrentView}
-            className="flex items-center gap-2 rounded-lg bg-brand-amber px-4 py-2 text-sm font-medium text-white hover:brightness-95"
+            className="flex items-center gap-2 whitespace-nowrap rounded-full bg-brand-amber px-4 py-2 text-sm font-medium text-black hover:brightness-95"
           >
             <Download className="h-4 w-4" />
             Exporter
@@ -1041,24 +1041,24 @@ export default function FinancialClient() {
       <div className="grid gap-6 sm:grid-cols-2 xl:grid-cols-4">
         {!isRecouvrement && (
           <>
-            <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+            <div className="rounded-xl border border-slate-200 bg-gi-card p-6 shadow-sm">
               <p className="text-sm font-medium text-slate-500">Nbr consistances</p>
               <div className="mt-2 text-3xl font-bold text-brand-amber">{consistenciesCount}</div>
               <p className="mt-3 text-sm text-slate-500">Lots enregistrés dans la plateforme</p>
             </div>
-            <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+            <div className="rounded-xl border border-slate-200 bg-gi-card p-6 shadow-sm">
               <p className="text-sm font-medium text-slate-500">Nbr logements vendus</p>
               <div className="mt-2 text-3xl font-bold text-slate-900">{soldHousingCount}</div>
               <p className="mt-3 text-sm text-slate-500">Biens marqués comme vendus</p>
             </div>
           </>
         )}
-        <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+        <div className="rounded-xl border border-slate-200 bg-gi-card p-6 shadow-sm">
           <p className="text-sm font-medium text-slate-500">Nbr charges payées</p>
           <div className="mt-2 text-3xl font-bold text-emerald-600">{paidChargesCount}</div>
           <p className="mt-3 text-sm text-slate-500">Charges de gestion réglées</p>
         </div>
-        <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+        <div className="rounded-xl border border-slate-200 bg-gi-card p-6 shadow-sm">
           <p className="text-sm font-medium text-slate-500">Nbr charges non payées</p>
           <div className="mt-2 text-3xl font-bold text-red-600">{unpaidChargesCount}</div>
           <p className="mt-3 text-sm text-slate-500">Charges en attente de règlement</p>
@@ -1067,7 +1067,7 @@ export default function FinancialClient() {
 
       <div className={`grid gap-6 ${isRecouvrement ? 'sm:grid-cols-1' : 'sm:grid-cols-3'}`}>
         {!isRecouvrement && (
-          <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+          <div className="rounded-xl border border-slate-200 bg-gi-card p-6 shadow-sm">
             <p className="text-sm font-medium text-slate-500">Solde global</p>
             <div className="mt-2 flex items-baseline gap-2">
               <span className={`text-3xl font-bold ${totalBalance >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
@@ -1080,7 +1080,7 @@ export default function FinancialClient() {
             </div>
           </div>
         )}
-        <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+        <div className="rounded-xl border border-slate-200 bg-gi-card p-6 shadow-sm">
           <p className="text-sm font-medium text-slate-500">Paiements reçus</p>
           <div className="mt-2 flex items-baseline gap-2">
             <span className="text-3xl font-bold text-slate-900">{paidChargesAmount.toLocaleString()} DA</span>
@@ -1091,7 +1091,7 @@ export default function FinancialClient() {
           </div>
         </div>
         {!isRecouvrement && (
-          <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+          <div className="rounded-xl border border-slate-200 bg-gi-card p-6 shadow-sm">
             <p className="text-sm font-medium text-slate-500">Dépenses effectuées</p>
             <div className="mt-2 flex items-baseline gap-2">
               <span className="text-3xl font-bold text-slate-900">{paidExpensesAmount.toLocaleString()} DA</span>
@@ -1109,33 +1109,33 @@ export default function FinancialClient() {
           <>
             <button
               onClick={() => setActiveTab('history')}
-              className={`border-b-2 px-4 py-2 text-sm font-medium transition-colors ${activeTab === 'history' ? 'border-brand-blue text-brand-amber' : 'border-transparent text-slate-500 hover:text-slate-700'}`}
+              className={`border-b-2 px-4 py-2 text-sm font-medium transition-colors ${activeTab === 'history' ? 'border-brand-amber text-brand-amber' : 'border-transparent text-slate-500 hover:text-slate-700'}`}
             >
               Historique des transactions
             </button>
             <button
               onClick={() => setActiveTab('tracking')}
-              className={`border-b-2 px-4 py-2 text-sm font-medium transition-colors ${activeTab === 'tracking' ? 'border-brand-blue text-brand-amber' : 'border-transparent text-slate-500 hover:text-slate-700'}`}
+              className={`border-b-2 px-4 py-2 text-sm font-medium transition-colors ${activeTab === 'tracking' ? 'border-brand-amber text-brand-amber' : 'border-transparent text-slate-500 hover:text-slate-700'}`}
             >
               Suivi des paiements
             </button>
             <button
               onClick={() => setActiveTab('expenses')}
-              className={`border-b-2 px-4 py-2 text-sm font-medium transition-colors ${activeTab === 'expenses' ? 'border-brand-blue text-brand-amber' : 'border-transparent text-slate-500 hover:text-slate-700'}`}
+              className={`border-b-2 px-4 py-2 text-sm font-medium transition-colors ${activeTab === 'expenses' ? 'border-brand-amber text-brand-amber' : 'border-transparent text-slate-500 hover:text-slate-700'}`}
             >
               Dépenses
             </button>
           </>
         )}
         {isRecouvrement && (
-          <div className="border-b-2 border-brand-blue px-4 py-2 text-sm font-medium text-brand-amber">
+          <div className="border-b-2 border-brand-amber px-4 py-2 text-sm font-medium text-brand-amber">
             Suivi des paiements
           </div>
         )}
       </div>
 
       {(activeTab === 'tracking' || isRecouvrement) && (
-        <div className="space-y-6 rounded-xl border border-slate-200 bg-white p-6 shadow-sm overflow-hidden">
+        <div className="space-y-6 rounded-xl border border-slate-200 bg-gi-card p-6 shadow-sm overflow-hidden">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
               <h3 className="font-bold text-slate-900">État des paiements (annuel)</h3>
@@ -1178,7 +1178,7 @@ export default function FinancialClient() {
                   <button
                     onClick={() => handleBulkSetStatus('Payé')}
                     disabled={isBulkUpdating}
-                    className="rounded-lg bg-brand-amber px-4 py-2 text-sm font-medium text-white hover:bg-brand-amber/90 disabled:opacity-50"
+                    className="whitespace-nowrap rounded-full bg-brand-amber px-4 py-2 text-sm font-medium text-black hover:bg-brand-amber/90 disabled:opacity-50"
                   >
                     Marquer payé ({selectedChargeIds.size})
                   </button>
@@ -1452,7 +1452,7 @@ export default function FinancialClient() {
 
       {!isRecouvrement && activeTab === 'expenses' && (
         <div className="space-y-6">
-          <div className="flex flex-col gap-4 rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+          <div className="flex flex-col gap-4 rounded-xl border border-slate-200 bg-gi-card p-6 shadow-sm">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div className="flex flex-wrap gap-2">
                 {(['UTIL_ELECTRICITY', 'UTIL_WATER', 'SUPPLIER_INVOICE', 'MISC_PURCHASE'] as const).map((key) => (
@@ -1464,7 +1464,7 @@ export default function FinancialClient() {
                       setExpenseForm((prev) => ({ ...prev, category: key }));
                     }}
                     className={`rounded-full px-4 py-2 text-sm font-semibold transition-colors ${
-                      expenseTab === key ? 'bg-brand-amber text-white' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                      expenseTab === key ? 'bg-brand-amber text-black' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
                     }`}
                   >
                     {expenseLabel(key)}
@@ -1510,7 +1510,7 @@ export default function FinancialClient() {
                     <button
                       onClick={() => handleBulkSetExpenseStatus('Payé')}
                       disabled={isExpensesBulkUpdating}
-                      className="rounded-lg bg-brand-amber px-4 py-2 text-sm font-medium text-white hover:bg-brand-amber/90 disabled:opacity-50"
+                      className="whitespace-nowrap rounded-full bg-brand-amber px-4 py-2 text-sm font-medium text-black hover:bg-brand-amber/90 disabled:opacity-50"
                     >
                       Marquer payé ({selectedExpenseIds.size})
                     </button>
@@ -1532,7 +1532,7 @@ export default function FinancialClient() {
                 )}
                 <button
                   onClick={handleOpenAddExpense}
-                  className="rounded-lg bg-brand-gold px-4 py-2 text-sm font-bold text-brand-amber hover:bg-brand-gold-hover"
+                  className="whitespace-nowrap rounded-full bg-brand-amber px-4 py-2 text-sm font-semibold text-black hover:brightness-95"
                 >
                   Nouvelle dépense
                 </button>
@@ -1648,7 +1648,7 @@ export default function FinancialClient() {
       )}
 
       {!isRecouvrement && activeTab === 'history' && (
-        <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+        <div className="overflow-hidden rounded-xl border border-slate-200 bg-gi-card shadow-sm">
           <div className="flex flex-col gap-3 border-b border-slate-100 px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
             <h3 className="font-bold text-slate-900">Historique des transactions</h3>
             <div className="flex items-center gap-2">
@@ -1786,8 +1786,8 @@ export default function FinancialClient() {
       )}
 
       {!isRecouvrement && selectedTransaction && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm overflow-y-auto">
-          <div className="w-full max-w-lg rounded-2xl bg-white shadow-2xl animate-in fade-in zoom-in duration-200">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-brand-navy/40 p-4 backdrop-blur-sm overflow-y-auto">
+          <div className="w-full max-w-lg rounded-2xl bg-gi-raised shadow-2xl animate-in fade-in zoom-in duration-200">
             <div className="flex items-center justify-between border-b border-slate-100 p-6">
               <h2 className="text-xl font-bold text-slate-900">Détails de la transaction</h2>
               <button onClick={() => setSelectedTransaction(null)} className="text-slate-400 hover:text-slate-600">
@@ -1897,7 +1897,7 @@ export default function FinancialClient() {
                 </button>
                 <button
                   onClick={() => setSelectedTransaction(null)}
-                  className="rounded-lg bg-brand-amber px-4 py-2 text-sm font-bold text-white hover:bg-brand-amber/90"
+                  className="whitespace-nowrap rounded-full bg-brand-amber px-4 py-2 text-sm font-semibold text-black hover:bg-brand-amber/90"
                 >
                   Fermer
                 </button>
@@ -1908,8 +1908,8 @@ export default function FinancialClient() {
       )}
 
       {showAddExpenseModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm overflow-y-auto">
-          <div className="w-full max-w-2xl rounded-2xl bg-white shadow-2xl animate-in fade-in zoom-in duration-200">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-brand-navy/40 p-4 backdrop-blur-sm overflow-y-auto">
+          <div className="w-full max-w-2xl rounded-2xl bg-gi-raised shadow-2xl animate-in fade-in zoom-in duration-200">
             <div className="flex items-center justify-between border-b border-slate-100 p-6">
               <h2 className="text-xl font-bold text-slate-900">Nouvelle dépense</h2>
               <button
@@ -1991,7 +1991,7 @@ export default function FinancialClient() {
                 <div className="space-y-2 md:col-span-2">
                   <label className="text-sm font-medium text-slate-700">Facture / Bon (PDF ou image)</label>
                   <div className="flex items-center gap-3">
-                    <label className="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50">
+                    <label className="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-slate-200 bg-gi-card px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50">
                       <input
                         type="file"
                         accept="application/pdf,image/png,image/jpeg,image/webp"
@@ -2021,7 +2021,7 @@ export default function FinancialClient() {
                 <button
                   type="submit"
                   disabled={isSavingExpense}
-                  className="rounded-lg bg-brand-amber px-6 py-2 text-sm font-bold text-white hover:bg-brand-amber/90 disabled:opacity-50"
+                  className="whitespace-nowrap rounded-full bg-brand-amber px-6 py-2 text-sm font-semibold text-black hover:bg-brand-amber/90 disabled:opacity-50"
                 >
                   {isSavingExpense ? 'Enregistrement...' : 'Créer'}
                 </button>
@@ -2032,8 +2032,8 @@ export default function FinancialClient() {
       )}
 
       {showFilters && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm overflow-y-auto">
-          <div className="w-full max-w-2xl rounded-2xl bg-white shadow-2xl animate-in fade-in zoom-in duration-200">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-brand-navy/40 p-4 backdrop-blur-sm overflow-y-auto">
+          <div className="w-full max-w-2xl rounded-2xl bg-gi-raised shadow-2xl animate-in fade-in zoom-in duration-200">
             <div className="flex items-center justify-between border-b border-slate-100 p-6">
               <h2 className="text-xl font-bold text-slate-900">Filtres</h2>
               <button
@@ -2051,7 +2051,7 @@ export default function FinancialClient() {
                   <select
                     value={draftFilters.zone}
                     onChange={(event) => setDraftFilters((prev) => ({ ...prev, zone: event.target.value, residenceId: '' }))}
-                    className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-blue/20"
+                    className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-amber/20"
                   >
                     <option value="">Toutes</option>
                     {zones.map((zone) => (
@@ -2064,7 +2064,7 @@ export default function FinancialClient() {
                   <select
                     value={draftFilters.residenceId}
                     onChange={(event) => setDraftFilters((prev) => ({ ...prev, residenceId: event.target.value }))}
-                    className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-blue/20"
+                    className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-amber/20"
                   >
                     <option value="">Toutes</option>
                     {residenceOptions.map((residence) => (
@@ -2078,7 +2078,7 @@ export default function FinancialClient() {
                     value={isRecouvrement ? 'Charge' : draftFilters.type}
                     onChange={(event) => setDraftFilters((prev) => ({ ...prev, type: event.target.value }))}
                     disabled={isRecouvrement}
-                    className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-blue/20"
+                    className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-amber/20"
                   >
                     {!isRecouvrement && <option value="">Tous</option>}
                     <option value="Charge">Charge</option>
@@ -2090,7 +2090,7 @@ export default function FinancialClient() {
                   <select
                     value={draftFilters.status}
                     onChange={(event) => setDraftFilters((prev) => ({ ...prev, status: event.target.value }))}
-                    className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-blue/20"
+                    className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-amber/20"
                   >
                     <option value="">Tous</option>
                     <option value="Payé">Payé</option>
@@ -2103,7 +2103,7 @@ export default function FinancialClient() {
                     type="date"
                     value={draftFilters.dateFrom}
                     onChange={(event) => setDraftFilters((prev) => ({ ...prev, dateFrom: event.target.value }))}
-                    className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-blue/20"
+                    className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-amber/20"
                   />
                 </div>
                 <div className="space-y-2">
@@ -2112,7 +2112,7 @@ export default function FinancialClient() {
                     type="date"
                     value={draftFilters.dateTo}
                     onChange={(event) => setDraftFilters((prev) => ({ ...prev, dateTo: event.target.value }))}
-                    className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-blue/20"
+                    className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-amber/20"
                   />
                 </div>
                 <div className="space-y-2">
@@ -2121,7 +2121,7 @@ export default function FinancialClient() {
                     type="text"
                     value={draftFilters.owner}
                     onChange={(event) => setDraftFilters((prev) => ({ ...prev, owner: event.target.value }))}
-                    className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-blue/20"
+                    className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-amber/20"
                     placeholder="Nom ou prénom"
                   />
                 </div>
@@ -2131,7 +2131,7 @@ export default function FinancialClient() {
                     type="text"
                     value={draftFilters.description}
                     onChange={(event) => setDraftFilters((prev) => ({ ...prev, description: event.target.value }))}
-                    className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-blue/20"
+                    className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-amber/20"
                     placeholder="Contient…"
                   />
                 </div>
@@ -2146,7 +2146,7 @@ export default function FinancialClient() {
                 </button>
                 <button
                   onClick={handleApplyFilters}
-                  className="rounded-lg bg-brand-amber px-6 py-2 text-sm font-bold text-white hover:bg-brand-amber/90"
+                  className="whitespace-nowrap rounded-full bg-brand-amber px-6 py-2 text-sm font-semibold text-black hover:bg-brand-amber/90"
                 >
                   Appliquer
                 </button>

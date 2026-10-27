@@ -1,11 +1,14 @@
 'use client';
 
 import { RoleProvider } from '@/contexts/RoleContext';
+import { NotificationsProvider } from '@/contexts/NotificationsContext';
 
 export function Providers({ children }: { children: React.ReactNode }) {
   return (
     <RoleProvider>
-      {children}
+      <NotificationsProvider>
+        {children}
+      </NotificationsProvider>
     </RoleProvider>
   );
 }

@@ -410,7 +410,7 @@ La personne sera immédiatement déconnectée et ne pourra plus se connecter.`;
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-2">
-        <h1 className="text-2xl font-bold text-slate-900">Paramétrage</h1>
+        <h1 className="text-xl font-semibold leading-tight text-gi-body md:text-2xl">Paramétrage</h1>
         <p className="text-sm text-slate-500">Utilisateurs, demandes de biens, historique et sauvegardes de la plateforme.</p>
       </div>
 
@@ -421,7 +421,7 @@ La personne sera immédiatement déconnectée et ne pourra plus se connecter.`;
             onClick={() => setActiveTab('users')}
             className={`flex items-center gap-2 border-b-2 py-4 px-1 text-sm font-medium transition-colors ${
               activeTab === 'users'
-                ? 'border-brand-blue text-brand-blue'
+                ? 'border-brand-amber text-brand-amber'
                 : 'border-transparent text-slate-500 hover:border-slate-300 hover:text-slate-700'
             }`}
           >
@@ -432,7 +432,7 @@ La personne sera immédiatement déconnectée et ne pourra plus se connecter.`;
             onClick={() => setActiveTab('propertyAddRequests')}
             className={`flex items-center gap-2 border-b-2 py-4 px-1 text-sm font-medium transition-colors ${
               activeTab === 'propertyAddRequests'
-                ? 'border-brand-blue text-brand-blue'
+                ? 'border-brand-amber text-brand-amber'
                 : 'border-transparent text-slate-500 hover:border-slate-300 hover:text-slate-700'
             }`}
           >
@@ -448,7 +448,7 @@ La personne sera immédiatement déconnectée et ne pourra plus se connecter.`;
             onClick={() => setActiveTab('history')}
             className={`flex items-center gap-2 border-b-2 py-4 px-1 text-sm font-medium transition-colors ${
               activeTab === 'history'
-                ? 'border-brand-blue text-brand-blue'
+                ? 'border-brand-amber text-brand-amber'
                 : 'border-transparent text-slate-500 hover:border-slate-300 hover:text-slate-700'
             }`}
           >
@@ -459,7 +459,7 @@ La personne sera immédiatement déconnectée et ne pourra plus se connecter.`;
             onClick={() => setActiveTab('backup')}
             className={`flex items-center gap-2 border-b-2 py-4 px-1 text-sm font-medium transition-colors ${
               activeTab === 'backup'
-                ? 'border-brand-blue text-brand-blue'
+                ? 'border-brand-amber text-brand-amber'
                 : 'border-transparent text-slate-500 hover:border-slate-300 hover:text-slate-700'
             }`}
           >
@@ -480,7 +480,7 @@ La personne sera immédiatement déconnectée et ne pourra plus se connecter.`;
                   <input
                     type="text"
                     placeholder="Rechercher un utilisateur..."
-                    className="w-full rounded-lg border border-slate-200 pl-10 pr-4 py-2 text-sm focus:border-brand-blue focus:outline-none focus:ring-1 focus:ring-brand-blue"
+                    className="w-full rounded-lg border border-slate-200 pl-10 pr-4 py-2 text-sm focus:border-brand-amber focus:outline-none focus:ring-1 focus:ring-brand-amber"
                   />
                 </div>
                 <select
@@ -500,14 +500,14 @@ La personne sera immédiatement déconnectée et ne pourra plus se connecter.`;
               </div>
               <button 
                 onClick={() => setShowAddUserModal(true)}
-                className="flex items-center gap-2 rounded-lg bg-brand-blue px-4 py-2 text-sm font-medium text-white hover:bg-blue-800"
+                className="flex items-center gap-2 whitespace-nowrap rounded-full bg-brand-amber px-4 py-2 text-sm font-medium text-black hover:brightness-95"
               >
                 <Plus className="h-4 w-4" />
                 Nouvel utilisateur
               </button>
             </div>
 
-            <div className="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden">
+            <div className="rounded-xl border border-slate-200 bg-gi-card shadow-sm overflow-hidden">
               <table className="w-full text-left text-sm">
                 <thead className="bg-slate-50 text-slate-700">
                   <tr>
@@ -528,7 +528,7 @@ La personne sera immédiatement déconnectée et ne pourra plus se connecter.`;
                     <tr key={user.id} className="hover:bg-slate-50">
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-3">
-                          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-brand-gold text-brand-blue font-bold text-xs">
+                          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-brand-gold text-brand-navy font-bold text-xs">
                             {user.name ? user.name.substring(0, 2).toUpperCase() : '??'}
                           </div>
                           <div>
@@ -571,7 +571,7 @@ La personne sera immédiatement déconnectée et ne pourra plus se connecter.`;
                           </button>
                           <button 
                               onClick={() => handleEdit(user)}
-                              className="text-brand-blue hover:underline text-xs font-medium"
+                              className="text-brand-navy hover:underline text-xs font-medium"
                           >
                               Modifier
                           </button>
@@ -587,7 +587,7 @@ La personne sera immédiatement déconnectée et ne pourra plus se connecter.`;
 
         {activeTab === 'propertyAddRequests' && (
           <div className="space-y-6 animate-in fade-in duration-300">
-            <div className="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden">
+            <div className="rounded-xl border border-slate-200 bg-gi-card shadow-sm overflow-hidden">
               <table className="w-full text-left text-sm">
                 <thead className="bg-slate-50 text-slate-700">
                   <tr>
@@ -665,7 +665,7 @@ La personne sera immédiatement déconnectée et ne pourra plus se connecter.`;
 
         {activeTab === 'history' && (
           <div className="space-y-6 animate-in fade-in duration-300">
-            <div className="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden">
+            <div className="rounded-xl border border-slate-200 bg-gi-card shadow-sm overflow-hidden">
               <div className="px-6 py-4 border-b border-slate-100 bg-slate-50">
                 <h3 className="font-semibold text-slate-900">Journal d'audit (Logs)</h3>
               </div>
@@ -706,7 +706,7 @@ La personne sera immédiatement déconnectée et ne pourra plus se connecter.`;
         {activeTab === 'backup' && (
           <div className="space-y-6 animate-in fade-in duration-300">
             <div className="grid gap-6 md:grid-cols-2">
-              <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+              <div className="rounded-xl border border-slate-200 bg-gi-card p-6 shadow-sm">
                 <div className="flex items-center gap-4">
                   <div className="rounded-full bg-green-50 p-3 text-green-600">
                     <CheckCircle className="h-6 w-6" />
@@ -728,16 +728,16 @@ La personne sera immédiatement déconnectée et ne pourra plus se connecter.`;
                 </div>
               </div>
 
-              <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+              <div className="rounded-xl border border-slate-200 bg-gi-card p-6 shadow-sm">
                 <h3 className="font-bold text-slate-900 mb-4">Actions de maintenance</h3>
                 <div className="space-y-3">
                   <button
                     onClick={handleCreateBackup}
                     disabled={isBackingUp}
-                    className="flex w-full items-center justify-between rounded-lg border border-slate-200 p-3 text-left hover:bg-slate-50 hover:border-brand-blue transition-colors disabled:opacity-50"
+                    className="flex w-full items-center justify-between rounded-lg border border-slate-200 p-3 text-left hover:bg-slate-50 hover:border-brand-amber transition-colors disabled:opacity-50"
                   >
                     <div className="flex items-center gap-3">
-                      <Save className="h-5 w-5 text-brand-blue" />
+                      <Save className="h-5 w-5 text-brand-navy" />
                       <div>
                         <div className="font-medium text-slate-900">Créer une sauvegarde</div>
                         <div className="text-xs text-slate-500">Exporter la base de données maintenant</div>
@@ -774,8 +774,8 @@ La personne sera immédiatement déconnectée et ne pourra plus se connecter.`;
 
       {/* Add User Modal */}
       {showAddUserModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-          <div className="w-full max-w-lg rounded-2xl bg-white shadow-2xl animate-in fade-in zoom-in duration-200">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-brand-navy/40 backdrop-blur-sm p-4">
+          <div className="w-full max-w-lg rounded-2xl bg-gi-raised shadow-2xl animate-in fade-in zoom-in duration-200">
             <div className="flex items-center justify-between border-b border-slate-100 p-6">
               <h2 className="text-xl font-bold text-slate-900">
                 {selectedUser ? "Modifier l'utilisateur" : "Nouvel Utilisateur"}
@@ -797,7 +797,7 @@ La personne sera immédiatement déconnectée et ne pourra plus se connecter.`;
                     value={formData.name}
                     onChange={handleInputChange}
                     type="text" 
-                    className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-brand-blue focus:ring-1 focus:ring-brand-blue outline-none" 
+                    className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-brand-amber focus:ring-1 focus:ring-brand-amber outline-none" 
                     placeholder="Ex: Jean Dupont" 
                 />
               </div>
@@ -810,7 +810,7 @@ La personne sera immédiatement déconnectée et ne pourra plus se connecter.`;
                     type="email"
                     value={formData.email}
                     onChange={handleInputChange}
-                    className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-brand-blue focus:ring-1 focus:ring-brand-blue outline-none" 
+                    className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-brand-amber focus:ring-1 focus:ring-brand-amber outline-none" 
                     placeholder="exemple@aymen.com" 
                 />
               </div>
@@ -822,7 +822,7 @@ La personne sera immédiatement déconnectée et ne pourra plus se connecter.`;
                     type="text"
                     value={formData.password}
                     onChange={handleInputChange}
-                    className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-brand-blue focus:ring-1 focus:ring-brand-blue outline-none" 
+                    className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-brand-amber focus:ring-1 focus:ring-brand-amber outline-none" 
                     placeholder={selectedUser ? "Laisser vide pour ne pas changer" : "Mot de passe par défaut: password123"} 
                 />
               </div>
@@ -834,7 +834,7 @@ La personne sera immédiatement déconnectée et ne pourra plus se connecter.`;
                     name="role"
                     value={formData.role}
                     onChange={handleInputChange}
-                    className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-brand-blue focus:ring-1 focus:ring-brand-blue outline-none"
+                    className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-brand-amber focus:ring-1 focus:ring-brand-amber outline-none"
                   >
                     <option value="ADMIN">Administrateur (Directeur)</option>
                     <option value="RESPONSABLE_ZONE">Responsable de Zone (Gestionnaire)</option>
@@ -853,7 +853,7 @@ La personne sera immédiatement déconnectée et ne pourra plus se connecter.`;
                         value={formData.profession}
                         onChange={handleInputChange}
                         placeholder="Ex: Electricien"
-                        className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-brand-blue focus:ring-1 focus:ring-brand-blue outline-none"
+                        className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-brand-amber focus:ring-1 focus:ring-brand-amber outline-none"
                     />
                     </div>
                 )}
@@ -864,7 +864,7 @@ La personne sera immédiatement déconnectée et ne pourra plus se connecter.`;
                         name="zone"
                         value={formData.zone}
                         onChange={handleInputChange}
-                        className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-brand-blue focus:ring-1 focus:ring-brand-blue outline-none"
+                        className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-brand-amber focus:ring-1 focus:ring-brand-amber outline-none"
                     >
                         <option value="">Sélectionner une zone</option>
                         <option value="ALL">Toutes les zones</option>
@@ -887,7 +887,7 @@ La personne sera immédiatement déconnectée et ne pourra plus se connecter.`;
                 <button 
                   type="submit"
                   disabled={isSubmitting}
-                  className="rounded-lg bg-brand-blue px-6 py-2 text-sm font-bold text-white hover:bg-blue-800 shadow-md"
+                  className="whitespace-nowrap rounded-full bg-brand-amber px-6 py-2 text-sm font-semibold text-black hover:brightness-95 shadow-md"
                 >
                   {isSubmitting ? 'Création...' : "Créer l'utilisateur"}
                 </button>

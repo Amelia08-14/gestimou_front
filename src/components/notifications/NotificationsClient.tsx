@@ -82,9 +82,9 @@ export default function NotificationsClient() {
     <div className="mx-auto max-w-3xl px-8 py-8">
       <div className="mb-6 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <h1 className="text-xl font-bold text-brand-navy">Notifications</h1>
+          <h1 className="text-xl font-semibold leading-tight text-gi-body md:text-2xl">Notifications</h1>
           {unreadCount > 0 && (
-            <span className="flex h-6 min-w-6 items-center justify-center rounded-full bg-brand-amber px-1.5 text-xs font-bold text-white">
+            <span className="flex h-6 min-w-6 items-center justify-center rounded-full bg-brand-amber px-1.5 text-xs font-semibold text-black">
               {unreadCount}
             </span>
           )}
@@ -100,7 +100,7 @@ export default function NotificationsClient() {
         )}
       </div>
 
-      <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
+      <div className="overflow-hidden rounded-2xl border border-slate-200 bg-gi-card">
         {loading ? (
           <p className="px-6 py-10 text-center text-sm text-slate-400">Chargement…</p>
         ) : items.length === 0 ? (

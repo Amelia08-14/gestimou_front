@@ -625,20 +625,20 @@ export default function MaintenanceClient({ tickets: initialTickets }: Maintenan
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Maintenance & Interventions</h1>
+          <h1 className="text-xl font-semibold leading-tight text-gi-body md:text-2xl">Maintenance & Interventions</h1>
           <p className="text-sm text-slate-500">Suivi des demandes et travaux (Parties Communes uniquement).</p>
         </div>
         <div className="flex gap-2">
           <button
             onClick={handleOpenFilters}
-            className="flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+            className="flex items-center gap-2 rounded-lg border border-slate-200 bg-gi-card px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
           >
             <Filter className="h-4 w-4" />
             Filtres
           </button>
           <button
             onClick={handleExport}
-            className="flex items-center gap-2 rounded-lg bg-brand-amber px-4 py-2 text-sm font-medium text-white hover:brightness-95"
+            className="flex items-center gap-2 whitespace-nowrap rounded-full bg-brand-amber px-4 py-2 text-sm font-medium text-black hover:brightness-95"
           >
             <Download className="h-4 w-4" />
             Exporter
@@ -646,7 +646,7 @@ export default function MaintenanceClient({ tickets: initialTickets }: Maintenan
           {role === 'ADMIN' && (
             <button 
                 onClick={() => setIsAddModalOpen(true)}
-                className="flex items-center gap-2 rounded-lg bg-brand-amber px-4 py-2 text-sm font-medium text-white hover:brightness-95"
+                className="flex items-center gap-2 whitespace-nowrap rounded-full bg-brand-amber px-4 py-2 text-sm font-medium text-black hover:brightness-95"
             >
                 <Plus className="h-4 w-4" />
                 Nouveau ticket
@@ -655,7 +655,7 @@ export default function MaintenanceClient({ tickets: initialTickets }: Maintenan
         </div>
       </div>
 
-      <div className="rounded-xl border border-slate-200 bg-white shadow-sm">
+      <div className="rounded-xl border border-slate-200 bg-gi-card shadow-sm">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-sm">
             <thead className="bg-slate-50 text-slate-500">
@@ -714,7 +714,7 @@ export default function MaintenanceClient({ tickets: initialTickets }: Maintenan
                         <select
                           value={ticket.responsible || ''}
                           onChange={(e) => handleResponsibleChange(ticket.id, e.target.value)}
-                          className="text-sm bg-transparent border border-transparent hover:border-slate-200 rounded px-1 py-0.5 focus:border-brand-blue focus:ring-0"
+                          className="text-sm bg-transparent border border-transparent hover:border-slate-200 rounded px-1 py-0.5 focus:border-brand-amber focus:ring-0"
                         >
                           <option value="">Non affecté</option>
                           {responsables.map((r) => (
@@ -751,7 +751,7 @@ export default function MaintenanceClient({ tickets: initialTickets }: Maintenan
                           <select
                             value={currentValue}
                             onChange={(e) => handleAssigneeChange(ticket.id, e.target.value)}
-                            className="text-sm bg-transparent border border-transparent hover:border-slate-200 rounded px-1 py-0.5 focus:border-brand-blue focus:ring-0"
+                            className="text-sm bg-transparent border border-transparent hover:border-slate-200 rounded px-1 py-0.5 focus:border-brand-amber focus:ring-0"
                           >
                             <option value="">Non assigné</option>
                             {subcontractors.length > 0 && (
@@ -847,8 +847,8 @@ export default function MaintenanceClient({ tickets: initialTickets }: Maintenan
 
       {/* Add Ticket Modal */}
       {isAddModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
-          <div className="w-full max-w-lg rounded-xl bg-white shadow-2xl animate-in fade-in zoom-in duration-200">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-brand-navy/40 p-4 backdrop-blur-sm">
+          <div className="w-full max-w-lg rounded-xl bg-gi-raised shadow-2xl animate-in fade-in zoom-in duration-200">
             <div className="flex items-center justify-between border-b border-slate-100 p-6">
               <h2 className="text-xl font-bold text-slate-900">Nouveau Ticket</h2>
               <button 
@@ -867,7 +867,7 @@ export default function MaintenanceClient({ tickets: initialTickets }: Maintenan
                   name="title" 
                   value={newTicket.title} 
                   onChange={handleInputChange}
-                  className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-brand-blue focus:ring-1 focus:ring-brand-blue"
+                  className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-brand-amber focus:ring-1 focus:ring-brand-amber"
                 >
                     <option value="">Sélectionner un type...</option>
                     {PROBLEM_TYPES.map((group) => (
@@ -889,7 +889,7 @@ export default function MaintenanceClient({ tickets: initialTickets }: Maintenan
                   maxLength={100}
                   rows={3}
                   placeholder="Détaillez le problème..."
-                  className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-brand-blue focus:ring-1 focus:ring-brand-blue" 
+                  className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-brand-amber focus:ring-1 focus:ring-brand-amber" 
                 />
               </div>
 
@@ -912,7 +912,7 @@ export default function MaintenanceClient({ tickets: initialTickets }: Maintenan
                     value={newTicket.requester} 
                     onChange={handleInputChange}
                     placeholder="Votre nom..."
-                    className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-brand-blue focus:ring-1 focus:ring-brand-blue" 
+                    className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-brand-amber focus:ring-1 focus:ring-brand-amber" 
                   />
                 </div>
               </div>
@@ -924,7 +924,7 @@ export default function MaintenanceClient({ tickets: initialTickets }: Maintenan
                     name="residenceId"
                     value={newTicket.residenceId}
                     onChange={handleInputChange}
-                    className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-brand-blue focus:ring-1 focus:ring-brand-blue"
+                    className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-brand-amber focus:ring-1 focus:ring-brand-amber"
                   >
                     <option value="">Non spécifiée</option>
                     {residences
@@ -957,7 +957,7 @@ export default function MaintenanceClient({ tickets: initialTickets }: Maintenan
                     name="priority" 
                     value={newTicket.priority} 
                     onChange={handleInputChange}
-                    className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-brand-blue focus:ring-1 focus:ring-brand-blue"
+                    className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-brand-amber focus:ring-1 focus:ring-brand-amber"
                   >
                     <option value="Basse">Basse</option>
                     <option value="Moyenne">Moyenne</option>
@@ -971,7 +971,7 @@ export default function MaintenanceClient({ tickets: initialTickets }: Maintenan
                     name="responsible"
                     value={newTicket.responsible}
                     onChange={handleInputChange}
-                    className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-brand-blue focus:ring-1 focus:ring-brand-blue"
+                    className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-brand-amber focus:ring-1 focus:ring-brand-amber"
                   >
                     <option value="">Non affecté</option>
                     {responsables
@@ -1011,7 +1011,7 @@ export default function MaintenanceClient({ tickets: initialTickets }: Maintenan
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="rounded-lg bg-brand-amber px-4 py-2 text-sm font-medium text-white hover:brightness-95 disabled:opacity-50"
+                  className="whitespace-nowrap rounded-full bg-brand-amber px-4 py-2 text-sm font-medium text-black hover:brightness-95 disabled:opacity-50"
                 >
                   {isSubmitting ? 'Création...' : 'Créer le ticket'}
                 </button>
@@ -1022,8 +1022,8 @@ export default function MaintenanceClient({ tickets: initialTickets }: Maintenan
       )}
 
       {isActionModalOpen && actionTicket && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
-          <div className="max-h-[90vh] w-full max-w-xl overflow-y-auto rounded-xl bg-white shadow-2xl">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-brand-navy/40 p-4 backdrop-blur-sm">
+          <div className="max-h-[90vh] w-full max-w-xl overflow-y-auto rounded-xl bg-gi-raised shadow-2xl">
             <div className="flex items-center justify-between border-b border-slate-100 p-6">
               <div className="flex flex-col">
                 <h2 className="text-xl font-bold text-slate-900">Actions ticket</h2>
@@ -1082,8 +1082,8 @@ export default function MaintenanceClient({ tickets: initialTickets }: Maintenan
       )}
 
       {showFilters && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm overflow-y-auto">
-          <div className="w-full max-w-2xl rounded-2xl bg-white shadow-2xl animate-in fade-in zoom-in duration-200">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-brand-navy/40 p-4 backdrop-blur-sm overflow-y-auto">
+          <div className="w-full max-w-2xl rounded-2xl bg-gi-raised shadow-2xl animate-in fade-in zoom-in duration-200">
             <div className="flex items-center justify-between border-b border-slate-100 p-6">
               <h2 className="text-xl font-bold text-slate-900">Filtres</h2>
               <button onClick={() => setShowFilters(false)} className="text-slate-400 hover:text-slate-600">
@@ -1193,7 +1193,7 @@ export default function MaintenanceClient({ tickets: initialTickets }: Maintenan
                 <button onClick={handleResetFilters} className="rounded-lg px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100">
                   Réinitialiser
                 </button>
-                <button onClick={handleApplyFilters} className="rounded-lg bg-brand-amber px-6 py-2 text-sm font-bold text-white hover:brightness-95">
+                <button onClick={handleApplyFilters} className="whitespace-nowrap rounded-full bg-brand-amber px-6 py-2 text-sm font-semibold text-black hover:brightness-95">
                   Appliquer
                 </button>
               </div>

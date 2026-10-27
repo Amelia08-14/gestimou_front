@@ -596,7 +596,7 @@ export default function PropertiesClient({ residences: initialResidences, proper
             </button>
           )}
           <div>
-            <h1 className="text-2xl font-bold text-brand-amber">
+            <h1 className="text-xl font-semibold leading-tight text-gi-body md:text-2xl">
               {view === 'residences' ? 'Nos Résidences' : selectedResidence?.name}
             </h1>
             <p className="text-sm text-slate-500">
@@ -610,7 +610,7 @@ export default function PropertiesClient({ residences: initialResidences, proper
         {view === 'residences' && (
           <button 
             onClick={handleOpenCreateResidence}
-            className="flex items-center gap-2 rounded-lg bg-brand-amber px-4 py-2 text-sm font-bold text-white hover:bg-brand-amber/90 transition-colors shadow-sm"
+            className="flex items-center gap-2 whitespace-nowrap rounded-full bg-brand-amber px-4 py-2 text-sm font-semibold text-black hover:bg-brand-amber/90 transition-colors shadow-sm"
           >
             <Plus className="h-4 w-4" />
             Nouvelle résidence
@@ -620,7 +620,7 @@ export default function PropertiesClient({ residences: initialResidences, proper
         {view === 'properties' && (
           <button 
             onClick={handleOpenAddProperty}
-            className="flex items-center gap-2 rounded-lg bg-brand-gold px-4 py-2 text-sm font-bold text-brand-amber hover:bg-brand-gold-hover transition-colors shadow-sm"
+            className="flex items-center gap-2 whitespace-nowrap rounded-full bg-brand-amber px-4 py-2 text-sm font-semibold text-black hover:brightness-95 transition-colors shadow-sm"
           >
             <Plus className="h-4 w-4" />
             Ajouter un bien
@@ -631,7 +631,7 @@ export default function PropertiesClient({ residences: initialResidences, proper
       {view === 'residences' && (
         <div className="space-y-6">
           <div className="flex items-center justify-between gap-4">
-            <div className="grid grid-cols-3 gap-2">
+            <div className="flex flex-wrap gap-2">
               {zoneOrder.map((zone) => {
                 const isAvailable = (zonesMap[zone]?.length || 0) > 0;
                 const isActive = activeZone === zone;
@@ -641,9 +641,9 @@ export default function PropertiesClient({ residences: initialResidences, proper
                     type="button"
                     onClick={() => isAvailable && setActiveZone(zone)}
                     disabled={!isAvailable}
-                    className={`rounded-full px-4 py-2 text-sm font-semibold transition-colors ${
+                    className={`whitespace-nowrap rounded-full px-4 py-2 text-sm font-semibold transition-colors ${
                       isActive
-                        ? 'bg-brand-amber text-white'
+                        ? 'bg-brand-amber text-black'
                         : isAvailable
                             ? 'bg-slate-100 text-slate-700 hover:bg-slate-200'
                             : 'bg-slate-50 text-slate-300'
@@ -672,7 +672,7 @@ export default function PropertiesClient({ residences: initialResidences, proper
               <div 
                 key={residence.id} 
                 onClick={() => handleResidenceClick(residence)}
-                className="group cursor-pointer overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-slate-200 transition-all hover:shadow-xl hover:ring-brand-gold/50 hover:-translate-y-1"
+                className="group cursor-pointer overflow-hidden rounded-2xl bg-gi-card shadow-sm ring-1 ring-slate-200 transition-all hover:shadow-xl hover:ring-brand-gold/50 hover:-translate-y-1"
               >
                 <div className="relative h-48 w-full overflow-hidden">
                   <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent z-10" />
@@ -687,7 +687,7 @@ export default function PropertiesClient({ residences: initialResidences, proper
                     </span>
                     <button
                       onClick={(event) => handleEditResidence(event, residence)}
-                      className="rounded-full bg-white/90 px-3 py-1 text-xs font-semibold text-brand-amber shadow-sm hover:bg-white"
+                      className="rounded-full bg-white/90 px-3 py-1 text-xs font-semibold text-brand-amber shadow-sm hover:bg-gi-raised"
                     >
                       Modifier
                     </button>
@@ -764,7 +764,7 @@ export default function PropertiesClient({ residences: initialResidences, proper
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
           {displayedProperties.length > 0 ? (
             displayedProperties.map((property) => (
-              <div key={property.id} className="group overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-slate-200 transition-all hover:shadow-lg hover:ring-brand-gold/30">
+              <div key={property.id} className="group overflow-hidden rounded-2xl bg-gi-card shadow-sm ring-1 ring-slate-200 transition-all hover:shadow-lg hover:ring-brand-gold/30">
                 <div className="relative aspect-video w-full overflow-hidden bg-slate-100">
                   <img 
                     src={property.image || 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?auto=format&fit=crop&w=500&q=60'} 
@@ -784,7 +784,7 @@ export default function PropertiesClient({ residences: initialResidences, proper
                 <div className="p-5">
                   <div className="flex items-start justify-between">
                     <div>
-                      <h3 className="font-semibold text-brand-amber group-hover:text-brand-gold-dark transition-colors">{getPropertyDisplayTitle(property)}</h3>
+                      <h3 className="font-semibold text-gi-body group-hover:text-brand-gold-dark transition-colors">{getPropertyDisplayTitle(property)}</h3>
                       <p className="mt-1 text-sm font-semibold text-slate-700">
                         {property.owner
                           ? `${property.owner.firstName} ${property.owner.lastName}`
@@ -825,7 +825,7 @@ export default function PropertiesClient({ residences: initialResidences, proper
                   <div className="mt-4 border-t border-slate-100 pt-4">
                     <button 
                       onClick={() => setSelectedProperty(property)}
-                      className="w-full rounded-lg border border-slate-200 bg-white py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 hover:text-brand-amber transition-colors"
+                      className="w-full rounded-lg border border-slate-200 bg-gi-card py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 hover:text-brand-amber transition-colors"
                     >
                       Voir détails
                     </button>
@@ -843,7 +843,7 @@ export default function PropertiesClient({ residences: initialResidences, proper
               <div className="mt-6">
                 <button
                   onClick={() => setShowAddModal(true)}
-                  className="inline-flex items-center rounded-md bg-brand-amber px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-brand-amber/90"
+                  className="inline-flex items-center rounded-md bg-brand-amber px-3 py-2 text-sm font-semibold text-black shadow-sm hover:bg-brand-amber/90"
                 >
                   <Plus className="-ml-0.5 mr-1.5 h-5 w-5" aria-hidden="true" />
                   Ajouter un bien
@@ -855,10 +855,10 @@ export default function PropertiesClient({ residences: initialResidences, proper
       )}
 
       {selectedProperty && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 overflow-y-auto">
-          <div className="w-full max-w-2xl rounded-2xl bg-white shadow-2xl animate-in fade-in zoom-in duration-200 my-8">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-brand-navy/40 backdrop-blur-sm p-4 overflow-y-auto">
+          <div className="w-full max-w-2xl rounded-2xl bg-gi-raised shadow-2xl animate-in fade-in zoom-in duration-200 my-8">
             <div className="flex items-center justify-between border-b border-slate-100 p-6">
-              <h2 className="text-xl font-bold text-brand-amber">{getPropertyDisplayTitle(selectedProperty)}</h2>
+              <h2 className="text-xl font-semibold text-gi-body">{getPropertyDisplayTitle(selectedProperty)}</h2>
               <button 
                 onClick={() => setSelectedProperty(null)}
                 className="text-slate-400 hover:text-slate-600"
@@ -985,7 +985,7 @@ export default function PropertiesClient({ residences: initialResidences, proper
                 >
                   Fermer
                 </button>
-                <button className="rounded-lg bg-brand-amber px-6 py-2 text-sm font-bold text-white hover:bg-brand-amber/90 shadow-md">
+                <button className="whitespace-nowrap rounded-full bg-brand-amber px-6 py-2 text-sm font-semibold text-black hover:bg-brand-amber/90 shadow-md">
                   Modifier le bien
                 </button>
               </div>
@@ -995,10 +995,10 @@ export default function PropertiesClient({ residences: initialResidences, proper
       )}
 
       {showAddModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 overflow-y-auto">
-          <div className="w-full max-w-2xl rounded-2xl bg-white shadow-2xl animate-in fade-in zoom-in duration-200 my-8">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-brand-navy/40 backdrop-blur-sm p-4 overflow-y-auto">
+          <div className="w-full max-w-2xl rounded-2xl bg-gi-raised shadow-2xl animate-in fade-in zoom-in duration-200 my-8">
              <div className="flex items-center justify-between border-b border-slate-100 p-6">
-              <h2 className="text-xl font-bold text-brand-amber">Ajouter un bien</h2>
+              <h2 className="text-xl font-semibold text-gi-body">Ajouter un bien</h2>
               <button
                 onClick={() => {
                   setShowAddModal(false);
@@ -1022,7 +1022,7 @@ export default function PropertiesClient({ residences: initialResidences, proper
                     name="title"
                     value={propertyForm.title}
                     onChange={handlePropertyInputChange}
-                    className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-blue/20"
+                    className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-amber/20"
                   />
                 </div>
 
@@ -1050,7 +1050,7 @@ export default function PropertiesClient({ residences: initialResidences, proper
                     value={propertyForm.surface}
                     onChange={handlePropertyInputChange}
                     inputMode="decimal"
-                    className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-blue/20"
+                    className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-amber/20"
                   />
                 </div>
 
@@ -1075,7 +1075,7 @@ export default function PropertiesClient({ residences: initialResidences, proper
                     value={propertyForm.price}
                     onChange={handlePropertyInputChange}
                     inputMode="decimal"
-                    className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-blue/20"
+                    className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-amber/20"
                   />
                 </div>
 
@@ -1151,7 +1151,7 @@ export default function PropertiesClient({ residences: initialResidences, proper
                 <button
                   type="submit"
                   disabled={isSavingProperty}
-                  className="rounded-lg bg-brand-amber px-6 py-2 text-sm font-bold text-white shadow-md hover:bg-brand-amber/90 disabled:opacity-50"
+                  className="whitespace-nowrap rounded-full bg-brand-amber px-6 py-2 text-sm font-semibold text-black shadow-md hover:bg-brand-amber/90 disabled:opacity-50"
                 >
                   {isSavingProperty ? 'Enregistrement...' : 'Créer le bien'}
                 </button>
@@ -1162,10 +1162,10 @@ export default function PropertiesClient({ residences: initialResidences, proper
       )}
 
       {showResidenceModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 overflow-y-auto">
-          <div className="w-full max-w-4xl rounded-2xl bg-white shadow-2xl animate-in fade-in zoom-in duration-200 my-8">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-brand-navy/40 backdrop-blur-sm p-4 overflow-y-auto">
+          <div className="w-full max-w-4xl rounded-2xl bg-gi-raised shadow-2xl animate-in fade-in zoom-in duration-200 my-8">
             <div className="flex items-center justify-between border-b border-slate-100 p-6">
-              <h2 className="text-xl font-bold text-brand-amber">
+              <h2 className="text-xl font-semibold text-gi-body">
                 {isEditingResidence ? 'Modifier la résidence' : 'Nouvelle résidence'}
               </h2>
               <button
@@ -1187,7 +1187,7 @@ export default function PropertiesClient({ residences: initialResidences, proper
                     value={residenceFormData.id}
                     onChange={handleResidenceInputChange}
                     disabled={isEditingResidence}
-                    className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-blue/20 disabled:bg-slate-50"
+                    className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-amber/20 disabled:bg-slate-50"
                   />
                 </div>
                 <div className="space-y-2">
@@ -1198,7 +1198,7 @@ export default function PropertiesClient({ residences: initialResidences, proper
                     name="name"
                     value={residenceFormData.name}
                     onChange={handleResidenceInputChange}
-                    className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-blue/20"
+                    className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-amber/20"
                   />
                 </div>
                 <div className="space-y-2">
@@ -1219,7 +1219,7 @@ export default function PropertiesClient({ residences: initialResidences, proper
                     name="managerName"
                     value={residenceFormData.managerName}
                     onChange={handleResidenceInputChange}
-                    className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-blue/20"
+                    className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-amber/20"
                   />
                 </div>
                 <div className="space-y-2 md:col-span-2">
@@ -1230,13 +1230,13 @@ export default function PropertiesClient({ residences: initialResidences, proper
                     name="address"
                     value={residenceFormData.address}
                     onChange={handleResidenceInputChange}
-                    className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-blue/20"
+                    className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-amber/20"
                   />
                 </div>
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-slate-700">Logo</label>
                   <div className="flex items-center gap-3">
-                    <label className={`inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 ${isUploadingLogo ? 'opacity-50' : ''}`}>
+                    <label className={`inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-gi-card px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 ${isUploadingLogo ? 'opacity-50' : ''}`}>
                       <input
                         type="file"
                         accept="image/png,image/jpeg,image/webp"
@@ -1261,7 +1261,7 @@ export default function PropertiesClient({ residences: initialResidences, proper
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-slate-700">Image</label>
                   <div className="flex items-center gap-3">
-                    <label className={`inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 ${isUploadingCover ? 'opacity-50' : ''}`}>
+                    <label className={`inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-gi-card px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 ${isUploadingCover ? 'opacity-50' : ''}`}>
                       <input
                         type="file"
                         accept="image/png,image/jpeg,image/webp"
@@ -1291,7 +1291,7 @@ export default function PropertiesClient({ residences: initialResidences, proper
                     name="totalUnits"
                     value={residenceFormData.totalUnits}
                     onChange={handleResidenceInputChange}
-                    className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-blue/20"
+                    className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-amber/20"
                   />
                 </div>
                 <div className="space-y-2">
@@ -1301,7 +1301,7 @@ export default function PropertiesClient({ residences: initialResidences, proper
                     name="deliveredUnits"
                     value={residenceFormData.deliveredUnits}
                     onChange={handleResidenceInputChange}
-                    className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-blue/20"
+                    className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-amber/20"
                   />
                 </div>
                 <div className="space-y-2">
@@ -1311,7 +1311,7 @@ export default function PropertiesClient({ residences: initialResidences, proper
                     name="occupancyRate"
                     value={residenceFormData.occupancyRate}
                     onChange={handleResidenceInputChange}
-                    className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-blue/20"
+                    className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-amber/20"
                   />
                 </div>
                 <div className="space-y-2">
@@ -1322,7 +1322,7 @@ export default function PropertiesClient({ residences: initialResidences, proper
                     value={residenceFormData.blocks}
                     onChange={handleResidenceInputChange}
                     placeholder="Ex: A, B, C"
-                    className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-blue/20"
+                    className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-amber/20"
                   />
                 </div>
               </div>
@@ -1335,7 +1335,7 @@ export default function PropertiesClient({ residences: initialResidences, proper
                     name="elevatorCount"
                     value={residenceFormData.elevatorCount}
                     onChange={handleResidenceInputChange}
-                    className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-blue/20"
+                    className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-amber/20"
                   />
                 </div>
                 <div className="space-y-2">
@@ -1345,7 +1345,7 @@ export default function PropertiesClient({ residences: initialResidences, proper
                     name="waterTankCount"
                     value={residenceFormData.waterTankCount}
                     onChange={handleResidenceInputChange}
-                    className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-blue/20"
+                    className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-amber/20"
                   />
                 </div>
                 <div className="space-y-2">
@@ -1355,7 +1355,7 @@ export default function PropertiesClient({ residences: initialResidences, proper
                     name="generatorCount"
                     value={residenceFormData.generatorCount}
                     onChange={handleResidenceInputChange}
-                    className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-blue/20"
+                    className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-amber/20"
                   />
                 </div>
                 <div className="space-y-2">
@@ -1365,7 +1365,7 @@ export default function PropertiesClient({ residences: initialResidences, proper
                     name="receptionCount"
                     value={residenceFormData.receptionCount}
                     onChange={handleResidenceInputChange}
-                    className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-blue/20"
+                    className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-amber/20"
                   />
                 </div>
               </div>
@@ -1378,7 +1378,7 @@ export default function PropertiesClient({ residences: initialResidences, proper
                       name={field.name}
                       checked={Boolean(residenceFormData[field.name])}
                       onChange={handleResidenceInputChange}
-                      className="h-4 w-4 rounded border-slate-300 text-brand-amber focus:ring-brand-blue"
+                      className="h-4 w-4 rounded border-slate-300 text-brand-amber focus:ring-brand-amber"
                     />
                     <span>{field.label}</span>
                   </label>
@@ -1392,7 +1392,7 @@ export default function PropertiesClient({ residences: initialResidences, proper
                   value={residenceFormData.description}
                   onChange={handleResidenceInputChange}
                   rows={4}
-                  className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-blue/20"
+                  className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-amber/20"
                 />
                 <p className="text-xs text-slate-400">Affichée aux résidents dans l&apos;application mobile (courte description).</p>
               </div>
@@ -1413,7 +1413,7 @@ export default function PropertiesClient({ residences: initialResidences, proper
                               : prev.amenities.filter((key) => key !== amenity.key)
                           }))
                         }
-                        className="h-4 w-4 rounded border-slate-300 text-brand-amber focus:ring-brand-blue"
+                        className="h-4 w-4 rounded border-slate-300 text-brand-amber focus:ring-brand-amber"
                       />
                       <span>{amenity.label}</span>
                     </label>
@@ -1432,7 +1432,7 @@ export default function PropertiesClient({ residences: initialResidences, proper
                 <button
                   type="submit"
                   disabled={isSavingResidence}
-                  className="rounded-lg bg-brand-amber px-6 py-2 text-sm font-bold text-white hover:bg-brand-amber/90 disabled:opacity-50"
+                  className="whitespace-nowrap rounded-full bg-brand-amber px-6 py-2 text-sm font-semibold text-black hover:bg-brand-amber/90 disabled:opacity-50"
                 >
                   {isSavingResidence ? 'Enregistrement...' : isEditingResidence ? 'Enregistrer' : 'Créer la résidence'}
                 </button>

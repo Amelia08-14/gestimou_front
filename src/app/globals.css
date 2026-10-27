@@ -1,10 +1,16 @@
 @import "tailwindcss";
 
+/* ─────────────────────────────────────────────────────────────────────────
+   Gérance Immo Service — design system shared with the mobile app
+   (mobile_app_gestion/lib/presentation/theme/design_tokens.dart + gi_colors.dart).
+   Every value below comes from the app's Figma tokens: keep both in sync.
+   ───────────────────────────────────────────────────────────────────────── */
+
 :root {
   --background: #f6f3ec;
   --foreground: #0c1620;
 
-  /* Gérance Immo Service — Brand Palette */
+  /* Brand */
   --color-brand-navy:  #0c1620;
   --color-brand-amber: #db9200;
   --color-brand-cream: #f6f3ec;
@@ -20,10 +26,10 @@
 @theme inline {
   --color-background:  var(--background);
   --color-foreground:  var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: var(--font-montserrat), system-ui, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, monospace;
 
-  /* Tailwind utility classes */
+  /* Brand — FigBrand */
   --color-brand-navy:       #0c1620;
   --color-brand-amber:      #db9200;
   --color-brand-cream:      #f6f3ec;
@@ -32,17 +38,106 @@
   --color-brand-gold-hover: #b8982d;
   --color-brand-gold-light: #f0e4c2;
   --color-brand-gold-dark:  #a08851;
+
+  /* Surfaces — FigLight / GiColors.light */
+  --color-gi-scaffold:     #f6f3ec;
+  --color-gi-card:         #ece9e3;
+  --color-gi-card-border:  #e7e4de;
+  --color-gi-pill-border:  #e2e0d9;
+  --color-gi-field:        #ece9e3;
+  --color-gi-raised:       #fbfaf7;
+  --color-gi-navbar:       #0c1620;
+  --color-gi-navbar-border:#1f2932;
+  --color-gi-body:         #000000;
+  --color-gi-muted:        #4c4c4c;
+  --color-gi-faint:        #999999;
+
+  /* Accents — FigAccent / FigAlert */
+  --color-gi-success: #2ecc71;
+  --color-gi-error:   #e74c3c;
+  --color-gi-violet:  #7b6fde;
+  --color-gi-blue:    #5794ea;
+  --color-gi-purple:  #8b81cb;
+
+  /* The pages were built on Tailwind's cool "slate" greys. Retune that scale
+     to the app's warm neutrals (FigNeutral) so every page follows the app
+     without rewriting each class. */
+  --color-slate-50:  #f1eee8;
+  --color-slate-100: #e7e4de;
+  --color-slate-200: #e2e0d9;
+  --color-slate-300: #cccccc;
+  --color-slate-400: #999999;
+  --color-slate-500: #6f6b64;
+  --color-slate-600: #4c4c4c;
+  --color-slate-700: #333333;
+  --color-slate-800: #1c242c;
+  --color-slate-900: #0c1620;
+  --color-stone-200: #e2e0d9;
+
+  /* Radii — FigRadius: cards 16, fields 8, CTA pill */
+  --radius-xl:  1rem;
+  --radius-2xl: 1.25rem;
+
+  /* The app's surfaces are flat: a 1px border, no drop shadow.
+     Floating layers (menus, dialogs) keep the larger shadows. */
+  --shadow-sm: 0 0 #0000;
+  --shadow-md: 0 0 #0000;
+  --shadow-lg: 0 12px 32px -12px rgb(12 22 32 / 0.18);
+  --shadow-xl: 0 20px 48px -16px rgb(12 22 32 / 0.25);
+  --shadow-2xl: 0 28px 64px -20px rgb(12 22 32 / 0.35);
+}
+
+html {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: var(--font-sans), system-ui, sans-serif;
+  font-family: var(--font-montserrat), system-ui, sans-serif;
+}
+
+::selection {
+  background: rgb(219 146 0 / 0.25);
+}
+
+/* Form controls follow GiTextField: warm field, amber focus. */
+input,
+select,
+textarea {
+  accent-color: #db9200;
+  caret-color: #db9200;
+}
+input::placeholder,
+textarea::placeholder {
+  color: #b2b2b2;
+}
+:focus-visible {
+  outline-color: #db9200;
+}
+
+/* Thin, warm scrollbars instead of the OS default grey. */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #cfcbc2 transparent;
+}
+
+/* GiAppear — content fades and slides in as a page opens. */
+@keyframes gi-appear {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: none; }
+}
+.gi-appear {
+  animation: gi-appear 360ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+@media (prefers-reduced-motion: reduce) {
+  .gi-appear { animation: none; }
 }
 
 @media (max-width: 767px) {
   body { min-width: 320px; }
-  main > div { padding-left: 26px !important; padding-right: 26px !important; }
+  main > div { padding-left: 20px !important; padding-right: 20px !important; }
   table { min-width: 720px; }
 }
 

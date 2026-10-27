@@ -55,21 +55,21 @@ export default function ProfilePage() {
   return (
     <div className="max-w-4xl mx-auto space-y-8">
       <div>
-        <h1 className="text-2xl font-bold text-slate-900">Mon Profil</h1>
+        <h1 className="text-xl font-semibold leading-tight text-gi-body md:text-2xl">Mon Profil</h1>
         <p className="text-sm text-slate-500">Gérez vos informations personnelles et votre sécurité.</p>
       </div>
 
       <div className="grid gap-8 md:grid-cols-3">
         {/* Profile Info */}
         <div className="md:col-span-1 space-y-6">
-          <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
+          <div className="bg-gi-card rounded-xl border border-slate-200 p-6 shadow-sm">
             <div className="flex flex-col items-center text-center">
-              <div className="h-24 w-24 rounded-full bg-brand-gold text-brand-blue text-3xl font-bold flex items-center justify-center mb-4 shadow-inner">
+              <div className="h-24 w-24 rounded-full bg-brand-gold text-brand-navy text-3xl font-bold flex items-center justify-center mb-4 shadow-inner">
                 {user?.name ? user.name.charAt(0).toUpperCase() : 'U'}
               </div>
               <h2 className="text-lg font-bold text-slate-900">{user?.name}</h2>
               <p className="text-sm text-slate-500 mb-4">{user?.email}</p>
-              <span className="px-3 py-1 bg-blue-50 text-brand-blue text-xs font-bold rounded-full border border-blue-100 uppercase tracking-wider">
+              <span className="px-3 py-1 bg-blue-50 text-brand-navy text-xs font-bold rounded-full border border-blue-100 uppercase tracking-wider">
                 {user?.role}
               </span>
             </div>
@@ -78,9 +78,9 @@ export default function ProfilePage() {
 
         {/* Password Change */}
         <div className="md:col-span-2">
-          <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+          <div className="bg-gi-card rounded-xl border border-slate-200 shadow-sm overflow-hidden">
             <div className="border-b border-slate-100 px-6 py-4 flex items-center gap-2">
-              <ShieldCheck className="h-5 w-5 text-brand-blue" />
+              <ShieldCheck className="h-5 w-5 text-brand-navy" />
               <h3 className="font-bold text-slate-900">Sécurité du compte</h3>
             </div>
             
@@ -95,7 +95,7 @@ export default function ProfilePage() {
                       required
                       value={currentPassword}
                       onChange={(e) => setCurrentPassword(e.target.value)}
-                      className="w-full pl-10 rounded-lg border border-slate-200 px-4 py-2 text-sm focus:border-brand-blue focus:ring-1 focus:ring-brand-blue"
+                      className="w-full pl-10 rounded-lg border border-slate-200 px-4 py-2 text-sm focus:border-brand-amber focus:ring-1 focus:ring-brand-amber"
                       placeholder="••••••••"
                     />
                   </div>
@@ -112,7 +112,7 @@ export default function ProfilePage() {
                       required
                       value={newPassword}
                       onChange={(e) => setNewPassword(e.target.value)}
-                      className="w-full pl-10 rounded-lg border border-slate-200 px-4 py-2 text-sm focus:border-brand-blue focus:ring-1 focus:ring-brand-blue"
+                      className="w-full pl-10 rounded-lg border border-slate-200 px-4 py-2 text-sm focus:border-brand-amber focus:ring-1 focus:ring-brand-amber"
                       placeholder="Nouveau mot de passe"
                     />
                   </div>
@@ -127,7 +127,7 @@ export default function ProfilePage() {
                       required
                       value={confirmPassword}
                       onChange={(e) => setConfirmPassword(e.target.value)}
-                      className="w-full pl-10 rounded-lg border border-slate-200 px-4 py-2 text-sm focus:border-brand-blue focus:ring-1 focus:ring-brand-blue"
+                      className="w-full pl-10 rounded-lg border border-slate-200 px-4 py-2 text-sm focus:border-brand-amber focus:ring-1 focus:ring-brand-amber"
                       placeholder="Confirmer"
                     />
                   </div>
@@ -149,7 +149,7 @@ export default function ProfilePage() {
                 <button
                   type="submit"
                   disabled={loading}
-                  className="rounded-lg bg-brand-blue px-6 py-2 text-sm font-bold text-white shadow-md hover:bg-brand-blue/90 transition-all disabled:opacity-50"
+                  className="whitespace-nowrap rounded-full bg-brand-amber px-6 py-2 text-sm font-semibold text-black shadow-md hover:brightness-95 transition-all disabled:opacity-50"
                 >
                   {loading ? 'Mise à jour...' : 'Mettre à jour le mot de passe'}
                 </button>

@@ -114,11 +114,11 @@ export default function TrombinoscopeClient() {
   return (
     <div className="px-8 py-8">
       <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-xl font-bold text-brand-navy">Trombinoscope résidence</h1>
+        <h1 className="text-xl font-semibold leading-tight text-gi-body md:text-2xl">Trombinoscope résidence</h1>
         <select
           value={residenceId}
           onChange={(e) => setResidenceId(e.target.value)}
-          className="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-brand-navy outline-none focus:border-brand-amber"
+          className="rounded-xl border border-slate-200 bg-gi-raised px-4 py-2.5 text-sm font-medium text-brand-navy outline-none focus:border-brand-amber"
         >
           {residences.map((r) => (
             <option key={r.id} value={r.id}>{r.name}</option>
@@ -141,7 +141,7 @@ export default function TrombinoscopeClient() {
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Lot ou propriétaire..."
-          className="w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-9 pr-3 text-sm outline-none focus:border-brand-amber"
+          className="w-full rounded-xl border border-slate-200 bg-gi-raised py-2.5 pl-9 pr-3 text-sm outline-none focus:border-brand-amber"
         />
       </div>
 
@@ -156,7 +156,7 @@ export default function TrombinoscopeClient() {
             const noAccount = b.lots.filter((l) => l.accountStatus === 'SANS_COMPTE').length;
             const isCollapsed = collapsed.has(b.block);
             return (
-              <div key={b.block} className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
+              <div key={b.block} className="overflow-hidden rounded-2xl border border-slate-200 bg-gi-card">
                 <button
                   onClick={() => toggleBlock(b.block)}
                   className="flex w-full items-center gap-3 border-b border-slate-100 px-5 py-4 text-left"

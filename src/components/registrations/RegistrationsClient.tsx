@@ -127,7 +127,7 @@ export default function RegistrationsClient() {
             <UserPlus className="h-5 w-5" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-brand-amber">Demandes d&apos;inscription</h1>
+            <h1 className="text-xl font-semibold leading-tight text-gi-body md:text-2xl">Demandes d&apos;inscription</h1>
             <p className="text-sm text-slate-500">Validez ou rejetez les demandes d&apos;inscription des résidents.</p>
           </div>
         </div>
@@ -140,8 +140,8 @@ export default function RegistrationsClient() {
             onClick={() => setStatusFilter(t.key)}
             className={`rounded-lg border px-3 py-2 text-xs font-bold transition-colors ${
               statusFilter === t.key
-                ? 'border-brand-navy bg-brand-navy text-white'
-                : 'border-slate-200 bg-white text-slate-500 hover:bg-slate-50'
+                ? 'border-brand-amber bg-brand-navy text-white'
+                : 'border-slate-200 bg-gi-card text-slate-500 hover:bg-slate-50'
             }`}
           >
             {t.label}
@@ -153,12 +153,12 @@ export default function RegistrationsClient() {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Nom, email, résidence..."
-            className="w-full rounded-lg border border-slate-200 bg-white py-2 pl-9 pr-3 text-sm outline-none focus:border-brand-amber"
+            className="w-full rounded-lg border border-slate-200 bg-gi-raised py-2 pl-9 pr-3 text-sm outline-none focus:border-brand-amber"
           />
         </div>
       </div>
 
-      <div className="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden">
+      <div className="rounded-xl border border-slate-200 bg-gi-card shadow-sm overflow-hidden">
         <table className="w-full text-left text-sm">
           <thead className="bg-slate-50 text-slate-700">
             <tr>

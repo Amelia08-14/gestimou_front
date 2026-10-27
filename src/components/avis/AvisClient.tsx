@@ -174,10 +174,10 @@ export default function AvisClient() {
   return (
     <div className="px-8 py-8">
       <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-xl font-bold text-brand-navy">Avis &amp; Annonces</h1>
+        <h1 className="text-xl font-semibold leading-tight text-gi-body md:text-2xl">Avis &amp; Annonces</h1>
         <button
           onClick={openNew}
-          className="flex items-center gap-2 rounded-xl bg-brand-amber px-4 py-2.5 text-sm font-bold text-white shadow-sm hover:brightness-95"
+          className="flex items-center gap-2 whitespace-nowrap rounded-full bg-brand-amber px-4 py-2.5 text-sm font-semibold text-black shadow-sm hover:brightness-95"
         >
           <Plus className="h-4 w-4" />
           Nouvel avis
@@ -191,7 +191,7 @@ export default function AvisClient() {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Rechercher par titre ou résidence..."
-            className="w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-9 pr-3 text-sm outline-none focus:border-brand-amber"
+            className="w-full rounded-xl border border-slate-200 bg-gi-raised py-2.5 pl-9 pr-3 text-sm outline-none focus:border-brand-amber"
           />
         </div>
         {(['ALL', 'URGENT', 'INFO', 'EVENT'] as const).map((c) => (
@@ -200,7 +200,7 @@ export default function AvisClient() {
             onClick={() => setCategoryFilter(c)}
             className={clsx(
               'rounded-lg border px-3 py-2 text-xs font-bold transition-colors',
-              categoryFilter === c ? 'border-brand-amber bg-brand-amber text-white' : 'border-slate-200 bg-white text-slate-500 hover:bg-slate-50'
+              categoryFilter === c ? 'border-brand-amber bg-brand-amber text-black' : 'border-slate-200 bg-gi-card text-slate-500 hover:bg-slate-50'
             )}
           >
             {c === 'ALL' ? 'Tous types' : CATEGORY_LABEL[c]}
@@ -212,7 +212,7 @@ export default function AvisClient() {
             onClick={() => setStatusFilter(s)}
             className={clsx(
               'rounded-lg border px-3 py-2 text-xs font-bold transition-colors',
-              statusFilter === s ? 'border-brand-navy bg-brand-navy text-white' : 'border-slate-200 bg-white text-slate-500 hover:bg-slate-50'
+              statusFilter === s ? 'border-brand-amber bg-brand-navy text-white' : 'border-slate-200 bg-gi-card text-slate-500 hover:bg-slate-50'
             )}
           >
             {s === 'ALL' ? 'Tous statuts' : STATUS_LABEL[s]}
@@ -220,7 +220,7 @@ export default function AvisClient() {
         ))}
       </div>
 
-      <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
+      <div className="overflow-hidden rounded-2xl border border-slate-200 bg-gi-card">
         <table className="w-full text-left text-sm">
           <thead>
             <tr className="border-b border-slate-200 text-xs font-bold uppercase tracking-wide text-slate-400">
@@ -292,7 +292,7 @@ export default function AvisClient() {
 
       {showForm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
-          <div className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-2xl bg-white p-6 shadow-2xl">
+          <div className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-2xl bg-gi-raised p-6 shadow-2xl">
             <div className="mb-4 flex items-center justify-between">
               <h2 className="text-lg font-bold text-brand-navy">Nouvel avis</h2>
               <button onClick={() => setShowForm(false)} className="text-slate-400 hover:text-slate-600">
@@ -386,7 +386,7 @@ export default function AvisClient() {
                       type="datetime-local"
                       value={form.startsAt}
                       onChange={(e) => setForm({ ...form, startsAt: e.target.value })}
-                      className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none focus:border-brand-amber"
+                      className="w-full rounded-xl border border-slate-200 bg-gi-raised px-3 py-2.5 text-sm outline-none focus:border-brand-amber"
                     />
                   </div>
                   <div>
@@ -396,7 +396,7 @@ export default function AvisClient() {
                       value={form.endsAt}
                       min={form.startsAt || undefined}
                       onChange={(e) => setForm({ ...form, endsAt: e.target.value })}
-                      className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none focus:border-brand-amber"
+                      className="w-full rounded-xl border border-slate-200 bg-gi-raised px-3 py-2.5 text-sm outline-none focus:border-brand-amber"
                     />
                   </div>
                 </div>
@@ -416,7 +416,7 @@ export default function AvisClient() {
               <button
                 onClick={() => save(true)}
                 disabled={saving}
-                className="rounded-xl bg-brand-amber px-4 py-2.5 text-sm font-bold text-white hover:brightness-95 disabled:opacity-50"
+                className="whitespace-nowrap rounded-full bg-brand-amber px-4 py-2.5 text-sm font-semibold text-black hover:brightness-95 disabled:opacity-50"
               >
                 Publier
               </button>

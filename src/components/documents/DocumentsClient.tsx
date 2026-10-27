@@ -277,27 +277,27 @@ export default function DocumentsClient() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Gestion Documentaire</h1>
+          <h1 className="text-xl font-semibold leading-tight text-gi-body md:text-2xl">Gestion Documentaire</h1>
           <p className="text-sm text-slate-500">Centralisez tous les documents de la résidence.</p>
         </div>
         <div className="flex gap-2">
           <button
             onClick={handleOpenFilters}
-            className="flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors shadow-sm"
+            className="flex items-center gap-2 rounded-lg border border-slate-200 bg-gi-card px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors shadow-sm"
           >
             <Filter className="h-4 w-4" />
             Filtres
           </button>
           <button
             onClick={handleExport}
-            className="flex items-center gap-2 rounded-lg bg-brand-blue px-4 py-2 text-sm font-medium text-white hover:bg-blue-800 transition-colors shadow-sm"
+            className="flex items-center gap-2 whitespace-nowrap rounded-full bg-brand-amber px-4 py-2 text-sm font-medium text-black hover:brightness-95 transition-colors shadow-sm"
           >
             <Download className="h-4 w-4" />
             Exporter
           </button>
           <button
             onClick={() => setShowUploadModal(true)}
-            className="flex items-center gap-2 rounded-lg bg-brand-blue px-4 py-2 text-sm font-medium text-white hover:bg-blue-800 transition-colors shadow-sm"
+            className="flex items-center gap-2 whitespace-nowrap rounded-full bg-brand-amber px-4 py-2 text-sm font-medium text-black hover:brightness-95 transition-colors shadow-sm"
           >
             <Upload className="h-4 w-4" />
             Ajouter un document
@@ -313,7 +313,7 @@ export default function DocumentsClient() {
                 onClick={() => setFilters((prev) => ({ ...prev, category: cat }))}
                 className={`px-4 py-2 text-sm font-medium whitespace-nowrap transition-colors border-b-2 ${
                     filters.category === cat 
-                    ? 'border-brand-gold text-brand-blue' 
+                    ? 'border-brand-gold text-brand-navy' 
                     : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'
                 }`}
             >
@@ -332,7 +332,7 @@ export default function DocumentsClient() {
           const meta = getIcon(doc);
           const Icon = meta.icon;
           return (
-          <div key={doc.id} className="group relative flex flex-col justify-between rounded-xl border border-slate-200 bg-white p-4 shadow-sm transition-all hover:shadow-md hover:border-brand-gold/30">
+          <div key={doc.id} className="group relative flex flex-col justify-between rounded-xl border border-slate-200 bg-gi-card p-4 shadow-sm transition-all hover:shadow-md hover:border-brand-gold/30">
             <div className="flex items-start justify-between">
               <div className={`rounded-lg p-3 ${meta.color}`}>
                 <Icon className="h-6 w-6" />
@@ -369,7 +369,7 @@ export default function DocumentsClient() {
         )})}
         
         {/* Upload Placeholder */}
-        <label className="flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-slate-200 bg-slate-50 p-6 transition-colors hover:border-brand-blue/50 hover:bg-blue-50/50 cursor-pointer">
+        <label className="flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-slate-200 bg-slate-50 p-6 transition-colors hover:border-brand-amber/50 hover:bg-blue-50/50 cursor-pointer">
             <input
               type="file"
               accept="application/pdf,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,image/png,image/jpeg,image/webp"
@@ -383,8 +383,8 @@ export default function DocumentsClient() {
                 setShowUploadModal(true);
               }}
             />
-            <div className="rounded-full bg-white p-3 shadow-sm ring-1 ring-slate-200">
-                <Upload className="h-6 w-6 text-brand-blue" />
+            <div className="rounded-full bg-gi-card p-3 shadow-sm ring-1 ring-slate-200">
+                <Upload className="h-6 w-6 text-brand-navy" />
             </div>
             <p className="mt-3 text-sm font-medium text-slate-900">Déposer un fichier</p>
             <p className="text-xs text-slate-500">ou cliquer pour parcourir</p>
@@ -392,8 +392,8 @@ export default function DocumentsClient() {
       </div>
 
       {showFilters && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm overflow-y-auto">
-          <div className="w-full max-w-2xl rounded-2xl bg-white shadow-2xl animate-in fade-in zoom-in duration-200">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-brand-navy/40 p-4 backdrop-blur-sm overflow-y-auto">
+          <div className="w-full max-w-2xl rounded-2xl bg-gi-raised shadow-2xl animate-in fade-in zoom-in duration-200">
             <div className="flex items-center justify-between border-b border-slate-100 p-6">
               <h2 className="text-xl font-bold text-slate-900">Filtres</h2>
               <button onClick={() => setShowFilters(false)} className="text-slate-400 hover:text-slate-600">
@@ -407,7 +407,7 @@ export default function DocumentsClient() {
                   <select
                     value={draftFilters.residenceId}
                     onChange={(e) => setDraftFilters((prev) => ({ ...prev, residenceId: e.target.value }))}
-                    className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-blue/20"
+                    className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-amber/20"
                   >
                     <option value="">Toutes</option>
                     {residences.map((r) => (
@@ -421,7 +421,7 @@ export default function DocumentsClient() {
                     type="text"
                     value={draftFilters.q}
                     onChange={(e) => setDraftFilters((prev) => ({ ...prev, q: e.target.value }))}
-                    className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-blue/20"
+                    className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-amber/20"
                     placeholder="Nom du document"
                   />
                 </div>
@@ -430,7 +430,7 @@ export default function DocumentsClient() {
                 <button onClick={handleResetFilters} className="rounded-lg px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100">
                   Réinitialiser
                 </button>
-                <button onClick={handleApplyFilters} className="rounded-lg bg-brand-blue px-6 py-2 text-sm font-bold text-white hover:bg-brand-blue/90">
+                <button onClick={handleApplyFilters} className="whitespace-nowrap rounded-full bg-brand-amber px-6 py-2 text-sm font-semibold text-black hover:brightness-95">
                   Appliquer
                 </button>
               </div>
@@ -440,8 +440,8 @@ export default function DocumentsClient() {
       )}
 
       {showUploadModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm overflow-y-auto">
-          <div className="w-full max-w-lg rounded-2xl bg-white shadow-2xl animate-in fade-in zoom-in duration-200">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-brand-navy/40 p-4 backdrop-blur-sm overflow-y-auto">
+          <div className="w-full max-w-lg rounded-2xl bg-gi-raised shadow-2xl animate-in fade-in zoom-in duration-200">
             <div className="flex items-center justify-between border-b border-slate-100 p-6">
               <h2 className="text-xl font-bold text-slate-900">Ajouter un document</h2>
               <button onClick={() => setShowUploadModal(false)} className="text-slate-400 hover:text-slate-600">
@@ -501,7 +501,7 @@ export default function DocumentsClient() {
                 />
               </div>
               <div className="flex justify-between items-center gap-3 border-t border-slate-100 pt-4">
-                <label className={`inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 ${isUploading ? 'opacity-50' : ''}`}>
+                <label className={`inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-gi-card px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 ${isUploading ? 'opacity-50' : ''}`}>
                   <input
                     type="file"
                     accept="application/pdf,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,image/png,image/jpeg,image/webp"
@@ -525,7 +525,7 @@ export default function DocumentsClient() {
                       .then(() => setPendingFile(null))
                       .catch((error) => alert(error instanceof Error ? error.message : 'Upload impossible'));
                   }}
-                  className="rounded-lg bg-brand-blue px-4 py-2 text-sm font-medium text-white hover:bg-blue-800 disabled:opacity-50"
+                  className="whitespace-nowrap rounded-full bg-brand-amber px-4 py-2 text-sm font-medium text-black hover:brightness-95 disabled:opacity-50"
                 >
                   {isUploading ? 'Téléversement...' : 'Téléverser'}
                 </button>

@@ -303,7 +303,7 @@ export default function TicketDetailsPanel<T extends TicketLike>({ ticket, role,
                 <button
                   onClick={upload}
                   disabled={uploading}
-                  className="rounded-lg bg-brand-amber px-4 py-2 text-sm font-medium text-white hover:brightness-95 disabled:opacity-50"
+                  className="whitespace-nowrap rounded-full bg-brand-amber px-4 py-2 text-sm font-medium text-black hover:brightness-95 disabled:opacity-50"
                 >
                   {uploading ? 'Envoi…' : 'Enregistrer'}
                 </button>
@@ -374,7 +374,7 @@ export default function TicketDetailsPanel<T extends TicketLike>({ ticket, role,
             <button
               onClick={sendInfo}
               disabled={sendingInfo || !infoText.trim()}
-              className="rounded-lg bg-brand-amber px-4 py-2 text-sm font-medium text-white hover:brightness-95 disabled:opacity-50"
+              className="whitespace-nowrap rounded-full bg-brand-amber px-4 py-2 text-sm font-medium text-black hover:brightness-95 disabled:opacity-50"
             >
               {sendingInfo ? 'Envoi…' : "Envoyer l'information"}
             </button>

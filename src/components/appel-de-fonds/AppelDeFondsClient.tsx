@@ -388,7 +388,7 @@ export default function AppelDeFondsClient() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-20">
-        <div className="h-12 w-12 animate-spin rounded-full border-4 border-brand-blue border-t-transparent"></div>
+        <div className="h-12 w-12 animate-spin rounded-full border-4 border-brand-amber border-t-transparent"></div>
       </div>
     );
   }
@@ -397,19 +397,19 @@ export default function AppelDeFondsClient() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-brand-blue">Appel de fonds</h1>
+          <h1 className="text-xl font-semibold leading-tight text-gi-body md:text-2xl">Appel de fonds</h1>
           <p className="text-sm text-slate-500">Création, traitement, documents justificatifs et suivi</p>
         </div>
         <button
           onClick={() => setShowCreate(true)}
-          className="rounded-lg bg-brand-blue px-4 py-2 text-sm font-semibold text-white hover:bg-brand-blue/90"
+          className="whitespace-nowrap rounded-full bg-brand-amber px-4 py-2 text-sm font-semibold text-black hover:brightness-95"
         >
           Nouveau
         </button>
       </div>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-        <div className="rounded-xl border border-slate-200 bg-white shadow-sm lg:col-span-1">
+        <div className="rounded-xl border border-slate-200 bg-gi-card shadow-sm lg:col-span-1">
           <div className="border-b border-slate-200 p-4">
             <p className="text-sm font-semibold text-slate-700">Liste</p>
           </div>
@@ -445,7 +445,7 @@ export default function AppelDeFondsClient() {
           </div>
         </div>
 
-        <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm lg:col-span-2">
+        <div className="rounded-xl border border-slate-200 bg-gi-card p-6 shadow-sm lg:col-span-2">
           {!selected ? (
             <p className="text-sm text-slate-500">Sélectionnez un appel de fonds.</p>
           ) : (
@@ -525,7 +525,7 @@ export default function AppelDeFondsClient() {
                             </div>
                             <div className="flex items-center gap-2">
                               {d.document ? (
-                                <button onClick={() => handleDownload(d.document as DocumentItem)} className="text-xs font-semibold text-brand-blue hover:underline">
+                                <button onClick={() => handleDownload(d.document as DocumentItem)} className="text-xs font-semibold text-brand-navy hover:underline">
                                   Télécharger
                                 </button>
                               ) : null}
@@ -595,7 +595,7 @@ export default function AppelDeFondsClient() {
                             </div>
                             <div className="flex items-center gap-2">
                               {d.document ? (
-                                <button onClick={() => handleDownload(d.document as DocumentItem)} className="text-xs font-semibold text-brand-blue hover:underline">
+                                <button onClick={() => handleDownload(d.document as DocumentItem)} className="text-xs font-semibold text-brand-navy hover:underline">
                                   Télécharger
                                 </button>
                               ) : null}
@@ -622,7 +622,7 @@ export default function AppelDeFondsClient() {
                   <button
                     onClick={handleSaveAfter}
                     disabled={isSaving}
-                    className="w-full rounded-lg bg-brand-blue px-4 py-2 text-sm font-semibold text-white hover:bg-brand-blue/90 disabled:opacity-50"
+                    className="w-full rounded-full bg-brand-amber px-4 py-2 text-sm font-semibold text-black hover:brightness-95 disabled:opacity-50"
                   >
                     Enregistrer après traitement
                   </button>
@@ -634,8 +634,8 @@ export default function AppelDeFondsClient() {
       </div>
 
       {showCreate ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="w-full max-w-xl rounded-xl bg-white p-6 shadow-xl">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-brand-navy/40 p-4 backdrop-blur-[2px]">
+          <div className="w-full max-w-xl rounded-xl bg-gi-raised p-6 shadow-xl">
             <div className="flex items-start justify-between gap-4">
               <div>
                 <p className="text-lg font-bold text-slate-900">Nouvel appel de fonds</p>
@@ -719,7 +719,7 @@ export default function AppelDeFondsClient() {
               <button
                 onClick={handleCreate}
                 disabled={isSaving}
-                className="rounded-lg bg-brand-blue px-4 py-2 text-sm font-semibold text-white hover:bg-brand-blue/90 disabled:opacity-50"
+                className="whitespace-nowrap rounded-full bg-brand-amber px-4 py-2 text-sm font-semibold text-black hover:brightness-95 disabled:opacity-50"
               >
                 Créer
               </button>

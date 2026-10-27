@@ -6,6 +6,7 @@ import { Header } from '@/components/Header';
 import { MobileNavigation } from '@/components/MobileNavigation';
 import { useRole } from '@/contexts/RoleContext';
 import { useEffect } from 'react';
+import Image from 'next/image';
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -48,10 +49,10 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   // Prevent flash of content while checking auth
   if (isLoading) {
       return (
-        <div className="flex h-screen items-center justify-center bg-brand-cream">
-          <div className="flex flex-col items-center gap-4">
-            <div className="h-12 w-12 animate-spin rounded-full border-4 border-brand-navy border-t-transparent"></div>
-            <p className="text-brand-navy/60 font-medium">Chargement…</p>
+        <div className="flex h-screen w-full items-center justify-center bg-brand-cream">
+          <div className="flex flex-col items-center gap-6">
+            <Image src="/brand/gis_logo_vertical_light.png" alt="Gérance Immo Service" width={96} height={96} priority className="gi-appear" />
+            <div className="h-6 w-6 animate-spin rounded-full border-2 border-brand-amber border-t-transparent" />
           </div>
         </div>
       );
@@ -70,10 +71,12 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex min-h-screen w-full bg-brand-cream md:h-screen">
       <div className="hidden md:block"><Sidebar /></div>
-      <div className="flex flex-1 flex-col h-screen overflow-hidden">
+      <div className="flex h-screen flex-1 flex-col overflow-hidden">
         <div className="hidden md:block"><Header /></div>
-        <main className="flex-1 overflow-y-auto pb-24 md:p-8 md:pb-8">
-          {children}
+        <main className="flex-1 overflow-y-auto pb-36 pt-6 md:px-8 md:pb-10 md:pt-7">
+          <div key={pathname} className="gi-appear mx-auto w-full max-w-[1320px]">
+            {children}
+          </div>
         </main>
       </div>
       <MobileNavigation />
